@@ -1,95 +1,82 @@
 import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
+import type { NewTokenEvent, TradeEvent } from '@/types/socket';
 
-// Token name pools for realistic mock data
-const TOKEN_NAMES = [
-    { symbol: 'PEPE', name: 'Pepe' },
-    { symbol: 'DOGE', name: 'Doge AI' },
-    { symbol: 'WOJAK', name: 'Wojak' },
-    { symbol: 'CHAD', name: 'GigaChad' },
-    { symbol: 'MFER', name: 'mfers' },
-    { symbol: 'BOBO', name: 'Bobo Bear' },
-    { symbol: 'SMOL', name: 'SmolBrain' },
-    { symbol: 'BONK', name: 'Bonk Inu' },
-    { symbol: 'MOON', name: 'MoonRocket' },
-    { symbol: 'APE', name: 'ApeDAO' },
-    { symbol: 'FREN', name: 'Frens' },
-    { symbol: 'WAGMI', name: 'WAGMI Token' },
-    { symbol: 'NGMI', name: 'NGMI Coin' },
-    { symbol: 'HODL', name: 'Hodler' },
-    { symbol: 'YOLO', name: 'YoloSwap' },
-];
+// BAGS token filter - only tokens with CA ending in 'bags'
+const isBagsToken = (mint: string): boolean => {
+    return mint.toLowerCase().endsWith('bags');
+};
 
-const DEPLOYER_NAMES = [
-    { wallet: '7Xa3...f2e1', name: 'whale_dev', launches: 12, successRate: 83 },
-    { wallet: '3Bb2...a4c8', name: 'alpha_chad', launches: 8, successRate: 75 },
-    { wallet: '9Cc4...b3d2', name: 'degen_anon', launches: 24, successRate: 42 },
-    { wallet: '2Ee6...c1a4', name: 'stealth_king', launches: 3, successRate: 66 },
-    { wallet: '8Ff1...d2b5', name: 'pump_master', launches: 15, successRate: 55 },
-    { wallet: '4Gg3...e5f6', name: 'based_dev', launches: 6, successRate: 90 },
-    { wallet: '1Hh8...a9b0', name: 'new_deployer', launches: 1, successRate: 100 },
-];
+// SOL price for USD calculations
+const SOL_PRICE = 250;
 
-// Generate realistic mock pulse item
-const generatePulseItem = (state: PulseState, index: number): PulseItem => {
-    const token = TOKEN_NAMES[Math.floor(Math.random() * TOKEN_NAMES.length)];
-    const deployer = DEPLOYER_NAMES[Math.floor(Math.random() * DEPLOYER_NAMES.length)];
-    const uniqueSuffix = Math.floor(Math.random() * 999);
+// Convert socket NewTokenEvent to PulseItem
+const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
+    // Determine state based on bonding curve status
+    let state: PulseState = 'NEW';
+    let bondingProgress = 0;
 
-    const bondingProgress = state === 'NEW'
-        ? Math.floor(Math.random() * 60) + 10
-        : state === 'FINAL_STRETCH'
-            ? Math.floor(Math.random() * 14) + 85
-            : 100;
+    if (token.status === 'migrated') {
+        state = 'MIGRATED';
+        bondingProgress = 100;
+    } else if (token.market_cap_sol) {
+        // Estimate bonding progress from market cap
+        const mcSol = parseFloat(token.market_cap_sol);
+        bondingProgress = Math.min(99, Math.floor(mcSol / 850 * 100)); // ~85 SOL = 100%
+        if (bondingProgress >= 85) {
+            state = 'FINAL_STRETCH';
+        }
+    }
 
-    const riskTypes: Array<'REUSED_FUNDING' | 'INSIDER_CLUSTER' | 'DEV_SELL' | 'CLEAN'> =
-        ['REUSED_FUNDING', 'INSIDER_CLUSTER', 'DEV_SELL', 'CLEAN'];
+    // Calculate market cap in USD
+    const marketCap = token.market_cap_sol
+        ? parseFloat(token.market_cap_sol) * SOL_PRICE
+        : 0;
 
+    // Parse holder rate for concentration
+    const top10Rate = parseFloat(token.top_10_holder_rate || '0');
+
+    // Determine risk flags based on data
     const riskFlags: RiskFlag[] = [];
-    const riskChance = Math.random();
-
-    if (riskChance > 0.7) {
-        // Add one or two risk flags
-        const riskType = riskTypes[Math.floor(Math.random() * 3)] as 'REUSED_FUNDING' | 'INSIDER_CLUSTER' | 'DEV_SELL';
+    if (top10Rate > 50) {
         riskFlags.push({
-            type: riskType,
-            severity: riskChance > 0.9 ? 'critical' : 'warn',
+            type: 'INSIDER_CLUSTER',
+            severity: top10Rate > 70 ? 'critical' : 'warn',
+        });
+    }
+    if (token.creator_token_status === 'sold') {
+        riskFlags.push({
+            type: 'DEV_SELL',
+            severity: 'warn',
         });
     }
 
-    const ageSeconds = state === 'NEW'
-        ? Math.floor(Math.random() * 7200) + 60 // 1min - 2hrs
-        : state === 'FINAL_STRETCH'
-            ? Math.floor(Math.random() * 14400) + 7200 // 2hrs - 6hrs
-            : Math.floor(Math.random() * 86400) + 14400; // 4hrs - 1day
+    // Calculate age from creation timestamp
+    const ageSeconds = Math.floor((Date.now() / 1000) - token.creation_timestamp);
 
     return {
-        tokenId: `${state}-${index}-${Date.now()}-${uniqueSuffix}`,
-        symbol: `$${token.symbol}${uniqueSuffix}`,
+        tokenId: token.mint,
+        symbol: `$${token.symbol}`,
         name: token.name,
-        deployer: deployer.wallet,
-        deployerName: deployer.name,
-        deployerLaunches: deployer.launches,
-        deployerSuccessRate: deployer.successRate,
-        ageSeconds,
-        marketCap: Math.floor(Math.random() * 2000000) + 20000,
-        liquidity: Math.floor(Math.random() * 300000) + 5000,
+        deployer: token.creator?.slice(0, 4) + '...' + token.creator?.slice(-4),
+        deployerName: 'deployer',
+        deployerLaunches: 1,
+        deployerSuccessRate: 50,
+        ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
+        marketCap,
+        liquidity: marketCap * 0.3, // Estimate
         bondingProgress,
-        holders: Math.floor(Math.random() * 1500) + 20,
-        txCount: Math.floor(Math.random() * 3000) + 50,
-        volume24h: Math.floor(Math.random() * 500000) + 10000,
+        holders: token.holder_count || 0,
+        txCount: 0,
+        volume24h: 0,
         state,
         riskFlags,
         updatedAt: Date.now(),
+        // Store original data for reference
+        logoUrl: token.logo_url || undefined,
+        protocolSource: token.protocol_source,
     };
 };
-
-// Initial mock data with more items
-const generateInitialData = (): Record<PulseState, PulseItem[]> => ({
-    NEW: Array.from({ length: 12 }, (_, i) => generatePulseItem('NEW', i)),
-    FINAL_STRETCH: Array.from({ length: 5 }, (_, i) => generatePulseItem('FINAL_STRETCH', i)),
-    MIGRATED: Array.from({ length: 8 }, (_, i) => generatePulseItem('MIGRATED', i)),
-});
 
 // Filter types
 export type DisplayMode = 'cards' | 'compact' | 'table';
@@ -100,6 +87,7 @@ interface PulseFilters {
     tierFilter: TierFilter;
     hideRisky: boolean;
     minMarketCap: number;
+    bagsOnly: boolean; // Filter for BAGS tokens
 }
 
 interface PulseStore {
@@ -110,33 +98,106 @@ interface PulseStore {
 
     // Actions
     addItem: (item: PulseItem) => void;
+    addTokenFromSocket: (token: NewTokenEvent) => void;
+    updateFromTrade: (trade: TradeEvent) => void;
     updateItem: (tokenId: string, updates: Partial<PulseItem>) => void;
     transitionItem: (tokenId: string, newState: PulseState) => void;
     removeItem: (tokenId: string) => void;
-    simulateRealtime: () => void;
+    clearItems: () => void;
     getItemById: (tokenId: string) => PulseItem | undefined;
     setFilters: (filters: Partial<PulseFilters>) => void;
     getFilteredItems: (state: PulseState) => PulseItem[];
+    setConnected: (connected: boolean) => void;
 }
 
 export const usePulseStore = create<PulseStore>((set, get) => ({
-    items: generateInitialData(),
-    isConnected: true,
+    // Start with empty state - will be populated by socket
+    items: {
+        NEW: [],
+        FINAL_STRETCH: [],
+        MIGRATED: [],
+    },
+    isConnected: false,
     lastUpdate: Date.now(),
     filters: {
         displayMode: 'compact',
         tierFilter: 'all',
         hideRisky: false,
         minMarketCap: 0,
+        bagsOnly: true, // Default to BAGS only
     },
 
     addItem: (item) => set((state) => ({
         items: {
             ...state.items,
-            [item.state]: [item, ...state.items[item.state]].slice(0, 50), // Limit to 50 per column
+            [item.state]: [item, ...state.items[item.state]].slice(0, 50),
         },
         lastUpdate: Date.now(),
     })),
+
+    // Add token from socket event (with BAGS filter)
+    addTokenFromSocket: (token: NewTokenEvent) => {
+        const { filters, items, addItem, updateItem } = get();
+
+        // Apply BAGS filter if enabled
+        if (filters.bagsOnly && !isBagsToken(token.mint)) {
+            return; // Skip non-BAGS tokens
+        }
+
+        // Check if token already exists
+        const existing = get().getItemById(token.mint);
+        if (existing) {
+            // Update existing token
+            updateItem(token.mint, {
+                holders: token.holder_count || existing.holders,
+                updatedAt: Date.now(),
+            });
+            return;
+        }
+
+        // Convert and add new token
+        const pulseItem = convertSocketTokenToPulseItem(token);
+        addItem(pulseItem);
+        console.log('Added BAGS token:', token.symbol, token.mint);
+    },
+
+    // Update token from trade event
+    updateFromTrade: (trade: TradeEvent) => {
+        const { filters, getItemById, updateItem, transitionItem } = get();
+
+        // Apply BAGS filter
+        if (filters.bagsOnly && !isBagsToken(trade.mint)) {
+            return;
+        }
+
+        const existing = getItemById(trade.mint);
+        if (!existing) return;
+
+        // Calculate new market cap
+        const marketCap = trade.market_cap_sol
+            ? parseFloat(trade.market_cap_sol) * SOL_PRICE
+            : existing.marketCap;
+
+        // Calculate bonding progress
+        let bondingProgress = existing.bondingProgress;
+        if (trade.bonding_curve_percent) {
+            bondingProgress = parseFloat(trade.bonding_curve_percent);
+        }
+
+        updateItem(trade.mint, {
+            marketCap,
+            bondingProgress,
+            txCount: existing.txCount + 1,
+            updatedAt: Date.now(),
+        });
+
+        // Handle state transitions
+        if (bondingProgress >= 100 && existing.state !== 'MIGRATED') {
+            transitionItem(trade.mint, 'MIGRATED');
+        } else if (bondingProgress >= 85 && existing.state === 'NEW') {
+            transitionItem(trade.mint, 'FINAL_STRETCH');
+        }
+    },
 
     updateItem: (tokenId, updates) => set((state) => {
         const newItems = { ...state.items };
@@ -152,7 +213,6 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         const newItems = { ...state.items };
         let itemToMove: PulseItem | null = null;
 
-        // Find and remove from current state
         for (const stateKey of Object.keys(newItems) as PulseState[]) {
             const idx = newItems[stateKey].findIndex((item) => item.tokenId === tokenId);
             if (idx !== -1) {
@@ -161,13 +221,10 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
             }
         }
 
-        // Add to new state at top
         if (itemToMove) {
             itemToMove.state = newState;
             itemToMove.updatedAt = Date.now();
-            if (newState === 'FINAL_STRETCH') {
-                itemToMove.bondingProgress = Math.floor(Math.random() * 14) + 85;
-            } else if (newState === 'MIGRATED') {
+            if (newState === 'MIGRATED') {
                 itemToMove.bondingProgress = 100;
             }
             newItems[newState] = [itemToMove, ...newItems[newState]];
@@ -184,55 +241,10 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         return { items: newItems, lastUpdate: Date.now() };
     }),
 
-    simulateRealtime: () => {
-        const { items, addItem, transitionItem, updateItem } = get();
-
-        // Randomly add new token (30% chance)
-        if (Math.random() > 0.7) {
-            const newItem = generatePulseItem('NEW', Date.now());
-            addItem(newItem);
-        }
-
-        // Randomly transition NEW -> FINAL_STRETCH (15% chance per item)
-        if (items.NEW.length > 2 && Math.random() > 0.85) {
-            const item = items.NEW.find(i => i.bondingProgress >= 70);
-            if (item) {
-                transitionItem(item.tokenId, 'FINAL_STRETCH');
-            }
-        }
-
-        // Randomly transition FINAL_STRETCH -> MIGRATED (10% chance)
-        if (items.FINAL_STRETCH.length > 0 && Math.random() > 0.9) {
-            const item = items.FINAL_STRETCH[0];
-            if (item) {
-                transitionItem(item.tokenId, 'MIGRATED');
-            }
-        }
-
-        // Update random NEW items' bonding progress
-        items.NEW.forEach((item) => {
-            if (Math.random() > 0.7 && item.bondingProgress < 84) {
-                updateItem(item.tokenId, {
-                    bondingProgress: Math.min(84, item.bondingProgress + Math.floor(Math.random() * 3) + 1),
-                    txCount: item.txCount + Math.floor(Math.random() * 15),
-                    holders: item.holders + Math.floor(Math.random() * 8),
-                    ageSeconds: item.ageSeconds + 3,
-                });
-            }
-        });
-
-        // Update FINAL_STRETCH items' bonding
-        items.FINAL_STRETCH.forEach((item) => {
-            if (Math.random() > 0.6 && item.bondingProgress < 99) {
-                updateItem(item.tokenId, {
-                    bondingProgress: Math.min(99, item.bondingProgress + Math.floor(Math.random() * 2) + 1),
-                    txCount: item.txCount + Math.floor(Math.random() * 20),
-                    holders: item.holders + Math.floor(Math.random() * 12),
-                    ageSeconds: item.ageSeconds + 3,
-                });
-            }
-        });
-    },
+    clearItems: () => set({
+        items: { NEW: [], FINAL_STRETCH: [], MIGRATED: [] },
+        lastUpdate: Date.now(),
+    }),
 
     getItemById: (tokenId) => {
         const { items } = get();
@@ -274,6 +286,8 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
 
         return filtered;
     },
+
+    setConnected: (connected) => set({ isConnected: connected }),
 }));
 
 // Column config
@@ -282,3 +296,4 @@ export const PULSE_COLUMNS: { state: PulseState; label: string; description: str
     { state: 'FINAL_STRETCH', label: 'Final Stretch', description: 'Near migration' },
     { state: 'MIGRATED', label: 'Migrated', description: 'LP live' },
 ];
+

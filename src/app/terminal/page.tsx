@@ -1,105 +1,136 @@
 "use client";
 
-import { useMemo } from "react";
-import { DataTable } from "@/components/tables/DataTable";
-import { TokenDrawer } from "@/components/drawers/TokenDrawer";
-import { useTerminalStore } from "@/store/terminal.store";
-import { MOCK_TOKENS } from "@/lib/mock-data";
-import { Terminal, Filter, Sliders } from "lucide-react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { usePulseStore } from "@/store/pulse.store";
+import { Terminal, ArrowRight, Loader2 } from "lucide-react";
 
-export default function TerminalPage() {
-    const { filters, activePreset } = useTerminalStore();
+// Mock featured tokens for quick access
+const FEATURED_TOKENS = [
+    { id: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", symbol: "$BONK", name: "Bonk" },
+    { id: "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", symbol: "$POPCAT", name: "Popcat" },
+    { id: "ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY", symbol: "$MOODENG", name: "Moodeng" },
+];
 
-    // Filter tokens based on active filters
-    const filteredTokens = useMemo(() => {
-        return MOCK_TOKENS.filter((token) => {
-            if (filters.min_launch_score && token.launch_score < filters.min_launch_score) return false;
-            if (filters.max_insider_pct && token.insider_pct > filters.max_insider_pct) return false;
-            if (filters.dev_sold !== null && token.dev_sold !== filters.dev_sold) return false;
-            if (filters.status.length > 0 && !filters.status.includes(token.status)) return false;
-            if (filters.funding_type.length > 0 && !filters.funding_type.includes(token.funding_type)) return false;
-            return true;
-        });
-    }, [filters]);
+export default function TerminalIndexPage() {
+    const router = useRouter();
+    const { items } = usePulseStore();
+
+    // Get recent tokens from Pulse
+    const recentTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED].slice(0, 10);
+
+    const handleOpenTerminal = (tokenId: string) => {
+        router.push(`/terminal/${tokenId}`);
+    };
 
     return (
-        <div className="h-[calc(100vh-56px)] flex bg-[#050505] overflow-hidden font-mono">
-            {/* Left Sidebar - Filters */}
-            <aside className="w-64 border-r border-white/10 bg-[#0A0A0A] flex flex-col z-20">
-                <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-[#EDEDED]">
-                        <Filter size={14} />
-                        <span className="text-xs font-bold uppercase tracking-widest">Filters</span>
-                    </div>
-                    <span className="text-[10px] text-[#666]">{filteredTokens.length} MATCHES</span>
+        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0A0A0A]">
+                <div className="flex items-center gap-3">
+                    <Terminal size={20} className="text-[#39FF14]" />
+                    <h1 className="text-lg font-bold tracking-tight">TERMINAL</h1>
                 </div>
-                
-                <div className="p-4 space-y-6 overflow-y-auto flex-1 custom-scrollbar">
-                    {/* Presets */}
-                    <div className="space-y-3">
-                        <div className="text-[10px] text-[#666] uppercase tracking-widest font-bold">Quick_Presets</div>
-                        {['SAFE_LAUNCH', 'DEGEN_PLAY', 'WHALE_WATCH'].map((preset) => (
-                            <button 
-                                key={preset}
-                                className="w-full text-left px-3 py-2 border border-white/10 hover:border-[#39FF14] hover:text-[#39FF14] text-xs text-[#888] transition-colors bg-black/20"
-                            >
-                                {'>'} {preset}
-                            </button>
+                <span className="text-[10px] text-[#666] font-mono">SELECT_TOKEN_TO_ANALYZE</span>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-auto p-6">
+                {/* Featured Tokens */}
+                <section className="mb-8">
+                    <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Featured Tokens</h2>
+                    <div className="grid grid-cols-3 gap-4">
+                        {FEATURED_TOKENS.map((token) => (
+                            <TokenCard
+                                key={token.id}
+                                id={token.id}
+                                symbol={token.symbol}
+                                name={token.name}
+                                onClick={() => handleOpenTerminal(token.id)}
+                            />
                         ))}
                     </div>
+                </section>
 
-                    <div className="h-px bg-white/5" />
-
-                    {/* Manual Sliders */}
-                    <div className="space-y-4">
-                        <div className="text-[10px] text-[#666] uppercase tracking-widest font-bold flex items-center gap-2">
-                            <Sliders size={12} /> Parameters
+                {/* Recent from Pulse */}
+                {recentTokens.length > 0 && (
+                    <section>
+                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Recent from Pulse</h2>
+                        <div className="grid grid-cols-4 gap-3">
+                            {recentTokens.map((token) => (
+                                <TokenCard
+                                    key={token.tokenId}
+                                    id={token.tokenId}
+                                    symbol={token.symbol}
+                                    name={token.name || token.symbol}
+                                    marketCap={token.marketCap}
+                                    onClick={() => handleOpenTerminal(token.tokenId)}
+                                />
+                            ))}
                         </div>
-                        
-                        <div>
-                            <div className="flex justify-between text-[10px] text-[#888] mb-1">
-                                <span>MIN_SCORE</span>
-                                <span className="text-[#39FF14]">70</span>
-                            </div>
-                            <input type="range" className="w-full h-1 bg-[#333] rounded-none appearance-none cursor-pointer accent-[#39FF14]" />
-                        </div>
+                    </section>
+                )}
 
-                        <div>
-                            <div className="flex justify-between text-[10px] text-[#888] mb-1">
-                                <span>MAX_INSIDER</span>
-                                <span className="text-[#FF003C]">15%</span>
-                            </div>
-                            <input type="range" className="w-full h-1 bg-[#333] rounded-none appearance-none cursor-pointer accent-[#FF003C]" />
-                        </div>
+                {/* Search / Paste Address */}
+                <section className="mt-8">
+                    <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Or Enter Token Address</h2>
+                    <div className="flex gap-4 max-w-xl">
+                        <input
+                            type="text"
+                            placeholder="Paste Solana token mint address..."
+                            className="flex-1 bg-[#1A1A1A] border border-[#333] px-4 py-3 text-sm font-mono text-[#EDEDED] placeholder-[#666] focus:border-[#39FF14] focus:outline-none"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    const input = e.currentTarget.value.trim();
+                                    if (input) handleOpenTerminal(input);
+                                }
+                            }}
+                        />
+                        <button
+                            className="px-6 py-3 bg-[#39FF14] text-black font-bold text-sm uppercase tracking-wider hover:brightness-110 transition-all"
+                            onClick={() => {
+                                const input = document.querySelector('input')?.value.trim();
+                                if (input) handleOpenTerminal(input);
+                            }}
+                        >
+                            Open Terminal
+                        </button>
                     </div>
-                </div>
-
-                <div className="p-4 border-t border-white/10 text-[10px] text-[#444]">
-                    TERMINAL_V2.4 // READY
-                </div>
-            </aside>
-
-            {/* Main Content - Data Grid */}
-            <main className="flex-1 flex flex-col relative bg-[#050505]">
-                {/* Top Bar */}
-                <div className="h-10 border-b border-white/10 flex items-center px-4 justify-between bg-[#050505]">
-                    <div className="flex items-center gap-2 text-xs text-[#666]">
-                        <Terminal size={14} />
-                        <span className="font-bold text-[#EDEDED]">MAIN_FEED</span>
-                        <span>/</span>
-                        <span>ALL_ASSETS</span>
-                    </div>
-                    <div className="flex items-center gap-4 text-[10px] font-mono">
-                         <span className="text-[#39FF14]">● LIVE</span>
-                         <span className="text-[#666]">LATENCY: 12ms</span>
-                    </div>
-                </div>
-
-                {/* Data Table */}
-                <DataTable tokens={filteredTokens} />
-            </main>
-
-            <TokenDrawer />
+                </section>
+            </div>
         </div>
+    );
+}
+
+// Token Card Component
+function TokenCard({
+    id,
+    symbol,
+    name,
+    marketCap,
+    onClick,
+}: {
+    id: string;
+    symbol: string;
+    name: string;
+    marketCap?: number;
+    onClick: () => void;
+}) {
+    return (
+        <button
+            onClick={onClick}
+            className="group flex items-center justify-between p-4 bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] transition-colors text-left"
+        >
+            <div className="flex flex-col gap-1">
+                <span className="text-sm font-bold text-[#EDEDED]">{symbol}</span>
+                <span className="text-[10px] text-[#666]">{name}</span>
+                {marketCap && (
+                    <span className="text-[10px] text-[#888] font-mono">
+                        MC: ${(marketCap / 1000).toFixed(0)}K
+                    </span>
+                )}
+            </div>
+            <ArrowRight size={14} className="text-[#666] group-hover:text-[#39FF14] transition-colors" />
+        </button>
     );
 }
