@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -m skills.codebase_analysis.analyze_workflow:*)",
+      "Bash(find:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}
