@@ -5,7 +5,8 @@ import { useSelectionStore } from "@/store/selection.store";
 import { formatAge, getRiskColor } from "@/lib/lifecycle";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { Copy, ExternalLink, Activity, Users, DollarSign } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Copy, ExternalLink, Activity, Users, DollarSign, TrendingUp, Zap } from "lucide-react";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -21,8 +22,20 @@ const formatCompact = (num: number) => {
 export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     const { selectToken, hoverToken } = useSelectionStore();
     const [copied, setCopied] = useState(false);
+    const router = useRouter();
 
     const hasRisk = item.riskFlags.some(f => f.severity === 'critical' || f.severity === 'warn');
+
+    const handleOpenTerminal = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        router.push(`/terminal/${item.tokenId}`);
+    };
+
+    const handleBuyNow = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        // Opens terminal with buy intent - could also open a buy modal
+        router.push(`/terminal/${item.tokenId}?action=buy`);
+    };
 
     return (
         <motion.div
@@ -91,8 +104,32 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                         </div>
                     </div>
                 </div>
+
+                {/* Action Buttons - Show on hover */}
+                <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Trade/Terminal Button */}
+                    <button
+                        onClick={handleOpenTerminal}
+                        className="p-1.5 bg-[#1A1A1A] border border-white/10 hover:border-[#00F0FF] hover:bg-[#00F0FF]/10 text-[#666] hover:text-[#00F0FF] transition-all"
+                        title="Open Terminal"
+                    >
+                        <TrendingUp size={12} />
+                    </button>
+
+                    {/* Buy Now Button */}
+                    <button
+                        onClick={handleBuyNow}
+                        className="px-2 py-1 bg-[#39FF14] hover:brightness-110 text-black text-[9px] font-bold uppercase tracking-wider transition-all"
+                        title="Buy Now"
+                    >
+                        <span className="flex items-center gap-1">
+                            <Zap size={10} />
+                            BUY
+                        </span>
+                    </button>
+                </div>
             </div>
-            
+
             {/* Hover Glitch Overlay (Optional) */}
             <div className="absolute inset-0 bg-[#39FF14] opacity-0 group-hover:opacity-[0.02] pointer-events-none mix-blend-overlay" />
         </motion.div>

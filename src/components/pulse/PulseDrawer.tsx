@@ -1,9 +1,12 @@
 "use client";
 
+import { useMemo } from "react";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { formatAge, getBondingColor, getRiskColor } from "@/lib/lifecycle";
+import { generateCredibilityMatrix } from "@/lib/credibility";
+import { CredibilityMatrix } from "@/components/credibility/CredibilityMatrix";
 import { motion, AnimatePresence } from "framer-motion";
 import { Shield, AlertTriangle, Terminal, X, ExternalLink, Copy, Activity, Zap } from "lucide-react";
 
@@ -21,6 +24,12 @@ export function PulseDrawer() {
     const { getItemById } = usePulseStore();
 
     const item = selectedTokenId ? getItemById(selectedTokenId) : null;
+
+    // Generate credibility matrix for selected token
+    const credibilityMatrix = useMemo(() => {
+        if (!selectedTokenId) return null;
+        return generateCredibilityMatrix(selectedTokenId);
+    }, [selectedTokenId]);
 
     if (!drawerOpen || !item || drawerSource !== 'pulse') return null;
 
@@ -63,7 +72,7 @@ export function PulseDrawer() {
 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
-                    
+
                     {/* Key Stats */}
                     <div className="grid grid-cols-2 gap-2">
                         <StatBlock label="MARKET_CAP" value={formatCurrency(item.marketCap)} color="text-[#39FF14]" />
@@ -79,7 +88,7 @@ export function PulseDrawer() {
                                 <Shield size={12} /> RISK_ASSESSMENT
                             </h3>
                         </div>
-                        
+
                         {item.riskFlags.length > 0 ? (
                             <div className="space-y-2">
                                 {item.riskFlags.map((flag, i) => (
@@ -97,16 +106,25 @@ export function PulseDrawer() {
                         )}
                     </div>
 
+                    {/* Credibility Matrix (Compact) */}
+                    {credibilityMatrix && (
+                        <CredibilityMatrix
+                            tokenId={selectedTokenId ?? undefined}
+                            layout="pulse"
+                            matrix={credibilityMatrix}
+                        />
+                    )}
+
                     {/* Bonding Curve */}
                     <div>
-                         <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-bold uppercase tracking-widest text-[#666]">CURVE_PROGRESS</span>
                             <span className="text-xs font-bold font-mono text-[#00F0FF]">{item.bondingProgress}%</span>
                         </div>
                         <div className="h-2 w-full bg-[#111] border border-white/5 relative overflow-hidden">
-                            <div 
-                                className="absolute top-0 left-0 h-full bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]" 
-                                style={{ width: `${item.bondingProgress}%` }} 
+                            <div
+                                className="absolute top-0 left-0 h-full bg-[#00F0FF] shadow-[0_0_10px_#00F0FF]"
+                                style={{ width: `${item.bondingProgress}%` }}
                             />
                             {/* Striped overlay */}
                             <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
@@ -126,7 +144,7 @@ export function PulseDrawer() {
                                     <Copy size={10} className="text-[#666] cursor-pointer hover:text-white" />
                                 </div>
                             </div>
-                             <div className="flex justify-between items-center">
+                            <div className="flex justify-between items-center">
                                 <span className="text-[10px] text-[#666]">HISTORY</span>
                                 <span className="text-xs font-mono text-[#EDEDED]">
                                     {item.deployerLaunches || 0} LAUNCHES
