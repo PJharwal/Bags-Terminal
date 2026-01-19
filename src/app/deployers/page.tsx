@@ -1,14 +1,120 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { MOCK_DEPLOYERS, getTokensByDeployer } from "@/lib/mock-data";
+import { usePulseStore } from "@/store/pulse.store";
+import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency, formatTimeAgo, getScoreColor } from "@/lib/format";
 import type { Deployer } from "@/lib/types";
-import { Search, Shield, AlertTriangle, Crosshair, Database } from "lucide-react";
+import type { PulseItem } from "@/lib/types";
+import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff } from "lucide-react";
+
+// Aggregate deployers from tokens
+interface AggregatedDeployer {
+    wallet: string;
+    name?: string;
+    total_launches: number;
+    success_rate: number;
+    avg_score: number;
+    risk_flags: string[];
+    last_launch: number;
+    total_volume: number;
+    insider_usage_avg: number;
+    tokens: PulseItem[];
+}
+
+function aggregateDeployers(tokens: PulseItem[]): AggregatedDeployer[] {
+    const deployerMap = new Map<string, AggregatedDeployer>();
+
+    tokens.forEach(token => {
+        const deployerKey = token.deployer;
+        const existing = deployerMap.get(deployerKey);
+
+        if (existing) {
+            existing.tokens.push(token);
+            existing.total_launches++;
+            existing.total_volume += token.volume24h || 0;
+            existing.last_launch = Math.max(existing.last_launch, token.updatedAt);
+        } else {
+            deployerMap.set(deployerKey, {
+                wallet: deployerKey,
+                name: token.deployerName || undefined,
+                total_launches: 1,
+                success_rate: 0,
+                avg_score: 0,
+                risk_flags: [],
+                last_launch: token.updatedAt,
+                total_volume: token.volume24h || 0,
+                insider_usage_avg: 0,
+                tokens: [token],
+            });
+        }
+    });
+
+    // Calculate success rate and risk flags
+    deployerMap.forEach((deployer) => {
+        const migratedCount = deployer.tokens.filter(t => t.state === 'MIGRATED').length;
+        deployer.success_rate = deployer.total_launches > 0
+            ? Math.round((migratedCount / deployer.total_launches) * 100)
+            : 0;
+
+        // Calculate average risk score (inverse of risky tokens)
+        const riskyTokens = deployer.tokens.filter(t => t.riskFlags.some(f => f.severity === 'critical'));
+        deployer.avg_score = deployer.total_launches > 0
+            ? Math.round(100 - (riskyTokens.length / deployer.total_launches) * 100)
+            : 50;
+
+        // Calculate average insider percentage
+        const insiderPercents = deployer.tokens
+            .filter(t => t.riskFlags.some(f => f.type === 'INSIDER_CLUSTER'))
+            .length;
+        deployer.insider_usage_avg = deployer.total_launches > 0
+            ? Math.round((insiderPercents / deployer.total_launches) * 100)
+            : 0;
+
+        // Set risk flags
+        if (deployer.insider_usage_avg > 30) {
+            deployer.risk_flags.push('high_insider_avg');
+        }
+        if (deployer.success_rate < 30 && deployer.total_launches > 2) {
+            deployer.risk_flags.push('low_success_rate');
+        }
+        if (riskyTokens.length > deployer.total_launches * 0.5) {
+            deployer.risk_flags.push('suspicious_patterns');
+        }
+    });
+
+    return Array.from(deployerMap.values())
+        .sort((a, b) => b.total_volume - a.total_volume);
+}
 
 export default function DeployersPage() {
-    const [selectedDeployer, setSelectedDeployer] = useState<Deployer | null>(null);
+    const [selectedDeployer, setSelectedDeployer] = useState<AggregatedDeployer | null>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const { items } = usePulseStore();
+    const { connect, isConnected } = useSocketStore();
+
+    useEffect(() => {
+        connect();
+    }, [connect]);
+
+    // Get all tokens and aggregate deployers
+    const allTokens = useMemo(() =>
+        [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED],
+        [items]
+    );
+
+    const deployers = useMemo(() => aggregateDeployers(allTokens), [allTokens]);
+
+    // Filter deployers by search
+    const filteredDeployers = useMemo(() => {
+        if (!searchQuery) return deployers;
+        const query = searchQuery.toLowerCase();
+        return deployers.filter(d =>
+            d.wallet.toLowerCase().includes(query) ||
+            (d.name && d.name.toLowerCase().includes(query))
+        );
+    }, [deployers, searchQuery]);
 
     return (
         <div className="h-[calc(100vh-56px)] flex bg-[#050505] font-mono overflow-hidden">
@@ -22,20 +128,28 @@ export default function DeployersPage() {
                                 DEPLOYER_DB
                             </h1>
                             <p className="text-xs text-[#888] uppercase tracking-widest">
-                                Global Identity Tracking System
+                                Aggregated from live token data
                             </p>
                         </div>
-                        <div className="flex items-center gap-2 text-[#39FF14] border border-[#39FF14] px-3 py-1 bg-[#39FF14]/5">
-                            <Database size={14} />
-                            <span className="text-xs font-bold">DB_ONLINE</span>
+                        <div className="flex items-center gap-4">
+                            <div className={`flex items-center gap-2 ${isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'} border ${isConnected ? 'border-[#39FF14]' : 'border-[#FF003C]'} px-3 py-1 bg-black/50`}>
+                                {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+                                <span className="text-xs font-bold">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[#888] border border-white/10 px-3 py-1 bg-black/50">
+                                <Database size={14} />
+                                <span className="text-xs font-bold">{deployers.length} DEPLOYERS</span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Search Bar */}
                     <div className="relative">
-                        <input 
-                            type="text" 
-                            placeholder="SEARCH_WALLET_OR_ALIAS..." 
+                        <input
+                            type="text"
+                            placeholder="SEARCH_WALLET_OR_ALIAS..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
                             className="w-full bg-[#050505] border border-white/10 p-3 pl-10 text-sm text-[#EDEDED] focus:border-[#39FF14] focus:outline-none placeholder-[#444] font-mono uppercase"
                         />
                         <Search className="absolute left-3 top-3.5 text-[#666]" size={16} />
@@ -45,67 +159,78 @@ export default function DeployersPage() {
                 {/* List Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none fixed" />
-                    
-                    <table className="w-full text-sm relative z-10">
-                        <thead className="sticky top-0 bg-[#0A0A0A] z-20 border-b border-white/10">
-                            <tr>
-                                <th className="text-left py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Identity</th>
-                                <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Reputation</th>
-                                <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Launches</th>
-                                <th className="text-right py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Vol_Total</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {MOCK_DEPLOYERS.map((deployer) => (
-                                <tr
-                                    key={deployer.wallet}
-                                    onClick={() => setSelectedDeployer(deployer)}
-                                    className={`cursor-pointer transition-all duration-100 group hover:bg-[#39FF14]/5 ${selectedDeployer?.wallet === deployer.wallet
-                                            ? "bg-[#39FF14]/10 border-l-2 border-[#39FF14]"
-                                            : "border-l-2 border-transparent"
-                                        }`}
-                                >
-                                    <td className="py-4 px-6">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`w-8 h-8 flex items-center justify-center border ${
-                                                deployer.risk_flags.length > 0 ? 'border-[#FF003C] text-[#FF003C]' : 'border-[#39FF14] text-[#39FF14]'
-                                            } bg-black`}>
-                                                <Crosshair size={14} />
-                                            </div>
-                                            <div>
-                                                <div className="font-bold text-[#EDEDED] group-hover:text-[#39FF14] transition-colors">
-                                                    {deployer.name || "UNKNOWN_TARGET"}
-                                                </div>
-                                                <div className="text-[10px] text-[#666] font-mono">{deployer.wallet}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    <td className="py-4 px-4 text-center">
-                                        <div className="flex flex-col items-center gap-1">
-                                            <span className={`text-sm font-bold ${getScoreColor(deployer.avg_score)}`}>
-                                                {deployer.avg_score}
-                                            </span>
-                                            <div className="w-16 h-1 bg-[#333]">
-                                                <div 
-                                                    className={`h-full ${deployer.avg_score > 70 ? 'bg-[#39FF14]' : 'bg-[#FF003C]'}`} 
-                                                    style={{ width: `${deployer.avg_score}%` }}
-                                                />
-                                            </div>
-                                        </div>
-                                    </td>
 
-                                    <td className="py-4 px-4 text-center font-mono text-[#888]">
-                                        {deployer.total_launches}
-                                    </td>
-
-                                    <td className="py-4 px-6 text-right font-mono text-[#EDEDED]">
-                                        {formatCurrency(deployer.total_volume)}
-                                    </td>
+                    {filteredDeployers.length > 0 ? (
+                        <table className="w-full text-sm relative z-10">
+                            <thead className="sticky top-0 bg-[#0A0A0A] z-20 border-b border-white/10">
+                                <tr>
+                                    <th className="text-left py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Identity</th>
+                                    <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Reputation</th>
+                                    <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Launches</th>
+                                    <th className="text-right py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Vol_Total</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {filteredDeployers.map((deployer) => (
+                                    <tr
+                                        key={deployer.wallet}
+                                        onClick={() => setSelectedDeployer(deployer)}
+                                        className={`cursor-pointer transition-all duration-100 group hover:bg-[#39FF14]/5 ${selectedDeployer?.wallet === deployer.wallet
+                                                ? "bg-[#39FF14]/10 border-l-2 border-[#39FF14]"
+                                                : "border-l-2 border-transparent"
+                                            }`}
+                                    >
+                                        <td className="py-4 px-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-8 h-8 flex items-center justify-center border ${
+                                                    deployer.risk_flags.length > 0 ? 'border-[#FF003C] text-[#FF003C]' : 'border-[#39FF14] text-[#39FF14]'
+                                                } bg-black`}>
+                                                    <Crosshair size={14} />
+                                                </div>
+                                                <div>
+                                                    <div className="font-bold text-[#EDEDED] group-hover:text-[#39FF14] transition-colors">
+                                                        {deployer.name || deployer.wallet}
+                                                    </div>
+                                                    <div className="text-[10px] text-[#666] font-mono">{deployer.wallet}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td className="py-4 px-4 text-center">
+                                            <div className="flex flex-col items-center gap-1">
+                                                <span className={`text-sm font-bold ${getScoreColor(deployer.avg_score)}`}>
+                                                    {deployer.avg_score}
+                                                </span>
+                                                <div className="w-16 h-1 bg-[#333]">
+                                                    <div
+                                                        className={`h-full ${deployer.avg_score > 70 ? 'bg-[#39FF14]' : 'bg-[#FF003C]'}`}
+                                                        style={{ width: `${deployer.avg_score}%` }}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </td>
+
+                                        <td className="py-4 px-4 text-center font-mono text-[#888]">
+                                            {deployer.total_launches}
+                                        </td>
+
+                                        <td className="py-4 px-6 text-right font-mono text-[#EDEDED]">
+                                            {formatCurrency(deployer.total_volume)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <div className="flex flex-col items-center justify-center h-64 text-[#666]">
+                            <Database size={32} className="mb-4 opacity-50" />
+                            <p className="text-sm">
+                                {isConnected
+                                    ? 'No deployers found. Waiting for BAGS tokens...'
+                                    : 'Connecting to live feed...'}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -132,13 +257,13 @@ export default function DeployersPage() {
                                     CLOSE [ESC]
                                 </button>
                             </div>
-                            
+
                             <div className="flex items-center gap-4 mb-4">
                                 <div className="w-16 h-16 bg-black border border-white/20 flex items-center justify-center">
                                     <Shield size={24} className={selectedDeployer.risk_flags.length > 0 ? "text-[#FF003C]" : "text-[#39FF14]"} />
                                 </div>
                                 <div>
-                                    <div className="text-lg font-bold text-white">{selectedDeployer.name}</div>
+                                    <div className="text-lg font-bold text-white">{selectedDeployer.name || selectedDeployer.wallet}</div>
                                     <div className="text-[10px] text-[#666] font-mono break-all">{selectedDeployer.wallet}</div>
                                 </div>
                             </div>
@@ -153,7 +278,9 @@ export default function DeployersPage() {
                                 <div className="bg-black/50 p-2 border border-white/10">
                                     <div className="text-[9px] text-[#666] uppercase tracking-widest">Total_Vol</div>
                                     <div className="text-xl font-bold text-white">
-                                        {(selectedDeployer.total_volume / 1000000).toFixed(1)}M
+                                        {selectedDeployer.total_volume >= 1000000
+                                            ? `${(selectedDeployer.total_volume / 1000000).toFixed(1)}M`
+                                            : formatCurrency(selectedDeployer.total_volume)}
                                     </div>
                                 </div>
                             </div>
@@ -164,7 +291,7 @@ export default function DeployersPage() {
                             <h3 className="text-xs font-bold text-[#666] uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <AlertTriangle size={12} /> Risk_Profile
                             </h3>
-                            
+
                             {selectedDeployer.risk_flags.length > 0 ? (
                                 <div className="space-y-2">
                                     {selectedDeployer.risk_flags.map((flag) => (
@@ -185,17 +312,22 @@ export default function DeployersPage() {
                         {/* Launch History */}
                         <div className="p-6">
                             <h3 className="text-xs font-bold text-[#666] uppercase tracking-widest mb-4">
-                                Recent_Deployment_Log
+                                Recent_Deployment_Log ({selectedDeployer.tokens.length})
                             </h3>
                             <div className="space-y-1">
-                                {getTokensByDeployer(selectedDeployer.wallet).map((token, i) => (
-                                    <div key={token.id} className="flex items-center justify-between p-3 border border-white/5 hover:border-white/20 bg-black/20 transition-colors group">
+                                {selectedDeployer.tokens.slice(0, 10).map((token, i) => (
+                                    <div key={token.tokenId} className="flex items-center justify-between p-3 border border-white/5 hover:border-white/20 bg-black/20 transition-colors group">
                                         <div className="flex items-center gap-3">
                                             <span className="text-[10px] text-[#444] font-mono">0{i+1}</span>
                                             <span className="font-bold text-[#EDEDED]">{token.symbol}</span>
                                         </div>
-                                        <div className={`text-xs font-bold ${getScoreColor(token.launch_score)}`}>
-                                            SCR:{token.launch_score}
+                                        <div className="flex items-center gap-2">
+                                            <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'text-[#39FF14]' : 'text-[#888]'}`}>
+                                                {token.state}
+                                            </span>
+                                            <span className="text-xs font-mono text-[#666]">
+                                                {formatCurrency(token.marketCap)}
+                                            </span>
                                         </div>
                                     </div>
                                 ))}

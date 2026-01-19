@@ -7,8 +7,8 @@ const isBagsToken = (mint: string): boolean => {
     return mint.toLowerCase().endsWith('bags');
 };
 
-// SOL price for USD calculations
-const SOL_PRICE = 250;
+// SOL price for USD calculations (per user spec: use constant 140)
+const SOL_PRICE = 140;
 
 // Convert socket NewTokenEvent to PulseItem
 const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {

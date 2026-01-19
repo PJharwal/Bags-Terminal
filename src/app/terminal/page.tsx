@@ -1,20 +1,44 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { usePulseStore } from "@/store/pulse.store";
-import { Terminal, ArrowRight, Loader2 } from "lucide-react";
-
-// Mock featured tokens for quick access
-const FEATURED_TOKENS = [
-    { id: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263", symbol: "$BONK", name: "Bonk" },
-    { id: "7GCihgDB8fe6KNjn2MYtkzZcRjQy3t9GHdC8uHYmW2hr", symbol: "$POPCAT", name: "Popcat" },
-    { id: "ED5nyyWEzpPPiWimP8vYm7sD7TD3LAt3Q3gRTWHzPJBY", symbol: "$MOODENG", name: "Moodeng" },
-];
+import { useSocketStore } from "@/store/socket.store";
+import { gmgnService } from "@/services/gmgn.service";
+import { formatCurrency } from "@/lib/format";
+import { Terminal, ArrowRight, Loader2, TrendingUp, Wifi, WifiOff } from "lucide-react";
 
 export default function TerminalIndexPage() {
     const router = useRouter();
     const { items } = usePulseStore();
+    const { connect, isConnected } = useSocketStore();
+
+    const [trendingTokens, setTrendingTokens] = useState<any[]>([]);
+    const [isLoadingTrending, setIsLoadingTrending] = useState(false);
+
+    // Connect to socket on mount
+    useEffect(() => {
+        connect();
+    }, [connect]);
+
+    // Fetch trending tokens from GMGN
+    const fetchTrending = useCallback(async () => {
+        setIsLoadingTrending(true);
+        try {
+            const data = await gmgnService.getTrending('1h');
+            if (data?.rank) {
+                setTrendingTokens(data.rank.slice(0, 6));
+            }
+        } catch (error) {
+            console.error('Failed to fetch trending:', error);
+        } finally {
+            setIsLoadingTrending(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchTrending();
+    }, [fetchTrending]);
 
     // Get recent tokens from Pulse
     const recentTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED].slice(0, 10);
@@ -31,31 +55,49 @@ export default function TerminalIndexPage() {
                     <Terminal size={20} className="text-[#39FF14]" />
                     <h1 className="text-lg font-bold tracking-tight">TERMINAL</h1>
                 </div>
-                <span className="text-[10px] text-[#666] font-mono">SELECT_TOKEN_TO_ANALYZE</span>
+                <div className="flex items-center gap-4">
+                    <div className={`flex items-center gap-2 text-[10px] ${isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                        {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                        <span>{isConnected ? 'LIVE' : 'CONNECTING...'}</span>
+                    </div>
+                    <span className="text-[10px] text-[#666] font-mono">SELECT_TOKEN_TO_ANALYZE</span>
+                </div>
             </div>
 
             {/* Content */}
             <div className="flex-1 overflow-auto p-6">
-                {/* Featured Tokens */}
+                {/* Trending Tokens from GMGN */}
                 <section className="mb-8">
-                    <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Featured Tokens</h2>
-                    <div className="grid grid-cols-3 gap-4">
-                        {FEATURED_TOKENS.map((token) => (
-                            <TokenCard
-                                key={token.id}
-                                id={token.id}
-                                symbol={token.symbol}
-                                name={token.name}
-                                onClick={() => handleOpenTerminal(token.id)}
-                            />
-                        ))}
+                    <div className="flex items-center gap-2 mb-4">
+                        <TrendingUp size={14} className="text-[#39FF14]" />
+                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest">Trending Tokens (1h)</h2>
+                        {isLoadingTrending && <Loader2 size={12} className="animate-spin text-[#666]" />}
                     </div>
+                    {trendingTokens.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-4">
+                            {trendingTokens.map((token) => (
+                                <TokenCard
+                                    key={token.address}
+                                    id={token.address}
+                                    symbol={token.symbol ? `$${token.symbol}` : '$???'}
+                                    name={token.name || 'Unknown'}
+                                    marketCap={token.market_cap}
+                                    priceChange={token.price_change_percent}
+                                    onClick={() => handleOpenTerminal(token.address)}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-[#666] text-sm py-4">
+                            {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Make sure GMGN server is running.'}
+                        </div>
+                    )}
                 </section>
 
                 {/* Recent from Pulse */}
                 {recentTokens.length > 0 && (
-                    <section>
-                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Recent from Pulse</h2>
+                    <section className="mb-8">
+                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Recent from Live Feed</h2>
                         <div className="grid grid-cols-4 gap-3">
                             {recentTokens.map((token) => (
                                 <TokenCard
@@ -64,11 +106,24 @@ export default function TerminalIndexPage() {
                                     symbol={token.symbol}
                                     name={token.name || token.symbol}
                                     marketCap={token.marketCap}
+                                    bondingProgress={token.bondingProgress}
                                     onClick={() => handleOpenTerminal(token.tokenId)}
                                 />
                             ))}
                         </div>
                     </section>
+                )}
+
+                {/* Empty state when no tokens */}
+                {recentTokens.length === 0 && trendingTokens.length === 0 && !isLoadingTrending && (
+                    <div className="text-center py-12 text-[#666]">
+                        <Terminal size={32} className="mx-auto mb-4 opacity-30" />
+                        <p className="text-sm">
+                            {isConnected
+                                ? 'Waiting for BAGS tokens...'
+                                : 'Connecting to live feed...'}
+                        </p>
+                    </div>
                 )}
 
                 {/* Search / Paste Address */}
@@ -108,12 +163,16 @@ function TokenCard({
     symbol,
     name,
     marketCap,
+    bondingProgress,
+    priceChange,
     onClick,
 }: {
     id: string;
     symbol: string;
     name: string;
     marketCap?: number;
+    bondingProgress?: number;
+    priceChange?: number;
     onClick: () => void;
 }) {
     return (
@@ -123,10 +182,20 @@ function TokenCard({
         >
             <div className="flex flex-col gap-1">
                 <span className="text-sm font-bold text-[#EDEDED]">{symbol}</span>
-                <span className="text-[10px] text-[#666]">{name}</span>
-                {marketCap && (
+                <span className="text-[10px] text-[#666] truncate max-w-[120px]">{name}</span>
+                {marketCap !== undefined && (
                     <span className="text-[10px] text-[#888] font-mono">
-                        MC: ${(marketCap / 1000).toFixed(0)}K
+                        MC: {formatCurrency(marketCap)}
+                    </span>
+                )}
+                {bondingProgress !== undefined && (
+                    <span className={`text-[10px] font-mono ${bondingProgress >= 100 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
+                        {bondingProgress}% bonded
+                    </span>
+                )}
+                {priceChange !== undefined && (
+                    <span className={`text-[10px] font-mono ${priceChange >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                        {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
                     </span>
                 )}
             </div>

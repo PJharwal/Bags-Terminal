@@ -1,17 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { gmgnService } from "@/services/gmgn.service";
+import { formatCurrency } from "@/lib/format";
+import { TrendingUp, Loader2, RefreshCw, Flame, Clock } from "lucide-react";
 
-const FILTERS = ["Clean", "Risky", "High Rep", "New"];
+const FILTERS = ["All", "Clean", "Risky", "High Volume"];
+const TIMEFRAMES = ["1m", "5m", "1h", "6h", "24h"];
 
-const TOKENS = [
-    { symbol: "$PEPE", score: 92, deployer: "A+", status: "Clean", risk: "low", volume: "2.4M" },
-    { symbol: "$WIF", score: 88, deployer: "A", status: "Clean", risk: "low", volume: "1.8M" },
-    { symbol: "$CHAD", score: 62, deployer: "B", status: "Watch", risk: "medium", volume: "890K" },
-    { symbol: "$DEGEN", score: 45, deployer: "C", status: "Caution", risk: "medium", volume: "1.2M" },
-    { symbol: "$MOON", score: 29, deployer: "D", status: "Risk", risk: "high", volume: "450K" },
-    { symbol: "$SHIB", score: 85, deployer: "A", status: "Clean", risk: "low", volume: "3.1M" },
-];
+interface TrendingToken {
+    address: string;
+    symbol: string;
+    name: string;
+    price: number;
+    price_change_percent: number;
+    volume: number;
+    market_cap: number;
+    logo?: string;
+}
+
+const getRiskLevel = (token: TrendingToken): 'low' | 'medium' | 'high' => {
+    // Simple heuristic based on price change and market cap
+    if (Math.abs(token.price_change_percent) > 50) return 'high';
+    if (Math.abs(token.price_change_percent) > 20) return 'medium';
+    return 'low';
+};
 
 const getRiskColor = (risk: string) => {
     switch (risk) {
@@ -22,25 +36,122 @@ const getRiskColor = (risk: string) => {
     }
 };
 
+const getStatusFromRisk = (risk: string) => {
+    switch (risk) {
+        case "low": return "Clean";
+        case "medium": return "Watch";
+        case "high": return "Risk";
+        default: return "Unknown";
+    }
+};
+
 const getStatusColor = (status: string) => {
     switch (status) {
         case "Clean": return "text-[#2ECC71]";
-        case "Watch": case "Caution": return "text-[#F1C40F]";
+        case "Watch": return "text-[#F1C40F]";
         case "Risk": return "text-[#E74C3C]";
         default: return "text-[#9AA0A6]";
     }
 };
 
 export default function TrendingPage() {
-    const [activeFilter, setActiveFilter] = useState("Clean");
+    const router = useRouter();
+    const [activeFilter, setActiveFilter] = useState("All");
+    const [activeTimeframe, setActiveTimeframe] = useState("1h");
     const [view, setView] = useState<"grid" | "table">("grid");
+    const [tokens, setTokens] = useState<TrendingToken[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    const fetchTrending = useCallback(async () => {
+        setIsLoading(true);
+        setError(null);
+
+        try {
+            // Try different endpoints based on timeframe
+            let data;
+            if (activeTimeframe === '1m' || activeTimeframe === '5m') {
+                data = await gmgnService.getSwapRanks(activeTimeframe, 20);
+            } else {
+                data = await gmgnService.getTrending(activeTimeframe);
+            }
+
+            if (data?.rank) {
+                const transformedTokens: TrendingToken[] = data.rank.map((t: any) => ({
+                    address: t.address,
+                    symbol: t.symbol || '???',
+                    name: t.name || 'Unknown',
+                    price: t.price || 0,
+                    price_change_percent: t.price_change_percent || 0,
+                    volume: t.volume || t.volume_24h || 0,
+                    market_cap: t.market_cap || 0,
+                    logo: t.logo,
+                }));
+                setTokens(transformedTokens);
+            } else {
+                setTokens([]);
+            }
+        } catch (err) {
+            console.error('Failed to fetch trending:', err);
+            setError('Failed to fetch trending tokens. Make sure GMGN server is running.');
+        } finally {
+            setIsLoading(false);
+        }
+    }, [activeTimeframe]);
+
+    useEffect(() => {
+        fetchTrending();
+    }, [fetchTrending]);
+
+    // Filter tokens
+    const filteredTokens = tokens.filter(token => {
+        const risk = getRiskLevel(token);
+        if (activeFilter === "All") return true;
+        if (activeFilter === "Clean") return risk === 'low';
+        if (activeFilter === "Risky") return risk === 'high';
+        if (activeFilter === "High Volume") return token.volume > 100000;
+        return true;
+    });
+
+    const handleTokenClick = (address: string) => {
+        router.push(`/terminal/${address}`);
+    };
 
     return (
-        <div className="min-h-screen bg-transparent p-6">
+        <div className="min-h-screen bg-transparent p-6 font-mono">
             {/* Header */}
             <div className="max-w-5xl mx-auto mb-6">
-                <h1 className="text-xl font-semibold mb-1">Trending BAGS Tokens</h1>
-                <p className="text-sm text-[#9AA0A6]">Trending based on distribution + demand</p>
+                <div className="flex items-center gap-3 mb-1">
+                    <TrendingUp className="text-[#39FF14]" size={24} />
+                    <h1 className="text-xl font-semibold">Trending Tokens</h1>
+                </div>
+                <p className="text-sm text-[#9AA0A6]">Real-time trending data from GMGN</p>
+            </div>
+
+            {/* Timeframe Selector */}
+            <div className="max-w-5xl mx-auto mb-4 flex items-center gap-2">
+                <Clock size={14} className="text-[#666]" />
+                <span className="text-[10px] text-[#666] uppercase mr-2">Timeframe:</span>
+                {TIMEFRAMES.map((tf) => (
+                    <button
+                        key={tf}
+                        onClick={() => setActiveTimeframe(tf)}
+                        className={`px-3 py-1 text-sm rounded-sm border transition-colors ${activeTimeframe === tf
+                            ? "border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10"
+                            : "border-white/10 text-[#9AA0A6] hover:border-white/20 hover:text-white"
+                            }`}
+                    >
+                        {tf}
+                    </button>
+                ))}
+                <button
+                    onClick={fetchTrending}
+                    disabled={isLoading}
+                    className="ml-auto p-2 border border-white/10 hover:border-[#39FF14] transition-colors disabled:opacity-50"
+                    title="Refresh"
+                >
+                    <RefreshCw size={14} className={`text-[#888] ${isLoading ? 'animate-spin' : ''}`} />
+                </button>
             </div>
 
             {/* Filters */}
@@ -79,68 +190,115 @@ export default function TrendingPage() {
                 </div>
             </div>
 
+            {/* Loading State */}
+            {isLoading && (
+                <div className="max-w-5xl mx-auto flex items-center justify-center py-16">
+                    <Loader2 size={24} className="animate-spin text-[#39FF14] mr-3" />
+                    <span className="text-[#888]">Loading trending tokens...</span>
+                </div>
+            )}
+
+            {/* Error State */}
+            {error && !isLoading && (
+                <div className="max-w-5xl mx-auto py-16 text-center">
+                    <Flame size={32} className="mx-auto mb-4 text-[#FF003C] opacity-50" />
+                    <p className="text-[#FF003C] mb-4">{error}</p>
+                    <button
+                        onClick={fetchTrending}
+                        className="px-4 py-2 border border-white/10 text-[#888] hover:text-white hover:border-white/20 transition-colors"
+                    >
+                        Try Again
+                    </button>
+                </div>
+            )}
+
+            {/* Empty State */}
+            {!isLoading && !error && filteredTokens.length === 0 && (
+                <div className="max-w-5xl mx-auto py-16 text-center text-[#666]">
+                    <TrendingUp size={32} className="mx-auto mb-4 opacity-30" />
+                    <p>No tokens match your filters</p>
+                </div>
+            )}
+
             {/* Grid View */}
-            {view === "grid" && (
+            {!isLoading && !error && view === "grid" && filteredTokens.length > 0 && (
                 <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {TOKENS.map((token, i) => (
-                        <div
-                            key={i}
-                            className="bg-[#11141B] border border-white/5 rounded-lg p-4 hover:border-white/10 transition-colors cursor-pointer"
-                        >
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="font-mono font-semibold text-lg">{token.symbol}</span>
-                                <span className={`w-2 h-2 rounded-full ${getRiskColor(token.risk)}`} />
+                    {filteredTokens.map((token, i) => {
+                        const risk = getRiskLevel(token);
+                        const status = getStatusFromRisk(risk);
+                        return (
+                            <div
+                                key={token.address || i}
+                                onClick={() => handleTokenClick(token.address)}
+                                className="bg-[#11141B] border border-white/5 rounded-lg p-4 hover:border-[#39FF14]/50 transition-colors cursor-pointer"
+                            >
+                                <div className="flex items-center justify-between mb-3">
+                                    <span className="font-mono font-semibold text-lg">${token.symbol}</span>
+                                    <span className={`w-2 h-2 rounded-full ${getRiskColor(risk)}`} />
+                                </div>
+                                <div className="space-y-2 text-sm">
+                                    <div className="flex justify-between">
+                                        <span className="text-[#9AA0A6]">Price</span>
+                                        <span className="font-mono">${token.price.toFixed(6)}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[#9AA0A6]">Change</span>
+                                        <span className={`font-mono ${token.price_change_percent >= 0 ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
+                                            {token.price_change_percent >= 0 ? '+' : ''}{token.price_change_percent.toFixed(2)}%
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[#9AA0A6]">Status</span>
+                                        <span className={getStatusColor(status)}>{status}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-[#9AA0A6]">Volume</span>
+                                        <span className="font-mono">{formatCurrency(token.volume)}</span>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-[#9AA0A6]">Score</span>
-                                    <span className="font-mono font-semibold">{token.score}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-[#9AA0A6]">Deployer</span>
-                                    <span>{token.deployer}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-[#9AA0A6]">Status</span>
-                                    <span className={getStatusColor(token.status)}>{token.status}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-[#9AA0A6]">Volume</span>
-                                    <span className="font-mono">${token.volume}</span>
-                                </div>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
             {/* Table View */}
-            {view === "table" && (
+            {!isLoading && !error && view === "table" && filteredTokens.length > 0 && (
                 <div className="max-w-5xl mx-auto bg-[#11141B] border border-white/5 rounded-lg overflow-hidden">
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="text-[#9AA0A6] text-xs uppercase border-b border-white/5">
                                 <th className="text-left p-4">Token</th>
-                                <th className="text-right p-4">Score</th>
-                                <th className="text-right p-4">Deployer</th>
+                                <th className="text-right p-4">Price</th>
+                                <th className="text-right p-4">Change</th>
                                 <th className="text-right p-4">Volume</th>
                                 <th className="text-right p-4">Status</th>
                                 <th className="p-4"></th>
                             </tr>
                         </thead>
                         <tbody>
-                            {TOKENS.map((token, i) => (
-                                <tr key={i} className="border-b border-white/5 hover:bg-white/[0.02] cursor-pointer">
-                                    <td className="p-4 font-mono font-medium">{token.symbol}</td>
-                                    <td className="p-4 text-right font-mono">{token.score}</td>
-                                    <td className="p-4 text-right">{token.deployer}</td>
-                                    <td className="p-4 text-right font-mono">${token.volume}</td>
-                                    <td className={`p-4 text-right ${getStatusColor(token.status)}`}>{token.status}</td>
-                                    <td className="p-4 text-right">
-                                        <span className={`w-2 h-2 rounded-full inline-block ${getRiskColor(token.risk)}`} />
-                                    </td>
-                                </tr>
-                            ))}
+                            {filteredTokens.map((token, i) => {
+                                const risk = getRiskLevel(token);
+                                const status = getStatusFromRisk(risk);
+                                return (
+                                    <tr
+                                        key={token.address || i}
+                                        onClick={() => handleTokenClick(token.address)}
+                                        className="border-b border-white/5 hover:bg-white/[0.02] cursor-pointer"
+                                    >
+                                        <td className="p-4 font-mono font-medium">${token.symbol}</td>
+                                        <td className="p-4 text-right font-mono">${token.price.toFixed(6)}</td>
+                                        <td className={`p-4 text-right font-mono ${token.price_change_percent >= 0 ? 'text-[#2ECC71]' : 'text-[#E74C3C]'}`}>
+                                            {token.price_change_percent >= 0 ? '+' : ''}{token.price_change_percent.toFixed(2)}%
+                                        </td>
+                                        <td className="p-4 text-right font-mono">{formatCurrency(token.volume)}</td>
+                                        <td className={`p-4 text-right ${getStatusColor(status)}`}>{status}</td>
+                                        <td className="p-4 text-right">
+                                            <span className={`w-2 h-2 rounded-full inline-block ${getRiskColor(risk)}`} />
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </div>

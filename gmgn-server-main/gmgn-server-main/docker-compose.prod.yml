@@ -1,0 +1,15 @@
+services:
+  proxy-server:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always
+
+  streamer:
+    build: .
+    command: python3 stream_new_pair.py
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+    restart: always

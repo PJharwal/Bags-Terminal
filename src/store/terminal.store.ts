@@ -10,79 +10,36 @@ import type {
     TradePanelState,
     CredibilityMatrix
 } from '@/lib/types';
-import { generateCredibilityMatrix } from '@/lib/credibility';
+import { generateCredibilityMatrix, type RealTokenData } from '@/lib/credibility';
+import { fetchTerminalTokenData, type GMGNHolder, type GMGNTrader } from '@/services/gmgn.service';
 
-// Mock data generators
-const MOCK_WALLETS = [
-    { wallet: '7Xa3...f2e1', label: 'whale_1' },
-    { wallet: '3Bb2...a4c8', label: 'degen_trader' },
-    { wallet: '9Cc4...b3d2', label: 'smart_money' },
-    { wallet: '2Ee6...c1a4', label: null },
-    { wallet: '8Ff1...d2b5', label: 'insider_1' },
-    { wallet: '4Gg3...e5f6', label: null },
-    { wallet: '1Hh8...a9b0', label: 'dev_wallet' },
-];
+// SOL price constant (per user spec)
+const SOL_PRICE = 140;
 
-const generateMockTrades = (count: number): TradeRow[] => {
-    return Array.from({ length: count }, (_, i) => {
-        const wallet = MOCK_WALLETS[Math.floor(Math.random() * MOCK_WALLETS.length)];
-        const isBuy = Math.random() > 0.45;
-        const amount = Math.floor(Math.random() * 50000) + 100;
-        const price = Math.random() * 0.001 + 0.0001;
-        return {
-            id: `trade-${Date.now()}-${i}`,
-            type: (isBuy ? 'buy' : 'sell') as 'buy' | 'sell',
-            wallet: wallet.wallet,
-            walletLabel: wallet.label || undefined,
-            amount,
-            priceUsd: price,
-            total: amount * price,
-            timestamp: Date.now() - Math.floor(Math.random() * 3600000),
-        };
-    }).sort((a, b) => b.timestamp - a.timestamp);
-};
+// Transform GMGN holder data to WalletRow
+const transformHolder = (holder: GMGNHolder): WalletRow => ({
+    wallet: holder.address.slice(0, 4) + '...' + holder.address.slice(-4),
+    walletLabel: holder.wallet_tag_v2 || undefined,
+    bought: holder.usd_value || 0,
+    sold: 0,
+    pnl: 0,
+    pnlPercent: 0,
+    holding: holder.balance,
+    holdingPercent: holder.amount_percentage * 100,
+    lastActive: Date.now(),
+});
 
-const generateMockHolders = (count: number): WalletRow[] => {
-    return Array.from({ length: count }, (_, i) => {
-        const wallet = MOCK_WALLETS[i % MOCK_WALLETS.length];
-        const bought = Math.floor(Math.random() * 100000) + 1000;
-        const sold = Math.floor(Math.random() * bought * 0.7);
-        const holding = bought - sold;
-        const pnl = (Math.random() - 0.3) * 5000;
-        return {
-            wallet: wallet.wallet,
-            walletLabel: wallet.label || undefined,
-            bought,
-            sold,
-            pnl,
-            pnlPercent: (pnl / (bought * 0.0005)) * 100,
-            holding,
-            holdingPercent: Math.random() * 15 + 0.1,
-            lastActive: Date.now() - Math.floor(Math.random() * 86400000),
-        };
-    }).sort((a, b) => b.holding - a.holding);
-};
-
-const generateMockToken = (tokenId: string): TerminalToken => ({
-    tokenId,
-    symbol: '$MOCK',
-    name: 'Mock Token',
-    image: undefined,
-    deployer: '7Xa3...f2e1',
-    deployerName: 'alpha_dev',
-    deployerLaunches: 8,
-    deployerSuccessRate: 75,
-    marketCap: Math.floor(Math.random() * 2000000) + 50000,
-    liquidity: Math.floor(Math.random() * 500000) + 10000,
-    supply: 1000000000,
-    bondingProgress: Math.floor(Math.random() * 40) + 60,
-    holders: Math.floor(Math.random() * 2000) + 100,
-    feesPaid: Math.floor(Math.random() * 5000) + 100,
-    migrated: false,
-    priceUsd: Math.random() * 0.01,
-    priceChange24h: (Math.random() - 0.5) * 100,
-    volume24h: Math.floor(Math.random() * 500000) + 10000,
-    volume5m: Math.floor(Math.random() * 50000) + 1000,
+// Transform GMGN trader data to WalletRow
+const transformTrader = (trader: GMGNTrader): WalletRow => ({
+    wallet: trader.address.slice(0, 4) + '...' + trader.address.slice(-4),
+    walletLabel: trader.wallet_tag_v2 || undefined,
+    bought: trader.buy_volume_cur,
+    sold: trader.sell_volume_cur,
+    pnl: trader.profit,
+    pnlPercent: trader.total_cost > 0 ? (trader.profit / trader.total_cost) * 100 : 0,
+    holding: trader.buy_volume_cur - trader.sell_volume_cur,
+    holdingPercent: 0,
+    lastActive: Date.now(),
 });
 
 interface TerminalStore {
@@ -90,6 +47,7 @@ interface TerminalStore {
     activeToken: TerminalToken | null;
     credibilityMatrix: CredibilityMatrix | null;
     isLoading: boolean;
+    error: string | null;
 
     // Data tables
     trades: TradeRow[];
@@ -110,7 +68,8 @@ interface TerminalStore {
     selectedDeployer: Deployer | null;
 
     // Actions
-    loadToken: (tokenId: string) => void;
+    loadToken: (tokenId: string) => Promise<void>;
+    addTrade: (trade: TradeRow) => void;
     setActiveBottomTab: (tab: TerminalBottomTab) => void;
     setTradePanelMode: (mode: 'buy' | 'sell') => void;
     setTradePanelOrderType: (orderType: 'market' | 'limit') => void;
@@ -118,7 +77,6 @@ interface TerminalStore {
     selectWallet: (wallet: string | null) => void;
     openDrawer: (type: 'token' | 'deployer' | 'wallet') => void;
     closeDrawer: () => void;
-    simulateTrade: () => void;
 
     // Legacy actions (kept for compatibility)
     selectToken: (token: Token | null) => void;
@@ -149,6 +107,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     activeToken: null,
     credibilityMatrix: null,
     isLoading: false,
+    error: null,
     trades: [],
     holders: [],
     topTraders: [],
@@ -164,27 +123,91 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     activePreset: null,
     filters: defaultFilters,
 
-    // Load token data
-    loadToken: (tokenId) => {
-        set({ isLoading: true });
+    // Load token data from GMGN API
+    loadToken: async (tokenId) => {
+        set({ isLoading: true, error: null });
 
-        // Simulate API delay
-        setTimeout(() => {
-            const token = generateMockToken(tokenId);
-            const trades = generateMockTrades(50);
-            const holders = generateMockHolders(20);
-            const topTraders = generateMockHolders(15).sort((a, b) => b.pnl - a.pnl);
-            const credibilityMatrix = generateCredibilityMatrix(tokenId);
+        try {
+            console.log('Loading token data for:', tokenId);
+            const { tokenInfo, security, holders, traders } = await fetchTerminalTokenData(tokenId);
+
+            if (!tokenInfo) {
+                throw new Error('Failed to fetch token info from GMGN');
+            }
+
+            // Extract data from enriched response
+            const info = tokenInfo.info;
+            const stats = tokenInfo.stats;
+
+            // Build TerminalToken from GMGN data
+            const token: TerminalToken = {
+                tokenId,
+                symbol: info?.symbol ? `$${info.symbol}` : '$UNK',
+                name: info?.name || 'Unknown Token',
+                image: info?.logo || undefined,
+                deployer: info?.creator ? info.creator.slice(0, 4) + '...' + info.creator.slice(-4) : 'unknown',
+                deployerName: undefined,
+                deployerLaunches: undefined,
+                deployerSuccessRate: undefined,
+                marketCap: info?.market_cap || 0,
+                liquidity: info?.liquidity || 0,
+                supply: 1000000000, // Default supply
+                bondingProgress: 100, // Assume migrated if in GMGN
+                holders: info?.holder_count || 0,
+                feesPaid: 0,
+                migrated: true,
+                priceUsd: info?.price || 0,
+                priceChange24h: info?.price_change_24h || 0,
+                volume24h: info?.volume_24h || 0,
+                volume5m: 0,
+            };
+
+            // Transform holders and traders
+            const transformedHolders = holders.map(transformHolder);
+            const transformedTraders = traders.map(transformTrader).sort((a, b) => b.pnl - a.pnl);
+
+            // Calculate real credibility data
+            const realData: RealTokenData = {
+                holders: holders.map(h => ({
+                    address: h.address,
+                    percentage: h.amount_percentage * 100,
+                    isSuspicious: h.is_suspicious,
+                    tags: h.maker_token_tags || [],
+                })),
+                stats: stats || undefined,
+                security: security?.security || undefined,
+                holderCount: info?.holder_count || 0,
+                top10Rate: info?.top_10_holder_rate || 0,
+                devStatus: info?.creator_token_status || 'unknown',
+            };
+
+            const credibilityMatrix = generateCredibilityMatrix(tokenId, realData);
 
             set({
                 activeToken: token,
                 credibilityMatrix,
-                trades,
-                holders,
-                topTraders,
+                holders: transformedHolders,
+                topTraders: transformedTraders,
+                trades: [], // Trades will come from socket
                 isLoading: false,
             });
-        }, 300);
+
+            console.log('Token loaded successfully:', token.symbol);
+        } catch (error) {
+            console.error('Failed to load token:', error);
+            set({
+                error: error instanceof Error ? error.message : 'Failed to load token',
+                isLoading: false,
+            });
+        }
+    },
+
+    // Add a trade from socket event
+    addTrade: (trade) => {
+        const { trades } = get();
+        set({
+            trades: [trade, ...trades].slice(0, 100),
+        });
     },
 
     setActiveBottomTab: (tab) => set({ activeBottomTab: tab }),
@@ -217,31 +240,6 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
         drawerType: null,
         selectedWallet: null,
     }),
-
-    simulateTrade: () => {
-        const { trades, activeToken } = get();
-        if (!activeToken) return;
-
-        const wallet = MOCK_WALLETS[Math.floor(Math.random() * MOCK_WALLETS.length)];
-        const isBuy = Math.random() > 0.45;
-        const amount = Math.floor(Math.random() * 20000) + 100;
-        const price = activeToken.priceUsd * (1 + (Math.random() - 0.5) * 0.1);
-
-        const newTrade: TradeRow = {
-            id: `trade-${Date.now()}`,
-            type: (isBuy ? 'buy' : 'sell') as 'buy' | 'sell',
-            wallet: wallet.wallet,
-            walletLabel: wallet.label || undefined,
-            amount,
-            priceUsd: price,
-            total: amount * price,
-            timestamp: Date.now(),
-        };
-
-        set({
-            trades: [newTrade, ...trades].slice(0, 100),
-        });
-    },
 
     // Legacy actions
     selectToken: (token) => set({
