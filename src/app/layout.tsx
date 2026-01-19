@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
+import ModuleNavigation from "@/components/terminal/ModuleNavigation";
+import SocketInitializer from "@/components/terminal/SocketInitializer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,8 +29,12 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-[#E6E8EB]`}>
         <TopBar />
-        <main className="min-h-screen pt-14">
-          {children}
+        <main className="min-h-screen pt-14 flex flex-col">
+          <SocketInitializer />
+          <ModuleNavigation />
+          <div className="flex-1">
+            {children}
+          </div>
         </main>
       </body>
     </html>
