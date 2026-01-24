@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Terminal, TrendingUp, Rocket, BarChart3, Wallet } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useBagsWallet } from '@/hooks/useWallet';
+import { useWallet } from '@solana/wallet-adapter-react';
 import { usePulseStore } from '@/store/pulse.store';
 import { useSocketStore } from '@/store/socket.store';
 import { gmgnService, type GMGNTrendingToken } from '@/services/gmgn.service';
@@ -83,19 +83,30 @@ const TokenCard = ({ token }: { token: GMGNTrendingToken | PulseItem }) => {
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const [trendingTokens, setTrendingTokens] = useState<GMGNTrendingToken[]>([]);
-  const { connected, shortenedAddress } = useBagsWallet();
+  const [trendingError, setTrendingError] = useState(false);
+  const { connected, publicKey } = useWallet();
   const { items } = usePulseStore();
   const { connect, isConnected } = useSocketStore();
   const { setVisible } = useWalletModal();
+
+  const shortenedAddress = publicKey
+    ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`
+    : null;
 
   useEffect(() => {
     setMounted(true);
     connect();
 
     const fetchTrending = async () => {
-      const result = await gmgnService.getTrending('1h');
-      if (result?.rank) {
-        setTrendingTokens(result.rank.slice(0, 12));
+      try {
+        const result = await gmgnService.getTrending('1h');
+        if (result?.rank) {
+          setTrendingTokens(result.rank.slice(0, 12));
+        } else {
+          setTrendingError(true);
+        }
+      } catch {
+        setTrendingError(true);
       }
     };
     fetchTrending();
@@ -189,9 +200,13 @@ export default function HomePage() {
                     trendingTokens.map((token) => (
                       <TokenCard key={token.address} token={token} />
                     ))
+                  ) : allPulseTokens.length > 0 ? (
+                    allPulseTokens.slice(0, 12).map((token) => (
+                      <TokenCard key={token.tokenId} token={token} />
+                    ))
                   ) : (
                     <div className="col-span-full text-center py-12 text-[#666]">
-                      Loading trending tokens...
+                      {trendingError ? 'Connect to discover tokens' : 'Loading trending tokens...'}
                     </div>
                   )}
                 </div>
@@ -263,10 +278,12 @@ export default function HomePage() {
               <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-2xl font-display font-bold">Trending Now</h2>
-                  <div className="flex items-center gap-2 text-xs text-[#39FF14] font-mono uppercase tracking-widest">
-                    <TrendingUp size={16} />
-                    1H
-                  </div>
+                  <Link
+                    href="/trending"
+                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
+                  >
+                    View All →
+                  </Link>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -274,9 +291,13 @@ export default function HomePage() {
                     trendingTokens.slice(0, 8).map((token) => (
                       <TokenCard key={token.address} token={token} />
                     ))
+                  ) : allPulseTokens.length > 0 ? (
+                    allPulseTokens.slice(0, 8).map((token) => (
+                      <TokenCard key={token.tokenId} token={token} />
+                    ))
                   ) : (
                     <div className="col-span-full text-center py-8 text-[#666]">
-                      Loading trending tokens...
+                      {trendingError ? 'No trending data available' : 'Loading trending tokens...'}
                     </div>
                   )}
                 </div>
