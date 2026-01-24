@@ -14,8 +14,8 @@ import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 // Types
 type Network = 'solana' | 'base' | 'ethereum';
 
-// SOL price for USD calculations
-const SOL_PRICE = 250;
+// SOL price for USD calculations (per user spec: use constant 140)
+const SOL_PRICE = 140;
 
 // BAGS token filter
 const isBagsToken = (mint: string): boolean => {

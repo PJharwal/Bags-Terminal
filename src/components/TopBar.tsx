@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Terminal, Bell, Wifi } from "lucide-react";
+import { Terminal, Bell } from "lucide-react";
+import { WalletButton } from "@/components/wallet/WalletButton";
 
 const navItems = [
     { href: "/", label: "HOME" },
     { href: "/terminal", label: "TERMINAL" },
-    { href: "/deployers", label: "DEPLOYERS" },
+    { href: "/launch", label: "LAUNCH" },
+    { href: "/creator", label: "CREATOR" },
     { href: "/pulse", label: "PULSE" },
 ];
 
@@ -53,7 +55,6 @@ export default function TopBar() {
                                 }`}
                         >
                             {item.label}
-                            {/* Animated underline */}
                             <div className={`absolute bottom-0 left-4 right-4 h-[1px] bg-[#39FF14] transition-transform duration-200 origin-left ${pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
                                     ? "scale-x-100"
                                     : "scale-x-0 group-hover:scale-x-100"
@@ -81,10 +82,8 @@ export default function TopBar() {
                         <Bell size={16} />
                         <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#FF003C] group-hover:animate-ping" />
                     </button>
-                    
-                    <button className="ml-2 px-4 py-1.5 bg-transparent border border-white/20 text-[#888] text-[10px] font-bold tracking-widest hover:border-[#39FF14] hover:text-[#39FF14] transition-all">
-                        CONNECT_WALLET
-                    </button>
+
+                    <WalletButton />
                 </div>
             </div>
 

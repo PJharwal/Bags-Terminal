@@ -1,7 +1,30 @@
 // Credibility Analysis Engine
-// Generates interpretive analysis for token credibility
+// Generates interpretive analysis for token credibility using real data
 
 import type { CredibilityMatrix, CredibilityGrade, PatternFlag, PatternFlagType } from './types';
+import type { TokenStatsData } from '@/types/token';
+
+// Type for real token data input
+export interface RealTokenData {
+    holders: {
+        address: string;
+        percentage: number;
+        isSuspicious: boolean;
+        tags: string[];
+    }[];
+    stats?: TokenStatsData;
+    security?: {
+        is_show_alert?: boolean;
+        top_10_holder_rate?: string;
+        renounced_mint?: boolean;
+        renounced_freeze_account?: boolean;
+        burn_ratio?: string;
+        is_honeypot?: boolean | null;
+    };
+    holderCount: number;
+    top10Rate: number;
+    devStatus: string;
+}
 
 // Score to grade conversion
 export function scoreToGrade(score: number): CredibilityGrade {
@@ -107,7 +130,7 @@ function analyzeFunding(data: FundingData): CredibilityMatrix['funding'] {
     return { score, grade: scoreToGrade(score), label, summary };
 }
 
-// Distribution analysis
+// Distribution analysis from real data
 interface DistributionData {
     top10Percent: number;
     insiderPercent: number;
@@ -145,7 +168,7 @@ function analyzeDistribution(data: DistributionData): CredibilityMatrix['distrib
     else label = 'Organic';
 
     // Generate summary
-    const summary = `Top 10 hold ${data.top10Percent}%`;
+    const summary = `Top 10 hold ${data.top10Percent.toFixed(1)}%`;
 
     return { score, grade: scoreToGrade(score), label, summary };
 }
@@ -172,7 +195,7 @@ function detectPatterns(
         patterns.push({
             type: 'INSIDER_CLUSTER',
             severity: distribution.insiderPercent > 40 ? 'critical' : 'warn',
-            explanation: `${distribution.insiderPercent}% held by connected wallets`
+            explanation: `${distribution.insiderPercent.toFixed(1)}% held by connected wallets`
         });
     }
 
@@ -212,50 +235,109 @@ function detectPatterns(
     return patterns;
 }
 
-// Generate mock data based on tokenId for consistent results
-function generateMockData(tokenId: string) {
-    // Use tokenId hash for deterministic random values
-    const hash = tokenId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const rand = (seed: number) => ((hash * seed) % 100) / 100;
+// Calculate real distribution metrics from holder data
+function calculateDistributionFromHolders(realData: RealTokenData): DistributionData {
+    const { holders, stats, holderCount, top10Rate } = realData;
 
-    const deployer: DeployerData = {
-        launches: Math.floor(rand(1) * 15) + 1,
-        failures: Math.floor(rand(2) * 3),
-        avgHoldTime: Math.floor(rand(3) * 48) + 2,
-        recycledFunding: rand(4) > 0.6
+    // Calculate top 10 percent from holders array if available
+    let top10Percent = top10Rate;
+    if (holders.length > 0) {
+        const sortedHolders = [...holders].sort((a, b) => b.percentage - a.percentage);
+        const top10 = sortedHolders.slice(0, 10);
+        top10Percent = top10.reduce((sum, h) => sum + h.percentage, 0);
+    }
+
+    // Calculate insider percent from suspicious wallets and stats
+    let insiderPercent = 0;
+    if (stats) {
+        const insiderCount = stats.insider_count + stats.bundler_count + stats.sniper_count;
+        insiderPercent = holderCount > 0 ? (insiderCount / holderCount) * 100 : 0;
+    }
+
+    // Also check suspicious flags in holders
+    const suspiciousHolders = holders.filter(h => h.isSuspicious || h.tags.includes('insider'));
+    const suspiciousPercent = suspiciousHolders.reduce((sum, h) => sum + h.percentage, 0);
+    insiderPercent = Math.max(insiderPercent, suspiciousPercent);
+
+    // Calculate dev holding from holders with dev tag
+    const devHolders = holders.filter(h => h.tags.includes('dev') || h.tags.includes('creator'));
+    const devHolding = devHolders.reduce((sum, h) => sum + h.percentage, 0);
+
+    return {
+        top10Percent,
+        insiderPercent,
+        devHolding,
+        holderCount,
     };
-
-    const funding: FundingData = {
-        isRecycled: rand(5) > 0.5,
-        reuseCount: Math.floor(rand(6) * 4),
-        sourceAge: Math.floor(rand(7) * 30),
-        linksToCex: rand(8) > 0.7
-    };
-
-    const distribution: DistributionData = {
-        top10Percent: Math.floor(rand(9) * 40) + 10,
-        insiderPercent: Math.floor(rand(10) * 30) + 5,
-        devHolding: Math.floor(rand(11) * 15) + 2,
-        holderCount: Math.floor(rand(12) * 2000) + 100
-    };
-
-    const devSoldEarly = rand(13) > 0.8;
-
-    return { deployer, funding, distribution, devSoldEarly };
 }
 
-// Main analysis function
-export function generateCredibilityMatrix(tokenId: string): CredibilityMatrix {
-    const mockData = generateMockData(tokenId);
+// Main analysis function - now accepts optional real data
+export function generateCredibilityMatrix(tokenId: string, realData?: RealTokenData): CredibilityMatrix {
+    // If real data is provided, use it; otherwise use default/fallback values
+    let deployerData: DeployerData;
+    let fundingData: FundingData;
+    let distributionData: DistributionData;
+    let devSoldEarly: boolean;
 
-    const deployer = analyzeDeployer(mockData.deployer);
-    const funding = analyzeFunding(mockData.funding);
-    const distribution = analyzeDistribution(mockData.distribution);
+    if (realData) {
+        // Calculate distribution from real holder data
+        distributionData = calculateDistributionFromHolders(realData);
+
+        // Infer deployer data from stats if available
+        deployerData = {
+            launches: realData.stats?.dev_count || 1,
+            failures: 0,
+            avgHoldTime: 24,
+            recycledFunding: false, // Would need additional API call to determine
+        };
+
+        // Funding data - default to fresh unless we have evidence otherwise
+        fundingData = {
+            isRecycled: false,
+            reuseCount: 0,
+            sourceAge: 7,
+            linksToCex: false,
+        };
+
+        // Check if dev sold
+        devSoldEarly = realData.devStatus === 'sold' || realData.devStatus === 'sold_all';
+    } else {
+        // Fallback to hash-based deterministic values for consistency
+        const hash = tokenId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        const rand = (seed: number) => ((hash * seed) % 100) / 100;
+
+        deployerData = {
+            launches: Math.floor(rand(1) * 15) + 1,
+            failures: Math.floor(rand(2) * 3),
+            avgHoldTime: Math.floor(rand(3) * 48) + 2,
+            recycledFunding: rand(4) > 0.6
+        };
+
+        fundingData = {
+            isRecycled: rand(5) > 0.5,
+            reuseCount: Math.floor(rand(6) * 4),
+            sourceAge: Math.floor(rand(7) * 30),
+            linksToCex: rand(8) > 0.7
+        };
+
+        distributionData = {
+            top10Percent: Math.floor(rand(9) * 40) + 10,
+            insiderPercent: Math.floor(rand(10) * 30) + 5,
+            devHolding: Math.floor(rand(11) * 15) + 2,
+            holderCount: Math.floor(rand(12) * 2000) + 100
+        };
+
+        devSoldEarly = rand(13) > 0.8;
+    }
+
+    const deployer = analyzeDeployer(deployerData);
+    const funding = analyzeFunding(fundingData);
+    const distribution = analyzeDistribution(distributionData);
     const behaviorPatterns = detectPatterns(
-        mockData.deployer,
-        mockData.funding,
-        mockData.distribution,
-        mockData.devSoldEarly
+        deployerData,
+        fundingData,
+        distributionData,
+        devSoldEarly
     );
 
     // Calculate overall score

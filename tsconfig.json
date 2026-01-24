@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "omnera-frontend-main", "opencode-antigravity-auth", "antigravity-kit"]
 }
