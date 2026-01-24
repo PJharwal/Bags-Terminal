@@ -3,7 +3,6 @@
 import { useTerminalStore } from "@/store/terminal.store";
 import { DrawerShell } from "./DrawerShell";
 import { formatCurrency, formatNumber, formatTimeAgo, getScoreColor } from "@/lib/format";
-import { getDeployerByWallet } from "@/lib/mock-data";
 import { Shield, AlertTriangle, Terminal, Activity, Zap, BarChart3, Users } from "lucide-react";
 
 function StatBlock({ label, value, color = "text-[#EDEDED]" }: { label: string; value: string | number; color?: string }) {
@@ -20,7 +19,14 @@ export function TokenDrawer() {
 
     if (!selectedToken) return null;
 
-    const deployer = getDeployerByWallet(selectedToken.deployer_wallet);
+    // Deployer info from token (no longer using mock data)
+    const deployerWallet = selectedToken.deployer_wallet;
+    const deployerInfo = deployerWallet ? {
+        wallet: deployerWallet,
+        name: null, // Would need to fetch from API
+        total_launches: null,
+        success_rate: null,
+    } : null;
 
     return (
         <DrawerShell title="INTELLIGENCE_REPORT">
@@ -60,7 +66,7 @@ export function TokenDrawer() {
                             <Shield size={12} /> RISK_PROFILE
                         </h3>
                     </div>
-                    
+
                     <div className="space-y-2">
                         {/* Dynamic Risk Flags based on token data */}
                         {selectedToken.dev_sold && (
@@ -116,9 +122,9 @@ export function TokenDrawer() {
                                 </span>
                             </div>
                             <div className="h-1 bg-[#111] w-full">
-                                <div 
-                                    className={`h-full ${selectedToken.insider_pct > 20 ? 'bg-[#FF003C]' : 'bg-[#F1C40F]'}`} 
-                                    style={{ width: `${selectedToken.insider_pct}%` }} 
+                                <div
+                                    className={`h-full ${selectedToken.insider_pct > 20 ? 'bg-[#FF003C]' : 'bg-[#F1C40F]'}`}
+                                    style={{ width: `${selectedToken.insider_pct}%` }}
                                 />
                             </div>
                         </div>
@@ -138,32 +144,18 @@ export function TokenDrawer() {
                 </div>
 
                 {/* Deployer Info */}
-                {deployer && (
+                {deployerInfo && (
                     <div>
                         <h3 className="text-xs font-bold uppercase tracking-widest text-[#666] mb-3 flex items-center gap-2">
                             <Terminal size={12} /> DEPLOYER_ID
                         </h3>
                         <div className="p-4 bg-black/40 border border-white/5 space-y-3">
                             <div className="flex justify-between items-center">
-                                <span className="text-[10px] text-[#666]">IDENTITY</span>
-                                <span className="text-xs font-mono font-bold text-[#EDEDED]">{deployer.name || "UNKNOWN"}</span>
-                            </div>
-                            <div className="flex justify-between items-center">
                                 <span className="text-[10px] text-[#666]">WALLET</span>
-                                <span className="text-xs font-mono text-[#888]">{deployer.wallet.slice(0, 8)}...</span>
+                                <span className="text-xs font-mono text-[#888]">{deployerInfo.wallet.slice(0, 8)}...</span>
                             </div>
-                            
-                            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/5 mt-2">
-                                <div className="text-center p-2 bg-white/5">
-                                    <div className="text-lg font-bold text-[#EDEDED]">{deployer.total_launches}</div>
-                                    <div className="text-[9px] text-[#666]">LAUNCHES</div>
-                                </div>
-                                <div className="text-center p-2 bg-white/5">
-                                    <div className={`text-lg font-bold ${deployer.success_rate >= 50 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
-                                        {deployer.success_rate}%
-                                    </div>
-                                    <div className="text-[9px] text-[#666]">WIN_RATE</div>
-                                </div>
+                            <div className="text-[10px] text-[#666] text-center pt-2 border-t border-white/5">
+                                Deployer analytics available in Deployers page
                             </div>
                         </div>
                     </div>
