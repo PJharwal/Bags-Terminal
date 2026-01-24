@@ -3,6 +3,7 @@
 import { useCreatorStore } from '@/store/creator.store';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { Loader2 } from 'lucide-react';
+import type { SendTransactionFn } from '@/lib/bags-types';
 
 export function FeeClaimsTab() {
   const { claimableEarnings, claimingToken, claimFees } = useCreatorStore();
@@ -15,7 +16,7 @@ export function FeeClaimsTab() {
   const handleClaim = async (tokenMint: string) => {
     if (!publicKey || !sendTransaction) return;
     try {
-      await claimFees(tokenMint, publicKey, sendTransaction as any, connection);
+      await claimFees(tokenMint, publicKey, sendTransaction as SendTransactionFn, connection);
     } catch (err) {
       console.error('Claim failed:', err);
     }
@@ -25,7 +26,7 @@ export function FeeClaimsTab() {
     if (!publicKey || !sendTransaction) return;
     for (const earning of claimableEarnings.filter(e => e.claimableAmount > 0)) {
       try {
-        await claimFees(earning.tokenMint, publicKey, sendTransaction as any, connection);
+        await claimFees(earning.tokenMint, publicKey, sendTransaction as SendTransactionFn, connection);
       } catch (err) {
         console.error(`Claim failed for ${earning.tokenMint}:`, err);
         break;

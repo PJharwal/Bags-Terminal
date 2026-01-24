@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { bagsService } from '@/services/bags.service';
-import type { BagsCreatedToken, FeeClaimInfo, ClaimEvent } from '@/lib/bags-types';
+import type { BagsCreatedToken, FeeClaimInfo, ClaimEvent, SendTransactionFn, SolanaConnection } from '@/lib/bags-types';
 
 interface CreatorStore {
   createdTokens: BagsCreatedToken[];
@@ -15,8 +15,7 @@ interface CreatorStore {
   loadClaimableEarnings: (wallet: string) => Promise<void>;
   loadClaimHistory: (wallet: string) => Promise<void>;
   refreshAll: (wallet: string) => Promise<void>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  claimFees: (tokenMint: string, walletAddress: string, sendTransaction: (...args: any[]) => Promise<string>, connection: any) => Promise<string>;
+  claimFees: (tokenMint: string, walletAddress: string, sendTransaction: SendTransactionFn, connection: SolanaConnection) => Promise<string>;
 }
 
 export const useCreatorStore = create<CreatorStore>((set, get) => ({
@@ -69,7 +68,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     }
   },
 
-  claimFees: async (tokenMint: string, walletAddress: string, sendTransaction: (...args: any[]) => Promise<string>, connection: any) => {
+  claimFees: async (tokenMint: string, walletAddress: string, sendTransaction: SendTransactionFn, connection: SolanaConnection) => {
     set({ claimingToken: tokenMint });
 
     try {
