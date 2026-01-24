@@ -10,6 +10,7 @@ import type {
     TradePanelState,
     CredibilityMatrix
 } from '@/lib/types';
+import type { SwapStatus } from '@/lib/bags-types';
 import { generateCredibilityMatrix, type RealTokenData } from '@/lib/credibility';
 import { fetchTerminalTokenData, type GMGNHolder, type GMGNTrader } from '@/services/gmgn.service';
 
@@ -61,6 +62,13 @@ interface TerminalStore {
     drawerType: 'token' | 'deployer' | 'wallet' | null;
     selectedWallet: string | null;
 
+    // Swap state
+    slippageBps: number;
+    priorityFee: number;
+    swapStatus: SwapStatus;
+    lastSignature: string | null;
+    swapError: string | null;
+
     // Legacy filters (kept for compatibility)
     filters: TokenFilters;
     activePreset: string | null;
@@ -77,6 +85,13 @@ interface TerminalStore {
     selectWallet: (wallet: string | null) => void;
     openDrawer: (type: 'token' | 'deployer' | 'wallet') => void;
     closeDrawer: () => void;
+
+    // Swap actions
+    setSlippage: (bps: number) => void;
+    setPriorityFee: (fee: number) => void;
+    setSwapStatus: (status: SwapStatus) => void;
+    setLastSignature: (sig: string | null) => void;
+    setSwapError: (error: string | null) => void;
 
     // Legacy actions (kept for compatibility)
     selectToken: (token: Token | null) => void;
@@ -116,6 +131,13 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     drawerOpen: false,
     drawerType: null,
     selectedWallet: null,
+
+    // Swap state
+    slippageBps: 100,
+    priorityFee: 0,
+    swapStatus: 'idle',
+    lastSignature: null,
+    swapError: null,
 
     // Legacy state
     selectedToken: null,
@@ -240,6 +262,13 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
         drawerType: null,
         selectedWallet: null,
     }),
+
+    // Swap actions
+    setSlippage: (bps) => set({ slippageBps: bps }),
+    setPriorityFee: (fee) => set({ priorityFee: fee }),
+    setSwapStatus: (status) => set({ swapStatus: status }),
+    setLastSignature: (sig) => set({ lastSignature: sig }),
+    setSwapError: (error) => set({ swapError: error }),
 
     // Legacy actions
     selectToken: (token) => set({
