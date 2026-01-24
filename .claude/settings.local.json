@@ -3,7 +3,17 @@
     "allow": [
       "Bash(python3 -m skills.codebase_analysis.analyze_workflow:*)",
       "Bash(find:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:docs.bags.fm)",
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "Bash(npm install:*)",
+      "Bash(node -e:*)",
+      "Bash(npx next build:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: Complete Bags.fm integration - wallet, swaps, launch, creator, social\n\nFull integration of Bags.fm features into the BAGS Terminal:\n- Solana wallet adapter \\(Phantom, Solflare, Coinbase, Trust\\)\n- Real swap execution in terminal trade panel with quote fetching\n- Token launch page \\(/launch\\) with fee share configuration\n- Creator dashboard \\(/creator\\) with fee claiming\n- Social linking \\(Twitter, Kick, GitHub, TikTok\\)\n- API proxy route \\(/api/bags\\) with rate limiting\n- Zustand stores for wallet, launch, creator, social state\n- Error boundary, skeleton loaders, toast notifications\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(npm run dev:*)"
     ]
   }
 }
