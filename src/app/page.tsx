@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Terminal, TrendingUp, Rocket, BarChart3, Wallet } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useBagsWallet } from '@/hooks/useWallet';
 import { usePulseStore } from '@/store/pulse.store';
 import { useSocketStore } from '@/store/socket.store';
 import { gmgnService, type GMGNTrendingToken } from '@/services/gmgn.service';
@@ -84,14 +84,10 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const [trendingTokens, setTrendingTokens] = useState<GMGNTrendingToken[]>([]);
   const [trendingError, setTrendingError] = useState(false);
-  const { connected, publicKey } = useWallet();
+  const { connected, shortenedAddress } = useBagsWallet();
   const { items } = usePulseStore();
   const { connect, isConnected } = useSocketStore();
   const { setVisible } = useWalletModal();
-
-  const shortenedAddress = publicKey
-    ? `${publicKey.toBase58().slice(0, 4)}...${publicKey.toBase58().slice(-4)}`
-    : null;
 
   useEffect(() => {
     setMounted(true);
