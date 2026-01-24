@@ -9,6 +9,8 @@ import { WalletButton } from "@/components/wallet/WalletButton";
 const navItems = [
     { href: "/", label: "HOME" },
     { href: "/terminal", label: "TERMINAL" },
+    { href: "/trending", label: "TRENDING" },
+    { href: "/analyze", label: "ANALYZE" },
     { href: "/launch", label: "LAUNCH" },
     { href: "/creator", label: "CREATOR" },
     { href: "/pulse", label: "PULSE" },
