@@ -189,6 +189,46 @@ export interface ImageUploadResponse {
 }
 
 // ==========================================
+// Solana Wallet Types
+// ==========================================
+
+import type { Transaction, VersionedTransaction, Connection } from '@solana/web3.js';
+
+export type SolanaTransaction = Transaction | VersionedTransaction;
+
+export type SendTransactionFn = (
+  transaction: SolanaTransaction,
+  connection: Connection
+) => Promise<string>;
+
+export type SolanaConnection = Connection;
+
+// ==========================================
+// Raw API Response Types (from backend/socket)
+// ==========================================
+
+export interface RawTokenData {
+  mint?: string;
+  address?: string;
+  name?: string;
+  symbol?: string;
+  creator?: string;
+  market_cap_sol?: string;
+  marketCapSol?: string;
+  bonding_curve_percent?: string;
+  top_10_holder_rate?: string;
+  creation_timestamp?: number;
+  created_at?: number;
+  holder_count?: number;
+  total_transactions?: number;
+  volume_24h_sol?: string;
+  logo_url?: string;
+  image_uri?: string;
+  protocol_source?: string;
+  status?: string;
+}
+
+// ==========================================
 // SOL Constants
 // ==========================================
 

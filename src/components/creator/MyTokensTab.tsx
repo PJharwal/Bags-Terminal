@@ -5,6 +5,7 @@ import { useBagsWallet } from '@/hooks/useWallet';
 import { TokenStatsCard } from './TokenStatsCard';
 import { EmptyState } from './EmptyState';
 import { Loader2 } from 'lucide-react';
+import type { SendTransactionFn } from '@/lib/bags-types';
 
 export function MyTokensTab() {
   const { createdTokens, claimableEarnings, claimingToken, isLoading, claimFees } = useCreatorStore();
@@ -13,7 +14,7 @@ export function MyTokensTab() {
   const handleClaim = async (tokenMint: string) => {
     if (!publicKey || !sendTransaction) return;
     try {
-      await claimFees(tokenMint, publicKey, sendTransaction as any, connection);
+      await claimFees(tokenMint, publicKey, sendTransaction as SendTransactionFn, connection);
     } catch (err) {
       console.error('Claim failed:', err);
     }

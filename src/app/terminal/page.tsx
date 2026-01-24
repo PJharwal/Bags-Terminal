@@ -7,13 +7,14 @@ import { useSocketStore } from "@/store/socket.store";
 import { gmgnService } from "@/services/gmgn.service";
 import { formatCurrency } from "@/lib/format";
 import { Terminal, ArrowRight, Loader2, TrendingUp, Wifi, WifiOff } from "lucide-react";
+import type { GMGNTrendingToken } from "@/services/gmgn.service";
 
 export default function TerminalIndexPage() {
     const router = useRouter();
     const { items } = usePulseStore();
     const { connect, isConnected } = useSocketStore();
 
-    const [trendingTokens, setTrendingTokens] = useState<any[]>([]);
+    const [trendingTokens, setTrendingTokens] = useState<GMGNTrendingToken[]>([]);
     const [isLoadingTrending, setIsLoadingTrending] = useState(false);
 
     // Connect to socket on mount
