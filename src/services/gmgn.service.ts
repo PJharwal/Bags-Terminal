@@ -84,6 +84,7 @@ export interface GMGNTrendingToken {
   price: number;
   price_change_percent?: number;
   volume?: number;
+  volume_24h?: number;
   market_cap?: number;
   logo?: string;
 }

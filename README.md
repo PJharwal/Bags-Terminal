@@ -51,6 +51,26 @@ npm install
 npm run dev
 ```
 
+### Local Backend Setup
+
+To run the application with the full feature set, you also need to start the local backend server:
+
+1. Navigate to the backend directory:
+   ```bash
+   cd gmgn-server-main/gmgn-server-main
+   ```
+
+2. Install backend dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Start the backend server:
+   ```bash
+   python server.py
+   ```
+   The backend will run on `http://localhost:8000`.
+
 Open [http://localhost:3000](http://localhost:3000) to view the app.
 
 ## Project Structure

@@ -6,7 +6,7 @@ import { HoldersTable } from "@/components/modules/analyze/HoldersTable";
 import { TradersTable } from "@/components/modules/analyze/TradersTable";
 import { TokenStatsData, HolderData, TraderData } from "@/types/token";
 import { useSocketStore } from "@/store/socket.store";
-import { gmgnService } from "@/services/gmgn.service";
+import { gmgnService, GMGNHolder, GMGNTrader } from "@/services/gmgn.service";
 import { Search, Loader2, AlertCircle } from "lucide-react";
 
 export default function AnalyzePage() {
@@ -70,7 +70,7 @@ export default function AnalyzePage() {
 
       // Transform holders data
       if (holdersData?.list) {
-        const transformedHolders: HolderData[] = holdersData.list.map((h: any) => ({
+        const transformedHolders: HolderData[] = holdersData.list.map((h: GMGNHolder) => ({
           address: h.address,
           balance: h.balance || 0,
           amount_percentage: h.amount_percentage || 0,
@@ -84,7 +84,7 @@ export default function AnalyzePage() {
 
       // Transform traders data
       if (tradersData?.list) {
-        const transformedTraders: TraderData[] = tradersData.list.map((t: any) => ({
+        const transformedTraders: TraderData[] = tradersData.list.map((t: GMGNTrader) => ({
           address: t.address,
           wallet_tag_v2: t.wallet_tag_v2 || "",
           profit: t.profit || 0,

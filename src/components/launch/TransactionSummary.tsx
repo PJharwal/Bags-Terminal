@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useLaunchStore } from '@/store/launch.store';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { Loader2, CheckCircle2, XCircle, Rocket } from 'lucide-react';
+import type { SendTransactionFn } from '@/lib/bags-types';
 
 const STATUS_LABELS: Record<string, string> = {
   idle: '',
@@ -37,7 +38,7 @@ export function TransactionSummary() {
   const handleLaunch = async () => {
     if (!publicKey || !sendTransaction) return;
     try {
-      const launchResult = await executeLaunch(publicKey, sendTransaction as any, connection);
+      const launchResult = await executeLaunch(publicKey, sendTransaction as SendTransactionFn, connection);
       // Redirect to terminal after success
       setTimeout(() => {
         router.push(`/terminal/${launchResult.tokenMint}`);

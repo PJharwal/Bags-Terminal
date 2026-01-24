@@ -10,6 +10,7 @@ import { config } from "@/config/env";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Wifi, WifiOff, Activity, Zap, ShieldAlert, Cpu, Layers, RefreshCw } from "lucide-react";
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
+import type { RawTokenData } from "@/lib/bags-types";
 
 // Types
 type Network = 'solana' | 'base' | 'ethereum';
@@ -18,12 +19,13 @@ type Network = 'solana' | 'base' | 'ethereum';
 const SOL_PRICE = 140;
 
 // BAGS token filter
-const isBagsToken = (mint: string): boolean => {
+const isBagsToken = (mint: string | undefined): boolean => {
+    if (!mint) return false;
     return mint.toLowerCase().endsWith('bags');
 };
 
 // Process API token data into PulseItem format
-const processApiTokenData = (data: any, targetState: PulseState): PulseItem => {
+const processApiTokenData = (data: RawTokenData, targetState: PulseState): PulseItem => {
     const marketCapSol = parseFloat(data.market_cap_sol || data.marketCapSol || "0");
     const bondingProgress = data.bonding_curve_percent
         ? parseFloat(data.bonding_curve_percent)
@@ -202,7 +204,7 @@ export default function PulsePage() {
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 console.log('Fetched NEW tokens:', tokens.length);
 
-                tokens.forEach((t: any) => {
+                tokens.forEach((t: RawTokenData) => {
                     // Apply BAGS filter if enabled
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
@@ -220,7 +222,7 @@ export default function PulsePage() {
                 const tokens = data.tokens || (Array.isArray(data) ? data : []);
                 console.log('Fetched GRADUATING tokens:', tokens.length);
 
-                tokens.forEach((t: any) => {
+                tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
                     const item = processApiTokenData(t, 'FINAL_STRETCH');
@@ -237,7 +239,7 @@ export default function PulsePage() {
                 const tokens = data.tokens || (Array.isArray(data) ? data : []);
                 console.log('Fetched MIGRATED tokens:', tokens.length);
 
-                tokens.forEach((t: any) => {
+                tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
                     const item = processApiTokenData(t, 'MIGRATED');

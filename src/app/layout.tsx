@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
-import ModuleNavigation from "@/components/terminal/ModuleNavigation";
 import SocketInitializer from "@/components/terminal/SocketInitializer";
 import { WalletProviderWrapper } from "@/components/wallet/WalletProviderWrapper";
 import { ToastContainer } from "@/components/ui/Toast";
@@ -34,7 +33,6 @@ export default function RootLayout({
           <TopBar />
           <main className="min-h-screen pt-14 flex flex-col">
             <SocketInitializer />
-            <ModuleNavigation />
             <div className="flex-1">
               {children}
             </div>
