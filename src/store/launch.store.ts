@@ -5,6 +5,8 @@ import type {
   FeeClaimerConfig,
   LaunchStatus,
   LaunchResult,
+  SendTransactionFn,
+  SolanaConnection,
 } from '@/lib/bags-types';
 
 interface LaunchStore {
@@ -35,8 +37,7 @@ interface LaunchStore {
   // Async actions
   uploadImage: () => Promise<string>;
   createConfig: () => Promise<string>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  executeLaunch: (walletAddress: string, sendTransaction: (...args: any[]) => Promise<string>, connection: any) => Promise<LaunchResult>;
+  executeLaunch: (walletAddress: string, sendTransaction: SendTransactionFn, connection: SolanaConnection) => Promise<LaunchResult>;
   reset: () => void;
 }
 
@@ -122,7 +123,7 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     }
   },
 
-  executeLaunch: async (walletAddress: string, sendTransaction: (...args: any[]) => Promise<string>, connection: any) => {
+  executeLaunch: async (walletAddress: string, sendTransaction: SendTransactionFn, connection: SolanaConnection) => {
     const state = get();
 
     set({ status: 'uploading_image', error: null });

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { gmgnService } from "@/services/gmgn.service";
 import { formatCurrency } from "@/lib/format";
 import { TrendingUp, Loader2, RefreshCw, Flame, Clock } from "lucide-react";
+import type { GMGNTrendingToken } from "@/services/gmgn.service";
 
 const FILTERS = ["All", "Clean", "Risky", "High Volume"];
 const TIMEFRAMES = ["1m", "5m", "1h", "6h", "24h"];
@@ -77,7 +78,7 @@ export default function TrendingPage() {
             }
 
             if (data?.rank) {
-                const transformedTokens: TrendingToken[] = data.rank.map((t: any) => ({
+                const transformedTokens: TrendingToken[] = data.rank.map((t: GMGNTrendingToken) => ({
                     address: t.address,
                     symbol: t.symbol || '???',
                     name: t.name || 'Unknown',
