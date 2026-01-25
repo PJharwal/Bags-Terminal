@@ -234,3 +234,40 @@ export interface RawTokenData {
 
 export const SOL_MINT = 'So11111111111111111111111111111111111111112';
 export const LAMPORTS_PER_SOL = 1_000_000_000;
+
+// ==========================================
+// Token Fee Data Types (from SDK)
+// ==========================================
+
+export interface BagsTokenCreator {
+  username: string;
+  pfp: string;
+  royaltyBps: number;           // Fee share in basis points (100 = 1%)
+  isCreator: boolean;
+  wallet: string;
+  provider: SocialProvider | 'unknown' | null;
+  providerUsername: string | null;
+}
+
+export interface BagsTokenCreatorWithStats extends BagsTokenCreator {
+  totalClaimed: string;         // Total SOL claimed (string for precision)
+}
+
+export interface BagsTokenClaimEvent {
+  wallet: string;
+  isCreator: boolean;
+  amount: string;               // SOL amount (string for precision)
+  signature: string;
+  timestamp: number;
+}
+
+export interface BagsTokenFeeInfo {
+  mint: string;
+  lifetimeFees: number;         // Total SOL fees earned
+  creators: BagsTokenCreator[]; // Fee earners
+}
+
+export interface BagsTokenFeeInfoWithStats extends BagsTokenFeeInfo {
+  creators: BagsTokenCreatorWithStats[];
+  claimEvents: BagsTokenClaimEvent[];
+}

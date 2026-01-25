@@ -3,12 +3,12 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, TrendingUp, Rocket, BarChart3, Wallet } from 'lucide-react';
+import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Coins, Users } from 'lucide-react';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { usePulseStore } from '@/store/pulse.store';
 import { useSocketStore } from '@/store/socket.store';
-import { gmgnService, type GMGNTrendingToken } from '@/services/gmgn.service';
+import { bagsService } from '@/services/bags.service';
 import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
 
@@ -23,57 +23,120 @@ const TickerToken = ({ token }: { token: PulseItem }) => (
   </span>
 );
 
-// Token Card (apps.fun inspired)
-const TokenCard = ({ token }: { token: GMGNTrendingToken | PulseItem }) => {
-  const isGMGN = 'price' in token;
-  const address = isGMGN ? token.address : token.tokenId;
-  const symbol = isGMGN ? `$${token.symbol}` : token.symbol;
-  const name = token.name || symbol;
-  const marketCap = isGMGN ? (token.market_cap || 0) : token.marketCap;
-  const logo = isGMGN ? token.logo : ('logoUrl' in token ? token.logoUrl : undefined);
-  const priceChange = isGMGN && token.price_change_percent !== undefined
-    ? token.price_change_percent
-    : null;
+// Enhanced BAGS Token Card with fee data
+const BagsTokenCard = ({ token }: { token: PulseItem }) => {
+  const [feeData, setFeeData] = useState<{ lifetimeFees: number; creatorsCount: number } | null>(null);
 
-  const initial = (token.symbol || '?').charAt(0).toUpperCase();
+  useEffect(() => {
+    let mounted = true;
+    bagsService.getTokenFeeInfo(token.tokenId)
+      .then((info) => {
+        if (mounted && info) {
+          setFeeData({
+            lifetimeFees: info.lifetimeFees,
+            creatorsCount: info.creators.length,
+          });
+        }
+      })
+      .catch(() => {
+        // Token might not have fee data yet
+      });
+    return () => { mounted = false; };
+  }, [token.tokenId]);
+
+  const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
   const colors = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
   const fallbackColor = colors[initial.charCodeAt(0) % colors.length];
 
   return (
-    <Link href={`/terminal/${address}`}>
+    <Link href={`/terminal/${token.tokenId}`}>
       <motion.div
         whileHover={{ y: -4 }}
         className="group bg-[#0A0A0A] border border-white/10 hover:border-[#39FF14] p-4 transition-all cursor-pointer h-full"
       >
         <div className="flex items-start gap-3 mb-3">
-          {logo ? (
-            <img src={logo} alt={symbol} className="w-12 h-12 rounded-full object-cover" />
+          {token.logoUrl ? (
+            <img src={token.logoUrl} alt={token.symbol} className="w-12 h-12 rounded-full object-cover" />
           ) : (
             <div className={`w-12 h-12 ${fallbackColor} flex items-center justify-center font-display font-bold text-black text-xl`}>
               {initial}
             </div>
           )}
           <div className="flex-1 min-w-0">
-            <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors truncate">
-              {symbol}
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors truncate">
+                {token.symbol}
+              </span>
+              {feeData && feeData.lifetimeFees > 0 && (
+                <div className="inline-flex items-center gap-0.5 text-[#FFD700]" title="Fee earner">
+                  <Coins size={10} />
+                </div>
+              )}
             </div>
-            <div className="text-xs text-[#666] truncate">{name}</div>
+            <div className="text-xs text-[#666] truncate">{token.name}</div>
           </div>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-xs text-[#888] font-mono">Market Cap</span>
-            <span className="text-sm font-mono text-white">{formatCurrency(marketCap)}</span>
+            <span className="text-sm font-mono text-white">{formatCurrency(token.marketCap)}</span>
           </div>
-          {priceChange !== null && (
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-[#888] font-mono">Change</span>
-              <span className={`text-sm font-mono font-bold ${priceChange >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
-                {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-[#888] font-mono">Bonding</span>
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+                <div
+                  className={`h-full transition-all ${token.bondingProgress >= 85 ? 'bg-[#39FF14]' : 'bg-[#444]'}`}
+                  style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
+                />
+              </div>
+              <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
+                {token.bondingProgress}%
+              </span>
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center">
+            <span className="text-xs text-[#888] font-mono">Holders</span>
+            <span className="text-sm font-mono text-white">{token.holders || '—'}</span>
+          </div>
+
+          {/* Fee Earnings Row */}
+          {feeData && feeData.lifetimeFees > 0 && (
+            <div className="flex justify-between items-center pt-1 border-t border-white/5">
+              <span className="text-xs text-[#FFD700] font-mono flex items-center gap-1">
+                <Coins size={10} /> Earnings
+              </span>
+              <span className="text-sm font-mono text-[#FFD700] font-bold">
+                {feeData.lifetimeFees < 1 ? feeData.lifetimeFees.toFixed(3) : feeData.lifetimeFees.toFixed(2)} SOL
               </span>
             </div>
           )}
+
+          {/* Fee Earners Count */}
+          {feeData && feeData.creatorsCount > 0 && (
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                <Users size={10} /> Fee Earners
+              </span>
+              <span className="text-sm font-mono text-white">{feeData.creatorsCount}</span>
+            </div>
+          )}
+        </div>
+
+        {/* State badge */}
+        <div className="mt-3 pt-3 border-t border-white/5">
+          <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded ${
+            token.state === 'MIGRATED' ? 'bg-[#39FF14]/20 text-[#39FF14]' :
+            token.state === 'FINAL_STRETCH' ? 'bg-[#FAFF00]/20 text-[#FAFF00]' :
+            'bg-white/10 text-[#888]'
+          }`}>
+            {token.state === 'MIGRATED' ? 'LP Live' :
+             token.state === 'FINAL_STRETCH' ? 'Near Migration' :
+             'Bonding'}
+          </span>
         </div>
       </motion.div>
     </Link>
@@ -82,39 +145,33 @@ const TokenCard = ({ token }: { token: GMGNTrendingToken | PulseItem }) => {
 
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
-  const [trendingTokens, setTrendingTokens] = useState<GMGNTrendingToken[]>([]);
-  const [trendingError, setTrendingError] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
-  const { items } = usePulseStore();
+  const { items, loadInitialData, isInitialLoading } = usePulseStore();
   const { connect, isConnected } = useSocketStore();
   const { setVisible } = useWalletModal();
 
   useEffect(() => {
     setMounted(true);
     connect();
-
-    const fetchTrending = async () => {
-      try {
-        const result = await gmgnService.getTrending('1h');
-        if (result?.rank) {
-          setTrendingTokens(result.rank.slice(0, 12));
-        } else {
-          setTrendingError(true);
-        }
-      } catch {
-        setTrendingError(true);
-      }
-    };
-    fetchTrending();
-  }, [connect]);
+    // Load initial data from GMGN/DexScreener while socket connects
+    loadInitialData();
+  }, [connect, loadInitialData]);
 
   if (!mounted) return null;
 
-  const allPulseTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED];
-  const tickerTokens = allPulseTokens.length > 0
-    ? [...allPulseTokens, ...allPulseTokens].slice(0, 20)
+  // BAGS tokens from pulse (sorted by market cap)
+  const allBagsTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED]
+    .sort((a, b) => b.marketCap - a.marketCap);
+
+  const tickerTokens = allBagsTokens.length > 0
+    ? [...allBagsTokens, ...allBagsTokens].slice(0, 20)
     : [];
-  const recentTokens = allPulseTokens.slice(0, 6);
+
+  // Separate by state for display
+  const migratedTokens = items.MIGRATED.slice(0, 4);
+  const trendingTokens = [...items.FINAL_STRETCH, ...items.NEW]
+    .sort((a, b) => b.marketCap - a.marketCap)
+    .slice(0, 8);
 
   return (
     <div className="min-h-screen bg-[#050505] text-[#EDEDED] font-mono selection:bg-[#39FF14] selection:text-black">
@@ -127,7 +184,7 @@ export default function HomePage() {
             tickerTokens.map((token, i) => <TickerToken key={`${token.tokenId}-${i}`} token={token} />)
           ) : (
             <span className="mx-8 font-mono text-sm text-[#666]">
-              {isConnected ? 'Waiting for BAGS tokens...' : 'Connecting to live feed...'}
+              {isConnected ? 'Waiting for tokens...' : 'Connecting to live feed...'}
             </span>
           )}
         </div>
@@ -161,7 +218,7 @@ export default function HomePage() {
                   transition={{ delay: 0.1 }}
                   className="text-xl md:text-2xl text-[#888] mb-12 max-w-2xl mx-auto"
                 >
-                  Deployer intelligence for Solana token launches
+                  Launch tokens with built-in fee sharing on Solana
                 </motion.p>
 
                 <motion.button
@@ -180,29 +237,25 @@ export default function HomePage() {
               </div>
             </section>
 
-            {/* Trending Grid — Not Connected */}
+            {/* Live BAGS Tokens — Not Connected */}
             <section className="py-16 px-6 border-t border-white/10">
               <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-display font-bold">Trending Launches</h2>
+                  <h2 className="text-3xl font-display font-bold">Live BAGS Tokens</h2>
                   <div className="flex items-center gap-2 text-xs text-[#39FF14] font-mono uppercase tracking-widest">
                     <TrendingUp size={16} />
-                    Live
+                    {isConnected ? 'Live' : 'Connecting...'}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {trendingTokens.length > 0 ? (
-                    trendingTokens.map((token) => (
-                      <TokenCard key={token.address} token={token} />
-                    ))
-                  ) : allPulseTokens.length > 0 ? (
-                    allPulseTokens.slice(0, 12).map((token) => (
-                      <TokenCard key={token.tokenId} token={token} />
+                  {allBagsTokens.length > 0 ? (
+                    allBagsTokens.slice(0, 12).map((token) => (
+                      <BagsTokenCard key={token.tokenId} token={token} />
                     ))
                   ) : (
                     <div className="col-span-full text-center py-12 text-[#666]">
-                      {trendingError ? 'Connect to discover tokens' : 'Loading trending tokens...'}
+                      {isConnected ? 'Waiting for tokens...' : 'Connect to discover tokens'}
                     </div>
                   )}
                 </div>
@@ -236,7 +289,7 @@ export default function HomePage() {
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
                         Launch Token
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Deploy on BAGS</div>
+                      <div className="text-xs text-[#666] mt-1">Deploy with fee sharing</div>
                     </motion.div>
                   </Link>
 
@@ -249,7 +302,7 @@ export default function HomePage() {
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
                         Creator Dashboard
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Track your launches</div>
+                      <div className="text-xs text-[#666] mt-1">Track earnings & claims</div>
                     </motion.div>
                   </Link>
 
@@ -262,50 +315,22 @@ export default function HomePage() {
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
                         Live Pulse
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Real-time activity</div>
+                      <div className="text-xs text-[#666] mt-1">Real-time BAGS activity</div>
                     </motion.div>
                   </Link>
                 </div>
               </div>
             </section>
 
-            {/* Trending — Connected */}
-            <section className="py-8 px-6 border-t border-white/10">
-              <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-display font-bold">Trending Now</h2>
-                  <Link
-                    href="/trending"
-                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
-                  >
-                    View All →
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {trendingTokens.length > 0 ? (
-                    trendingTokens.slice(0, 8).map((token) => (
-                      <TokenCard key={token.address} token={token} />
-                    ))
-                  ) : allPulseTokens.length > 0 ? (
-                    allPulseTokens.slice(0, 8).map((token) => (
-                      <TokenCard key={token.tokenId} token={token} />
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-8 text-[#666]">
-                      {trendingError ? 'No trending data available' : 'Loading trending tokens...'}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Recent BAGS Tokens — Connected */}
-            {recentTokens.length > 0 && (
+            {/* Migrated Tokens (LP Live) */}
+            {migratedTokens.length > 0 && (
               <section className="py-8 px-6 border-t border-white/10">
                 <div className="max-w-7xl mx-auto">
                   <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-display font-bold">Recent BAGS Tokens</h2>
+                    <h2 className="text-2xl font-display font-bold flex items-center gap-2">
+                      <span className="text-[#39FF14]">LP Live</span>
+                      <span className="text-[10px] font-mono text-[#888] uppercase">Migrated</span>
+                    </h2>
                     <Link
                       href="/pulse"
                       className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
@@ -314,14 +339,41 @@ export default function HomePage() {
                     </Link>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recentTokens.map((token) => (
-                      <TokenCard key={token.tokenId} token={token} />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {migratedTokens.map((token) => (
+                      <BagsTokenCard key={token.tokenId} token={token} />
                     ))}
                   </div>
                 </div>
               </section>
             )}
+
+            {/* Trending BAGS Tokens */}
+            <section className="py-8 px-6 border-t border-white/10">
+              <div className="max-w-7xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-display font-bold">Trending BAGS</h2>
+                  <Link
+                    href="/pulse"
+                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
+                  >
+                    View All →
+                  </Link>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {trendingTokens.length > 0 ? (
+                    trendingTokens.map((token) => (
+                      <BagsTokenCard key={token.tokenId} token={token} />
+                    ))
+                  ) : (
+                    <div className="col-span-full text-center py-8 text-[#666]">
+                      {isConnected ? 'Waiting for tokens...' : 'Connecting to live feed...'}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </section>
           </>
         )}
       </div>
