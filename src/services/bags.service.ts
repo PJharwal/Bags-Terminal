@@ -15,6 +15,9 @@ import type {
   SocialProvider,
   ImageUploadResponse,
   BagsApiResponse,
+  BagsTokenCreator,
+  BagsTokenCreatorWithStats,
+  BagsTokenClaimEvent,
 } from '@/lib/bags-types';
 
 const BAGS_API_BASE = '/api/bags';
@@ -234,6 +237,74 @@ async function getTokenMetadata(mint: string): Promise<BagsTokenMetadata | null>
 }
 
 // ==========================================
+// Token Fee Data Methods (Public API v2)
+// ==========================================
+
+/**
+ * Get total lifetime fees earned by a token (in lamports)
+ */
+async function getTokenLifetimeFees(mint: string): Promise<number> {
+  const result = await fetchBags<{ response: number }>(
+    `/token-launch/lifetime-fees?tokenMint=${mint}`
+  );
+  // API returns lamports, convert to SOL
+  return result?.response ? result.response / 1_000_000_000 : 0;
+}
+
+/**
+ * Get all fee earners/creators for a token
+ */
+async function getTokenCreators(mint: string): Promise<BagsTokenCreator[]> {
+  const result = await fetchBags<{ response: BagsTokenCreator[] }>(
+    `/token-launch/creator/v3?tokenMint=${mint}`
+  );
+  return result?.response || [];
+}
+
+/**
+ * Get claim statistics per earner (includes total claimed amounts)
+ */
+async function getTokenClaimStats(mint: string): Promise<BagsTokenCreatorWithStats[]> {
+  const result = await fetchBags<{ response: BagsTokenCreatorWithStats[] }>(
+    `/token-launch/claim-stats?tokenMint=${mint}`
+  );
+  return result?.response || [];
+}
+
+/**
+ * Get claim events history for a token
+ */
+async function getTokenClaimEvents(
+  mint: string,
+  limit: number = 50,
+  offset: number = 0
+): Promise<BagsTokenClaimEvent[]> {
+  const result = await fetchBags<{ events: BagsTokenClaimEvent[] }>(
+    `/fee-share/token/claim-events?tokenMint=${mint}&limit=${limit}&offset=${offset}`
+  );
+  return result?.events || [];
+}
+
+/**
+ * Get complete fee info for a token (lifetime fees + creators)
+ */
+async function getTokenFeeInfo(mint: string): Promise<{
+  lifetimeFees: number;
+  creators: BagsTokenCreator[];
+} | null> {
+  try {
+    const [lifetimeFees, creators] = await Promise.all([
+      getTokenLifetimeFees(mint),
+      getTokenCreators(mint),
+    ]);
+    return { lifetimeFees, creators };
+  } catch (error) {
+    console.error('Failed to get token fee info:', error);
+    return null;
+  }
+}
+
+// ==========================================
 // Export Service
 // ==========================================
 
@@ -261,6 +332,13 @@ export const bagsService = {
 
   // Token Info
   getTokenMetadata,
+
+  // Token Fee Data (Public API v2)
+  getTokenLifetimeFees,
+  getTokenCreators,
+  getTokenClaimStats,
+  getTokenClaimEvents,
+  getTokenFeeInfo,
 };
 
 export default bagsService;

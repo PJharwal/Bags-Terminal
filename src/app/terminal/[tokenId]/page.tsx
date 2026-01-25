@@ -10,6 +10,7 @@ import { TerminalTradePanel } from "../components/TerminalTradePanel";
 import { TerminalBottomTabs } from "../components/TerminalBottomTabs";
 import { TerminalToolbar } from "../components/TerminalToolbar";
 import { CredibilityMatrix } from "@/components/credibility/CredibilityMatrix";
+import { FeeEarnersPanel } from "@/components/terminal/FeeEarnersPanel";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import type { TradeRow } from "@/lib/types";
 
@@ -149,10 +150,18 @@ export default function TerminalPage() {
                     </div>
                 </div>
 
-                {/* Right: Trade Panel + Credibility */}
+                {/* Right: Trade Panel + Credibility + Fee Earners */}
                 <div className="w-[300px] min-w-[300px] flex flex-col overflow-y-auto custom-scrollbar">
                     <TerminalTradePanel />
                     <CredibilityMatrix tokenId={tokenId} layout="terminal" />
+                    {activeToken.hasBagsFees && (
+                        <div className="p-2">
+                            <FeeEarnersPanel
+                                feeEarners={activeToken.feeEarners}
+                                lifetimeFees={activeToken.lifetimeFees}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

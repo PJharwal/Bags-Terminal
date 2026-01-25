@@ -118,6 +118,19 @@ export interface PulseItem {
 // Terminal Types
 // ==========================================
 
+// Fee earner info for terminal display
+export interface TokenFeeEarner {
+    username: string;
+    pfp?: string;
+    royaltyBps: number;           // Fee share in basis points (100 = 1%)
+    royaltyPercent: number;       // Computed: royaltyBps / 100
+    isCreator: boolean;
+    wallet: string;
+    provider: 'twitter' | 'kick' | 'github' | 'tiktok' | 'unknown' | null;
+    providerUsername: string | null;
+    totalClaimed?: number;        // SOL claimed (if available)
+}
+
 // Terminal Token Context (full detail for Terminal view)
 export interface TerminalToken {
     tokenId: string;       // Solana mint address (used for GeckoTerminal)
@@ -139,6 +152,17 @@ export interface TerminalToken {
     priceChange24h: number;
     volume24h: number;
     volume5m: number;
+
+    // Bags Fee Data
+    lifetimeFees: number;              // Total fees earned (SOL)
+    feeEarners: TokenFeeEarner[];      // List of fee earners
+    topEarner?: {
+        username: string;
+        provider: string | null;
+        royaltyPercent: number;
+        pfp?: string;
+    };
+    hasBagsFees: boolean;              // Quick check if token has Bags fee data
 }
 
 // Trade row for bottom tabs
@@ -167,7 +191,7 @@ export interface WalletRow {
 }
 
 // Terminal bottom tab types
-export type TerminalBottomTab = 'trades' | 'holders' | 'top-traders' | 'dev-tokens';
+export type TerminalBottomTab = 'trades' | 'holders' | 'top-traders' | 'dev-tokens' | 'fees';
 
 // Trade panel state
 export interface TradePanelState {
