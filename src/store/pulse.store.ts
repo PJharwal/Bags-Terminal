@@ -1,10 +1,58 @@
 import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent } from '@/types/socket';
+import { tokenService, type Token } from '@/services/token.service';
 
-// BAGS token filter - only tokens with CA ending in 'bags'
+// BAGS token filter - tokens from bags.fm have CA ending in 'bags'
+// For broader filtering, we now include all tokens and attempt fee data fetch
 const isBagsToken = (mint: string): boolean => {
     return mint.toLowerCase().endsWith('bags');
+};
+
+// Check if token could potentially be a BAGS token (for fee data fetching)
+const isPotentialBagsToken = (mint: string): boolean => {
+    // All tokens from the socket could potentially be BAGS tokens
+    // We'll try to fetch fee data and silently fail if not available
+    return true;
+};
+
+// Convert token service Token to PulseItem format
+const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
+    // Estimate state based on market cap (simple heuristic)
+    let state: PulseState = 'NEW';
+    let bondingProgress = 0;
+
+    if (token.marketCap >= 100000) {
+        state = 'MIGRATED';
+        bondingProgress = 100;
+    } else if (token.marketCap >= 50000) {
+        state = 'FINAL_STRETCH';
+        bondingProgress = 85;
+    } else {
+        bondingProgress = Math.min(84, Math.floor(token.marketCap / 50000 * 85));
+    }
+
+    return {
+        tokenId: token.address,
+        symbol: `$${token.symbol}`,
+        name: token.name,
+        deployer: 'Unknown',
+        deployerName: 'deployer',
+        deployerLaunches: 1,
+        deployerSuccessRate: 50,
+        ageSeconds: 0,
+        marketCap: token.marketCap,
+        liquidity: token.liquidity,
+        bondingProgress,
+        holders: 0,
+        txCount: 0,
+        volume24h: token.volume24h,
+        state,
+        riskFlags: [],
+        updatedAt: Date.now(),
+        logoUrl: token.logo,
+        protocolSource: 'pumpfun',
+    };
 };
 
 // SOL price for USD calculations (per user spec: use constant 140)
@@ -95,6 +143,7 @@ interface PulseStore {
     isConnected: boolean;
     lastUpdate: number;
     filters: PulseFilters;
+    isInitialLoading: boolean;
 
     // Actions
     addItem: (item: PulseItem) => void;
@@ -108,23 +157,25 @@ interface PulseStore {
     setFilters: (filters: Partial<PulseFilters>) => void;
     getFilteredItems: (state: PulseState) => PulseItem[];
     setConnected: (connected: boolean) => void;
+    loadInitialData: () => Promise<void>;
 }
 
 export const usePulseStore = create<PulseStore>((set, get) => ({
-    // Start with empty state - will be populated by socket
+    // Start with empty state - will be populated by socket or initial load
     items: {
         NEW: [],
         FINAL_STRETCH: [],
         MIGRATED: [],
     },
     isConnected: false,
+    isInitialLoading: false,
     lastUpdate: Date.now(),
     filters: {
         displayMode: 'compact',
         tierFilter: 'all',
         hideRisky: false,
         minMarketCap: 0,
-        bagsOnly: true, // Default to BAGS only
+        bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
     addItem: (item) => set((state) => ({
@@ -135,14 +186,9 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         lastUpdate: Date.now(),
     })),
 
-    // Add token from socket event (with BAGS filter)
+    // Add token from socket event
     addTokenFromSocket: (token: NewTokenEvent) => {
-        const { filters, items, addItem, updateItem } = get();
-
-        // Apply BAGS filter if enabled
-        if (filters.bagsOnly && !isBagsToken(token.mint)) {
-            return; // Skip non-BAGS tokens
-        }
+        const { addItem, updateItem } = get();
 
         // Check if token already exists
         const existing = get().getItemById(token.mint);
@@ -158,17 +204,12 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         // Convert and add new token
         const pulseItem = convertSocketTokenToPulseItem(token);
         addItem(pulseItem);
-        console.log('Added BAGS token:', token.symbol, token.mint);
+        console.log('Added token:', token.symbol, token.mint);
     },
 
     // Update token from trade event
     updateFromTrade: (trade: TradeEvent) => {
-        const { filters, getItemById, updateItem, transitionItem } = get();
-
-        // Apply BAGS filter
-        if (filters.bagsOnly && !isBagsToken(trade.mint)) {
-            return;
-        }
+        const { getItemById, updateItem, transitionItem } = get();
 
         const existing = getItemById(trade.mint);
         if (!existing) return;
@@ -288,6 +329,40 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     },
 
     setConnected: (connected) => set({ isConnected: connected }),
+
+    // Load initial data from GMGN/DexScreener
+    loadInitialData: async () => {
+        const { items, addItem, getItemById } = get();
+
+        // Only load if we don't have data yet
+        const totalItems = items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
+        if (totalItems > 0) {
+            return;
+        }
+
+        set({ isInitialLoading: true });
+
+        try {
+            console.log('Loading initial token data from GMGN/DexScreener...');
+            const tokens = await tokenService.getTrending('1h');
+
+            if (tokens && tokens.length > 0) {
+                console.log(`Loaded ${tokens.length} tokens from service`);
+
+                tokens.forEach((token) => {
+                    // Skip if already exists (from socket)
+                    if (getItemById(token.address)) return;
+
+                    const pulseItem = convertServiceTokenToPulseItem(token);
+                    addItem(pulseItem);
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load initial token data:', error);
+        } finally {
+            set({ isInitialLoading: false });
+        }
+    },
 }));
 
 // Column config

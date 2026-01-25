@@ -1,13 +1,16 @@
 "use client";
 
 import { useTerminalStore } from "@/store/terminal.store";
+import { useBagsFees } from "@/hooks/useBagsFees";
 import type { TerminalBottomTab, TradeRow, WalletRow } from "@/lib/types";
-import { ArrowDownRight, ArrowUpRight, Users, TrendingUp, Code } from "lucide-react";
+import type { BagsTokenClaimEvent } from "@/lib/bags-types";
+import { ArrowDownRight, ArrowUpRight, Users, TrendingUp, Code, Coins, ExternalLink } from "lucide-react";
 
 const TABS: { id: TerminalBottomTab; label: string; icon: React.ReactNode }[] = [
     { id: 'trades', label: 'Trades', icon: <ArrowUpRight size={12} /> },
     { id: 'holders', label: 'Holders', icon: <Users size={12} /> },
     { id: 'top-traders', label: 'Top Traders', icon: <TrendingUp size={12} /> },
+    { id: 'fees', label: 'Fee Claims', icon: <Coins size={12} /> },
     { id: 'dev-tokens', label: 'Dev Tokens', icon: <Code size={12} /> },
 ];
 
@@ -28,25 +31,41 @@ function formatNum(num: number): string {
 }
 
 export function TerminalBottomTabs() {
-    const { activeBottomTab, setActiveBottomTab, trades, holders, topTraders } = useTerminalStore();
+    const { activeBottomTab, setActiveBottomTab, trades, holders, topTraders, activeToken } = useTerminalStore();
+
+    // Fetch claim events when on fees tab
+    const { claimEvents, isLoading: feesLoading } = useBagsFees(
+        activeBottomTab === 'fees' ? activeToken?.tokenId ?? null : null,
+        { fetchClaimEvents: true, claimEventsLimit: 100 }
+    );
 
     return (
         <div className="flex flex-col h-full border-t border-white/10 bg-[#0A0A0A]">
             {/* Tab Headers */}
             <div className="flex border-b border-white/10">
-                {TABS.map((tab) => (
-                    <button
-                        key={tab.id}
-                        onClick={() => setActiveBottomTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeBottomTab === tab.id
-                                ? 'text-[#39FF14] border-b-2 border-[#39FF14] bg-[#39FF14]/5'
-                                : 'text-[#666] hover:text-[#EDEDED]'
-                            }`}
-                    >
-                        {tab.icon}
-                        {tab.label}
-                    </button>
-                ))}
+                {TABS.map((tab) => {
+                    // Highlight fees tab if token has Bags fees
+                    const isFeesTabHighlighted = tab.id === 'fees' && activeToken?.hasBagsFees;
+
+                    return (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveBottomTab(tab.id)}
+                            className={`flex items-center gap-2 px-4 py-2 text-[10px] font-bold uppercase tracking-wider transition-colors ${activeBottomTab === tab.id
+                                    ? 'text-[#39FF14] border-b-2 border-[#39FF14] bg-[#39FF14]/5'
+                                    : isFeesTabHighlighted
+                                        ? 'text-[#FFD700] hover:text-[#FFD700]'
+                                        : 'text-[#666] hover:text-[#EDEDED]'
+                                }`}
+                        >
+                            {tab.icon}
+                            {tab.label}
+                            {isFeesTabHighlighted && activeBottomTab !== tab.id && (
+                                <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700]" />
+                            )}
+                        </button>
+                    );
+                })}
             </div>
 
             {/* Tab Content */}
@@ -54,6 +73,7 @@ export function TerminalBottomTabs() {
                 {activeBottomTab === 'trades' && <TradesTable trades={trades} />}
                 {activeBottomTab === 'holders' && <HoldersTable holders={holders} />}
                 {activeBottomTab === 'top-traders' && <TopTradersTable traders={topTraders} />}
+                {activeBottomTab === 'fees' && <FeesTable events={claimEvents} isLoading={feesLoading} />}
                 {activeBottomTab === 'dev-tokens' && <DevTokensTable />}
             </div>
         </div>
@@ -186,6 +206,82 @@ function TopTradersTable({ traders }: { traders: WalletRow[] }) {
                         </td>
                         <td className="py-2 px-3 text-right text-[#EDEDED]">${formatNum(trader.bought + trader.sold)}</td>
                         <td className="py-2 px-3 text-right text-[#666]">{formatTimeAgo(trader.lastActive)}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    );
+}
+
+// Fees Table - Claim Events History
+function FeesTable({ events, isLoading }: { events: BagsTokenClaimEvent[]; isLoading: boolean }) {
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-32 text-[#666] text-xs font-mono">
+                <div className="text-center">
+                    <Coins size={24} className="mx-auto mb-2 opacity-50 animate-pulse" />
+                    <p>Loading fee claims...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (events.length === 0) {
+        return (
+            <div className="flex items-center justify-center h-32 text-[#666] text-xs font-mono">
+                <div className="text-center">
+                    <Coins size={24} className="mx-auto mb-2 opacity-50" />
+                    <p>No fee claims yet</p>
+                    <p className="text-[10px] text-[#444] mt-1">Claims will appear here when earners collect fees</p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <table className="w-full text-[10px] font-mono">
+            <thead className="sticky top-0 bg-[#0A0A0A]">
+                <tr className="text-[#666] uppercase tracking-widest border-b border-white/10">
+                    <th className="py-2 px-3 text-left font-normal">Time</th>
+                    <th className="py-2 px-3 text-left font-normal">Wallet</th>
+                    <th className="py-2 px-3 text-left font-normal">Role</th>
+                    <th className="py-2 px-3 text-right font-normal">Amount</th>
+                    <th className="py-2 px-3 text-right font-normal">Tx</th>
+                </tr>
+            </thead>
+            <tbody>
+                {events.map((event, idx) => (
+                    <tr
+                        key={`${event.signature}-${idx}`}
+                        className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                    >
+                        <td className="py-2 px-3 text-[#666]">
+                            {formatTimeAgo(event.timestamp * 1000)}
+                        </td>
+                        <td className="py-2 px-3 text-[#EDEDED]">
+                            {event.wallet.slice(0, 4)}...{event.wallet.slice(-4)}
+                        </td>
+                        <td className="py-2 px-3">
+                            {event.isCreator ? (
+                                <span className="text-[#39FF14]">CREATOR</span>
+                            ) : (
+                                <span className="text-[#00F0FF]">EARNER</span>
+                            )}
+                        </td>
+                        <td className="py-2 px-3 text-right text-[#FFD700] font-bold">
+                            {parseFloat(event.amount).toFixed(4)} SOL
+                        </td>
+                        <td className="py-2 px-3 text-right">
+                            <a
+                                href={`https://solscan.io/tx/${event.signature}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-[#666] hover:text-[#00F0FF] transition-colors inline-flex items-center gap-1"
+                            >
+                                {event.signature.slice(0, 4)}...
+                                <ExternalLink size={10} />
+                            </a>
+                        </td>
                     </tr>
                 ))}
             </tbody>

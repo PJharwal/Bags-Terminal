@@ -1,7 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const BAGS_API_BASE = 'https://api.bags.fm';
+const BAGS_PUBLIC_API_BASE = 'https://public-api-v2.bags.fm/api/v1';
 const BAGS_API_KEY = process.env.BAGS_API_KEY_SERVER || process.env.NEXT_PUBLIC_BAGS_API_KEY || '';
+
+// Routes that should use the public API v2
+const PUBLIC_API_ROUTES = [
+  'token-launch/lifetime-fees',
+  'token-launch/creator/v3',
+  'token-launch/claim-stats',
+  'fee-share/token/claim-events',
+];
+
+function getApiBase(path: string): string {
+  if (PUBLIC_API_ROUTES.some(route => path.startsWith(route))) {
+    return BAGS_PUBLIC_API_BASE;
+  }
+  return BAGS_API_BASE;
+}
 
 // Simple in-memory rate limiter
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -45,7 +61,8 @@ export async function GET(
   const { path } = await params;
   const pathStr = path.join('/');
   const searchParams = request.nextUrl.searchParams.toString();
-  const url = `${BAGS_API_BASE}/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
+  const apiBase = getApiBase(pathStr);
+  const url = `${apiBase}/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
 
   try {
     const response = await fetch(url, {
@@ -86,7 +103,8 @@ export async function POST(
 
   const { path } = await params;
   const pathStr = path.join('/');
-  const url = `${BAGS_API_BASE}/${pathStr}`;
+  const apiBase = getApiBase(pathStr);
+  const url = `${apiBase}/${pathStr}`;
 
   try {
     const contentType = request.headers.get('content-type') || '';

@@ -3,6 +3,7 @@
 import type { PulseItem } from "@/lib/types";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { useSelectionStore } from "@/store/selection.store";
+import { BagsFeeIndicator } from "@/components/ui/BagsFeeIndicator";
 
 interface PulseCardProps {
     item: PulseItem;
@@ -53,7 +54,10 @@ export function PulseCard({ item }: PulseCardProps) {
                         {item.symbol.slice(1, 3)}
                     </div>
                     <div>
-                        <div className="font-medium text-sm">{item.symbol}</div>
+                        <div className="flex items-center gap-1.5">
+                            <span className="font-medium text-sm">{item.symbol}</span>
+                            <BagsFeeIndicator tokenMint={item.tokenId} size="sm" />
+                        </div>
                         <div className="text-[10px] text-[#9AA0A6] font-mono">@{item.deployer}</div>
                     </div>
                 </div>

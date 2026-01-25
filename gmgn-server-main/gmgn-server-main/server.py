@@ -1,9 +1,21 @@
 from fastapi import FastAPI, Query, Path, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from client import gmgn
 from typing import Optional, List
+import os
 
-app = FastAPI(title="GMGN Proxy Server", description="API for GMGN.ai data")
+# Try curl_cffi client first (best Cloudflare bypass), then enhanced, then original
+try:
+    from client_curl import GMGNCurl as gmgn
+    print("Using curl_cffi GMGN client (TLS fingerprint impersonation)")
+except ImportError:
+    try:
+        from client_enhanced import GMGNEnhanced as gmgn
+        print("Using enhanced GMGN client")
+    except ImportError:
+        from client import gmgn
+        print("Using original GMGN client")
+
+app = FastAPI(title="GMGN Proxy Server", description="API for GMGN.ai data with Cloudflare bypass")
 
 app.add_middleware(
     CORSMiddleware,
@@ -12,6 +24,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Create client
 client = gmgn()
 
 @app.get("/")

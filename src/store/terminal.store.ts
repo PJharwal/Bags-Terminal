@@ -4,15 +4,17 @@ import type {
     Deployer,
     TokenFilters,
     TerminalToken,
+    TokenFeeEarner,
     TradeRow,
     WalletRow,
     TerminalBottomTab,
     TradePanelState,
     CredibilityMatrix
 } from '@/lib/types';
-import type { SwapStatus } from '@/lib/bags-types';
+import type { SwapStatus, BagsTokenCreator } from '@/lib/bags-types';
 import { generateCredibilityMatrix, type RealTokenData } from '@/lib/credibility';
 import { fetchTerminalTokenData, type GMGNHolder, type GMGNTrader } from '@/services/gmgn.service';
+import { bagsService } from '@/services/bags.service';
 
 // SOL price constant (per user spec)
 const SOL_PRICE = 140;
@@ -41,6 +43,18 @@ const transformTrader = (trader: GMGNTrader): WalletRow => ({
     holding: trader.buy_volume_cur - trader.sell_volume_cur,
     holdingPercent: 0,
     lastActive: Date.now(),
+});
+
+// Transform Bags creator data to TokenFeeEarner
+const transformCreator = (creator: BagsTokenCreator): TokenFeeEarner => ({
+    username: creator.username,
+    pfp: creator.pfp || undefined,
+    royaltyBps: creator.royaltyBps,
+    royaltyPercent: creator.royaltyBps / 100,
+    isCreator: creator.isCreator,
+    wallet: creator.wallet,
+    provider: creator.provider as TokenFeeEarner['provider'],
+    providerUsername: creator.providerUsername,
 });
 
 interface TerminalStore {
@@ -145,13 +159,20 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     activePreset: null,
     filters: defaultFilters,
 
-    // Load token data from GMGN API
+    // Load token data from GMGN API + Bags fee data
     loadToken: async (tokenId) => {
         set({ isLoading: true, error: null });
 
         try {
             console.log('Loading token data for:', tokenId);
-            const { tokenInfo, security, holders, traders } = await fetchTerminalTokenData(tokenId);
+
+            // Fetch GMGN data and Bags fee data in parallel
+            const [gmgnData, bagsFeeData] = await Promise.all([
+                fetchTerminalTokenData(tokenId),
+                bagsService.getTokenFeeInfo(tokenId).catch(() => null),
+            ]);
+
+            const { tokenInfo, security, holders, traders } = gmgnData;
 
             if (!tokenInfo) {
                 throw new Error('Failed to fetch token info from GMGN');
@@ -161,7 +182,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
             const info = tokenInfo.info;
             const stats = tokenInfo.stats;
 
-            // Build TerminalToken from GMGN data
+            // Transform Bags creators to fee earners
+            const feeEarners = bagsFeeData?.creators.map(transformCreator) || [];
+            const lifetimeFees = bagsFeeData?.lifetimeFees || 0;
+
+            // Find top earner (highest royalty %)
+            const topEarner = feeEarners.length > 0
+                ? feeEarners.reduce((max, curr) =>
+                    curr.royaltyBps > max.royaltyBps ? curr : max
+                  )
+                : undefined;
+
+            // Build TerminalToken from GMGN data + Bags fee data
             const token: TerminalToken = {
                 tokenId,
                 symbol: info?.symbol ? `$${info.symbol}` : '$UNK',
@@ -176,12 +208,23 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
                 supply: 1000000000, // Default supply
                 bondingProgress: 100, // Assume migrated if in GMGN
                 holders: info?.holder_count || 0,
-                feesPaid: 0,
+                feesPaid: lifetimeFees, // Now from Bags API
                 migrated: true,
                 priceUsd: info?.price || 0,
                 priceChange24h: info?.price_change_24h || 0,
                 volume24h: info?.volume_24h || 0,
                 volume5m: 0,
+
+                // Bags Fee Data
+                lifetimeFees,
+                feeEarners,
+                topEarner: topEarner ? {
+                    username: topEarner.username,
+                    provider: topEarner.provider,
+                    royaltyPercent: topEarner.royaltyPercent,
+                    pfp: topEarner.pfp,
+                } : undefined,
+                hasBagsFees: feeEarners.length > 0 || lifetimeFees > 0,
             };
 
             // Transform holders and traders
@@ -214,7 +257,11 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
                 isLoading: false,
             });
 
-            console.log('Token loaded successfully:', token.symbol);
+            console.log('Token loaded successfully:', token.symbol, {
+                hasBagsFees: token.hasBagsFees,
+                lifetimeFees: token.lifetimeFees,
+                feeEarnersCount: token.feeEarners.length,
+            });
         } catch (error) {
             console.error('Failed to load token:', error);
             set({
