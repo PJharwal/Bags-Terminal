@@ -3,7 +3,8 @@
  * Connects to the local GMGN server for token data, market data, and wallet analysis
  */
 
-const GMGN_BASE = 'http://localhost:8000';
+// Use the Next.js API proxy to avoid CORS issues
+const GMGN_BASE = '/api/gmgn';
 
 // Types for GMGN responses
 export interface GMGNTokenInfo {

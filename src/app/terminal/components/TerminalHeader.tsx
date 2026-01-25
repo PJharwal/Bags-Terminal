@@ -1,7 +1,15 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Twitter } from "lucide-react";
+import { Copy, ExternalLink, Globe, Twitter, Coins } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
+
+// Provider icon mapping
+const providerIcons: Record<string, string> = {
+    twitter: "𝕏",
+    tiktok: "TT",
+    kick: "K",
+    github: "GH",
+};
 
 interface TerminalHeaderProps {
     token: TerminalToken;
@@ -21,6 +29,15 @@ function formatPrice(price: number): string {
     if (price < 0.01) return price.toFixed(6);
     if (price < 1) return price.toFixed(4);
     return price.toFixed(2);
+}
+
+// Format SOL amount
+function formatSOL(amount: number): string {
+    if (amount === 0) return "0";
+    if (amount < 0.01) return amount.toFixed(4);
+    if (amount < 1) return amount.toFixed(3);
+    if (amount < 100) return amount.toFixed(2);
+    return formatNumber(amount);
 }
 
 export function TerminalHeader({ token }: TerminalHeaderProps) {
@@ -94,7 +111,43 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <StatItem label="VOL_24H" value={`$${formatNumber(token.volume24h)}`} />
                 <StatItem label="VOL_5M" value={`$${formatNumber(token.volume5m)}`} />
                 <StatItem label="HOLDERS" value={formatNumber(token.holders)} />
-                <StatItem label="FEES" value={`$${formatNumber(token.feesPaid)}`} />
+
+                {/* Fees - highlighted if has Bags fees */}
+                <div className="flex flex-col">
+                    <span className="text-[9px] text-[#666] uppercase tracking-widest">FEES</span>
+                    <div className="flex items-center gap-1">
+                        {token.hasBagsFees && (
+                            <Coins size={10} className="text-[#FFD700]" />
+                        )}
+                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "text-[#FFD700]" : "text-[#EDEDED]"}`}>
+                            {formatSOL(token.lifetimeFees)} SOL
+                        </span>
+                    </div>
+                </div>
+
+                {/* Fee Earners Badge */}
+                {token.hasBagsFees && token.feeEarners.length > 0 && (
+                    <div className="flex flex-col">
+                        <span className="text-[9px] text-[#666] uppercase tracking-widest">EARNERS</span>
+                        <div className="flex items-center gap-1">
+                            {token.topEarner && (
+                                <span className="text-[10px] text-[#00F0FF] font-mono">
+                                    {token.topEarner.provider && providerIcons[token.topEarner.provider]
+                                        ? `${providerIcons[token.topEarner.provider]} `
+                                        : ""}
+                                    {token.topEarner.username.length > 12
+                                        ? `${token.topEarner.username.slice(0, 12)}...`
+                                        : token.topEarner.username}
+                                </span>
+                            )}
+                            {token.feeEarners.length > 1 && (
+                                <span className="text-[9px] text-[#666]">
+                                    +{token.feeEarners.length - 1}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Bonding Progress */}
                 <div className="flex flex-col">

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { config } from '@/config/env';
 import { NewTokenEvent, TradeEvent, MigrationEvent, SocketRoom } from '@/types/socket';
+import { usePulseStore } from './pulse.store';
 
 // BAGS token filter - only tokens with CA ending in 'bags'
 const isBagsToken = (mint: string): boolean => {
@@ -50,6 +51,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       console.log('Socket connected:', newSocket.id);
       set({ isConnected: true });
 
+      // Sync with pulse store
+      usePulseStore.getState().setConnected(true);
+
       // Subscribe to all token/trade rooms
       get().subscribe('new_tokens:all');
       get().subscribe('trades:all');
@@ -59,6 +63,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     newSocket.on('disconnect', () => {
       console.log('Socket disconnected');
       set({ isConnected: false });
+
+      // Sync with pulse store
+      usePulseStore.getState().setConnected(false);
     });
 
     newSocket.on('connect_error', (error) => {
@@ -78,13 +85,17 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         latestTokens: [token, ...state.latestTokens].slice(0, 50)
       }));
 
-      // Filter for BAGS tokens (CA ends with 'bags')
+      // Track BAGS tokens separately (CA ends with 'bags')
       if (isBagsToken(token.mint)) {
         console.log('BAGS token found:', token.symbol, token.mint);
         set((state) => ({
           bagsTokens: [token, ...state.bagsTokens].slice(0, 50)
         }));
       }
+
+      // Add ALL tokens to pulse store for UI display
+      // Fee data will be fetched for tokens that support it
+      usePulseStore.getState().addTokenFromSocket(token);
     });
 
     // Handle trade events
@@ -94,17 +105,23 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         latestTrades: [trade, ...state.latestTrades].slice(0, 100)
       }));
 
-      // Filter for BAGS token trades
+      // Track BAGS token trades separately
       if (isBagsToken(trade.mint)) {
         set((state) => ({
           bagsTrades: [trade, ...state.bagsTrades].slice(0, 100)
         }));
       }
+
+      // Update ALL trades in pulse store for UI display
+      usePulseStore.getState().updateFromTrade(trade);
     });
 
     // Handle migration events
     newSocket.on('migration', (migration: MigrationEvent) => {
       console.log('Migration:', migration.symbol, migration.mint, '->', migration.to_dex);
+
+      // Update pulse store - transition to MIGRATED state for all tokens
+      usePulseStore.getState().transitionItem(migration.mint, 'MIGRATED');
     });
 
     // Ping/pong for connection health
