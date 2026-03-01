@@ -9,7 +9,12 @@ const PUBLIC_API_ROUTES = [
   'token-launch/lifetime-fees',
   'token-launch/creator/v3',
   'token-launch/claim-stats',
+  'token-launch/create-token-info',
   'fee-share/token/claim-events',
+  'fee-share/wallet/v2',
+  'partner/config',
+  'partner/claimable',
+  'partner/claim',
 ];
 
 function getApiBase(path: string): string {

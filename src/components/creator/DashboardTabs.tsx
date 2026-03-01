@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { MyTokensTab } from './MyTokensTab';
 import { FeeClaimsTab } from './FeeClaimsTab';
 import { ClaimHistoryTab } from './ClaimHistoryTab';
+import { PartnerConfigTab } from './PartnerConfigTab';
 
 const TABS = [
   { id: 'tokens', label: 'MY TOKENS' },
   { id: 'claims', label: 'FEE CLAIMS' },
   { id: 'history', label: 'CLAIM HISTORY' },
+  { id: 'partner', label: 'PARTNER' },
 ] as const;
 
 type TabId = typeof TABS[number]['id'];
@@ -43,6 +45,7 @@ export function DashboardTabs() {
         {activeTab === 'tokens' && <MyTokensTab />}
         {activeTab === 'claims' && <FeeClaimsTab />}
         {activeTab === 'history' && <ClaimHistoryTab />}
+        {activeTab === 'partner' && <PartnerConfigTab />}
       </div>
     </div>
   );

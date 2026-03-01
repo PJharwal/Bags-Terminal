@@ -9,12 +9,25 @@ export interface BagsTokenMetadata {
   symbol: string;
   description: string;
   image: string; // IPFS URL after upload
+  imageUrl?: string; // Direct image URL (skips IPFS upload when provided)
+  metadataUrl?: string; // Direct metadata URL (skips IPFS upload entirely)
 }
 
 export interface BagsTokenLaunchConfig {
   metadata: BagsTokenMetadata;
   feeShareConfigKey: string;
   initialBuyAmountSol: number;
+  tipWallet?: string; // Optional tip wallet address
+  tipLamports?: number; // Optional tip amount in lamports
+}
+
+// ==========================================
+// Tip Configuration
+// ==========================================
+
+export interface TipConfig {
+  tipWallet: string;
+  tipLamports: number;
 }
 
 export interface BagsCreatedToken {
@@ -46,6 +59,8 @@ export interface FeeClaimerConfig {
   provider?: SocialProvider; // only for social type
   percentage: number; // 0-100
 }
+
+export const MAX_FEE_CLAIMERS = 100; // Maximum fee earners per token launch
 
 export interface FeeShareConfig {
   configKey: string;
@@ -270,4 +285,54 @@ export interface BagsTokenFeeInfo {
 export interface BagsTokenFeeInfoWithStats extends BagsTokenFeeInfo {
   creators: BagsTokenCreatorWithStats[];
   claimEvents: BagsTokenClaimEvent[];
+}
+
+// ==========================================
+// Partner Configuration Types (v2)
+// ==========================================
+
+export interface PartnerConfig {
+  partnerKey: string;
+  wallet: string;
+  createdAt: number;
+  totalFeesEarned: number;
+  tokenCount: number;
+}
+
+export interface PartnerClaimInfo {
+  partnerKey: string;
+  claimableAmount: number; // in SOL
+  totalEarned: number;
+  totalClaimed: number;
+}
+
+// ==========================================
+// Fee Share Wallet v2 Types
+// ==========================================
+
+export interface FeeShareWalletInfo {
+  wallet: string;
+  provider: SocialProvider | null;
+  providerUsername: string | null;
+  totalEarned: number;
+  totalClaimed: number;
+  tokens: FeeShareWalletToken[];
+}
+
+export interface FeeShareWalletToken {
+  tokenMint: string;
+  tokenSymbol: string;
+  tokenImage: string;
+  royaltyBps: number;
+  lifetimeFees: number;
+  claimableAmount: number;
+}
+
+// ==========================================
+// Lookup Table Types (for >15 claimers)
+// ==========================================
+
+export interface LookupTableConfig {
+  lookupTableAddress: string;
+  transactions: string[]; // Serialized transactions for LUT creation
 }
