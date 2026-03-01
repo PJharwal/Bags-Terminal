@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 
 // SOL price constant (per user spec: use 140)
 // This can be updated to fetch from an API later if needed
@@ -18,18 +18,14 @@ interface UseSolPriceReturn {
  */
 export function useSolPrice(): UseSolPriceReturn {
     const [price, setPrice] = useState(SOL_PRICE_CONSTANT);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const [isLoading] = useState(false);
+    const [error] = useState<string | null>(null);
 
-    const refresh = () => {
+    const refresh = useCallback(() => {
         // Currently just returns the constant
         // Could be extended to fetch from an API:
         // const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
         setPrice(SOL_PRICE_CONSTANT);
-    };
-
-    useEffect(() => {
-        refresh();
     }, []);
 
     return {

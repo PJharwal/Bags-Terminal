@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useLaunchStore } from '@/store/launch.store';
 import { useBagsWallet } from '@/hooks/useWallet';
-import { Loader2, CheckCircle2, XCircle, Rocket } from 'lucide-react';
+import { Loader2, CheckCircle2, XCircle, Rocket, Heart } from 'lucide-react';
 import type { SendTransactionFn } from '@/lib/bags-types';
 
 const STATUS_LABELS: Record<string, string> = {
@@ -19,16 +19,25 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function TransactionSummary() {
   const router = useRouter();
-  const { metadata, feeClaimers, initialBuyAmount, status, error, result, executeLaunch } = useLaunchStore();
+  const {
+    metadata, feeClaimers, initialBuyAmount, status, error, result,
+    tipEnabled, tipAmountSol, imageSourceMode, imageUrl,
+    executeLaunch,
+  } = useLaunchStore();
   const { connected, publicKey, balance, sendTransaction, connection } = useBagsWallet();
 
-  const txFeeEstimate = 0.01;
-  const totalCost = initialBuyAmount + txFeeEstimate;
+  // No API fees — only Solana tx costs
+  const txFeeEstimate = 0.005;
+  const tipCost = tipEnabled ? tipAmountSol : 0;
+  const totalCost = initialBuyAmount + txFeeEstimate + tipCost;
   const hasSufficientBalance = balance !== null && balance >= totalCost;
+
+  const hasImage = imageSourceMode === 'url' ? imageUrl.length > 0 : true;
 
   const isFormValid =
     metadata.name.length > 0 &&
     metadata.symbol.length > 0 &&
+    hasImage &&
     feeClaimers.length > 0 &&
     feeClaimers.reduce((sum, c) => sum + c.percentage, 0) === 100;
 
@@ -59,14 +68,35 @@ export function TransactionSummary() {
           <span className="text-[#EDEDED] font-mono">{initialBuyAmount} SOL</span>
         </div>
         <div className="flex justify-between text-[10px]">
-          <span className="text-[#888]">Transaction fees</span>
+          <span className="text-[#888]">Solana tx fees</span>
           <span className="text-[#EDEDED] font-mono">~{txFeeEstimate} SOL</span>
         </div>
+        <div className="flex justify-between text-[10px]">
+          <span className="text-[#888]">API fees</span>
+          <span className="text-[#39FF14] font-mono font-bold">FREE</span>
+        </div>
+        {tipEnabled && tipAmountSol > 0 && (
+          <div className="flex justify-between text-[10px]">
+            <span className="text-[#FFD700] flex items-center gap-1">
+              <Heart size={8} /> Tip
+            </span>
+            <span className="text-[#FFD700] font-mono">{tipAmountSol} SOL</span>
+          </div>
+        )}
         <div className="border-t border-white/10 pt-2 flex justify-between text-[11px]">
           <span className="text-[#EDEDED] font-bold">Total</span>
           <span className="text-[#39FF14] font-mono font-bold">~{totalCost.toFixed(3)} SOL</span>
         </div>
       </div>
+
+      {/* Large claimer set notice */}
+      {feeClaimers.length > 15 && (
+        <div className="p-2 bg-[#00F0FF]/10 border border-[#00F0FF]/30">
+          <span className="text-[9px] text-[#00F0FF] font-mono">
+            {feeClaimers.length} fee claimers — additional lookup table TX will be created
+          </span>
+        </div>
+      )}
 
       {/* Balance Warning */}
       {connected && !hasSufficientBalance && (

@@ -24,10 +24,12 @@ export function useBagsWallet() {
     } else if (!connected && !connecting) {
       store.setConnected(null);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, publicKey, connecting]);
 
   useEffect(() => {
     store.setConnecting(connecting);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connecting]);
 
   // Auto-refresh balance every 30s when connected
@@ -39,11 +41,13 @@ export function useBagsWallet() {
     }, 30000);
 
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [store.connected]);
 
   const disconnect = useCallback(async () => {
     await adapterDisconnect();
     store.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [adapterDisconnect]);
 
   const shortenedAddress = store.publicKey

@@ -64,6 +64,7 @@ export function TerminalTradePanel() {
             slippageBps,
             priorityFee: priorityFee || undefined,
         });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [tradePanel.amount, tradePanel.mode, activeToken?.tokenId, slippageBps]);
 
     const handleSwap = useCallback(async () => {
@@ -132,6 +133,7 @@ export function TerminalTradePanel() {
             setSwapError(errorMessage);
             updateTransaction(txId, { status: 'failed' });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [connected, publicKey, activeToken, isBuy, tradePanel.amount, slippageBps, priorityFee, quote, sendTransaction, connection]);
 
     const handleRetry = () => {

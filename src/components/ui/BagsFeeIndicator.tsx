@@ -33,6 +33,7 @@ export function BagsFeeIndicator({
         // Check cache first
         const cached = feeStatusCache.get(tokenMint);
         if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setFeeData({ hasFees: cached.hasFees, lifetimeFees: cached.lifetimeFees });
             return;
         }

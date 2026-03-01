@@ -9,6 +9,9 @@ const isBagsToken = (mint: string): boolean => {
   return mint.toLowerCase().endsWith('bags');
 };
 
+// Store ping interval ID for cleanup
+let pingIntervalId: ReturnType<typeof setInterval> | null = null;
+
 interface SocketState {
   socket: Socket | null;
   isConnected: boolean;
@@ -124,8 +127,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       usePulseStore.getState().transitionItem(migration.mint, 'MIGRATED');
     });
 
-    // Ping/pong for connection health
-    const pingInterval = setInterval(() => {
+    // Ping/pong for connection health - clear any existing interval first
+    if (pingIntervalId) {
+      clearInterval(pingIntervalId);
+    }
+    pingIntervalId = setInterval(() => {
       if (newSocket.connected) {
         newSocket.emit('ping');
       }
@@ -140,6 +146,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   disconnect: () => {
     const { socket } = get();
+    if (pingIntervalId) {
+      clearInterval(pingIntervalId);
+      pingIntervalId = null;
+    }
     if (socket) {
       socket.disconnect();
       set({ socket: null, isConnected: false });
@@ -161,4 +171,3 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     }
   }
 }));
-

@@ -3,7 +3,7 @@
 // Pure functions for data shaping
 
 import type { HolderData } from '@/types/token';
-import { classifyWallet, getPrimaryTag, hasNegativeTags } from '../shared/walletClassifier';
+import { getPrimaryTag, hasNegativeTags } from '../shared/walletClassifier';
 
 // Processed holder for UI
 export interface ProcessedHolder extends HolderData {

@@ -2,7 +2,7 @@
 // Detection patterns for wallet behavior and token risk
 // Pure functions for risk detection
 
-import type { TokenStatsData, HolderData, TraderData } from '@/types/token';
+import type { TokenStatsData, HolderData } from '@/types/token';
 
 // Heuristic flags
 export interface HeuristicFlag {

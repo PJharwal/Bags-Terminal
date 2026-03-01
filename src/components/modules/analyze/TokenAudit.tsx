@@ -4,9 +4,7 @@ import { TokenStatsData } from "@/types/token";
 import { cn } from "@/lib/utils";
 import {
     computeTokenAudit,
-    getRiskLevel,
     getScoreColor,
-    getRiskColor,
     type RiskLevel
 } from "@/skills/analyze/tokenAudit.engine";
 
