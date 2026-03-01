@@ -12,6 +12,7 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
 
     // Reset loading state when tokenMint changes
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoaded(false);
         setChartKey(prev => prev + 1);
     }, [tokenMint]);
@@ -19,10 +20,6 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
     // GeckoTerminal embed URL - use token page format instead of pool
     // Format: /solana/tokens/{tokenMint} for token-based view
     const iframeSrc = `https://www.geckoterminal.com/solana/tokens/${tokenMint}?embed=1&info=0&swaps=0&light_chart=0&chart_type=price&resolution=15m&bg_color=000000`;
-
-    // Debug log
-    console.log('[TerminalChart] tokenMint:', tokenMint);
-    console.log('[TerminalChart] iframeSrc:', iframeSrc);
 
     if (!tokenMint) {
         return (

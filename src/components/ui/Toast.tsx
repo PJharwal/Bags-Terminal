@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect } from 'react';
 import { CheckCircle2, XCircle, AlertTriangle, Info, X } from 'lucide-react';
 import { create } from 'zustand';
 
@@ -64,7 +64,7 @@ function ToastItem({ toast: t }: { toast: Toast }) {
       const timer = setTimeout(() => removeToast(t.id), t.duration);
       return () => clearTimeout(timer);
     }
-  }, [t.id, t.duration]);
+  }, [t.id, t.duration, removeToast]);
 
   const Icon = ICONS[t.type];
 

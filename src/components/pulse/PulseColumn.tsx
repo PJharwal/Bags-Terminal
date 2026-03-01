@@ -5,9 +5,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import type { PulseItem, PulseState } from "@/lib/types";
 import { PulseCardCompact } from "./PulseCardCompact";
 import { useSelectionStore } from "@/store/selection.store";
-import { getStateConfig } from "@/lib/lifecycle";
 import { motion, AnimatePresence } from "framer-motion";
-import { SortAsc, SortDesc, Filter, CheckSquare, Square } from "lucide-react";
+import { SortAsc, SortDesc, CheckSquare, Square } from "lucide-react";
 
 interface PulseColumnProps {
     state: PulseState;
@@ -89,7 +88,6 @@ function ColumnSortDropdown({
 export function PulseColumn({ state, items }: PulseColumnProps) {
     const parentRef = useRef<HTMLDivElement>(null);
     const { selectedTokenId } = useSelectionStore();
-    const config = getStateConfig(state);
 
     const [sortBy, setSortBy] = useState<SortOption>('age');
     const [sortDir, setSortDir] = useState<SortDirection>('asc');

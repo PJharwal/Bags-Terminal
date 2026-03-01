@@ -18,7 +18,7 @@ export default function CreatorPage() {
       refreshAll(publicKey);
       loadLinkedAccounts(publicKey);
     }
-  }, [connected, publicKey]);
+  }, [connected, publicKey, refreshAll, loadLinkedAccounts]);
 
   if (!connected) {
     return (

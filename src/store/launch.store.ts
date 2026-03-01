@@ -86,6 +86,11 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   })),
 
   setUploadedImage: (file) => {
+    // Revoke previous object URL to prevent memory leaks
+    const prevUrl = get().imagePreviewUrl;
+    if (prevUrl && prevUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(prevUrl);
+    }
     if (file) {
       const previewUrl = URL.createObjectURL(file);
       set({ uploadedImage: file, imagePreviewUrl: previewUrl, ipfsUrl: null });

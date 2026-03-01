@@ -3,7 +3,7 @@
 // PnL calculation and aggregation logic
 
 import type { TraderData } from '@/types/token';
-import { classifyWallet, getPrimaryTag, hasNegativeTags, hasPositiveTags } from '../shared/walletClassifier';
+import { getPrimaryTag, hasNegativeTags, hasPositiveTags } from '../shared/walletClassifier';
 
 // Processed trader for UI
 export interface ProcessedTrader extends TraderData {

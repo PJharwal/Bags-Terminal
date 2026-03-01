@@ -4,8 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
-import { formatCurrency, formatTimeAgo, getScoreColor } from "@/lib/format";
-import type { Deployer } from "@/lib/types";
+import { formatCurrency, getScoreColor } from "@/lib/format";
 import type { PulseItem } from "@/lib/types";
 import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff } from "lucide-react";
 
