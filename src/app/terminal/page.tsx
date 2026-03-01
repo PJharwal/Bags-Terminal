@@ -160,7 +160,6 @@ export default function TerminalIndexPage() {
 
 // Token Card Component
 function TokenCard({
-    id,
     symbol,
     name,
     marketCap,

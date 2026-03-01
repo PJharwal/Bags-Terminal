@@ -146,11 +146,12 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
-  const { items, loadInitialData, isInitialLoading } = usePulseStore();
+  const { items, loadInitialData } = usePulseStore();
   const { connect, isConnected } = useSocketStore();
   const { setVisible } = useWalletModal();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     connect();
     // Load initial data from GMGN/DexScreener while socket connects

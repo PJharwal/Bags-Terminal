@@ -25,17 +25,6 @@ export interface TokenAuditResult {
     safeCount: number;
 }
 
-// Risk thresholds (from omnera)
-const RISK_THRESHOLDS = {
-    bundler_count: { danger: 100, warning: 50 },
-    sniper_count: { danger: 30, warning: 15 },
-    fresh_wallet_count: { warning: 50 },
-    insider_count: { danger: 0 }, // Any insider = danger
-} as const;
-
-// Positive signals (more = better)
-const POSITIVE_SIGNALS = ['smart_degen_count', 'renowned_count', 'bluechip_owner_count'];
-
 /**
  * Classify risk level for a specific stat
  * Extracted from omnera TokenAudit.tsx

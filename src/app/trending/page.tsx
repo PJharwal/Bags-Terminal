@@ -3,11 +3,11 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { usePulseStore, type TierFilter } from "@/store/pulse.store";
+import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
 import { bagsService } from "@/services/bags.service";
 import { formatCurrency } from "@/lib/format";
-import { TrendingUp, Loader2, RefreshCw, Coins, Users, Zap, DollarSign, Percent, Award, Clock, Wallet } from "lucide-react";
+import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet } from "lucide-react";
 import type { PulseItem } from "@/lib/types";
 import type { BagsTokenCreator } from "@/lib/bags-types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
@@ -41,6 +41,7 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
     useEffect(() => {
         let mounted = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoadingFees(true);
         setFeeError(false);
 
@@ -232,6 +233,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
 
     useEffect(() => {
         let mounted = true;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setIsLoadingFees(true);
 
         bagsService.getTokenFeeInfo(token.tokenId)

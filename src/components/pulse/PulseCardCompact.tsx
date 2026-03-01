@@ -2,11 +2,10 @@
 
 import type { PulseItem } from "@/lib/types";
 import { useSelectionStore } from "@/store/selection.store";
-import { formatAge, getRiskColor } from "@/lib/lifecycle";
+import { formatAge } from "@/lib/lifecycle";
 import { motion } from "framer-motion";
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, ExternalLink, Activity, Users, DollarSign, TrendingUp, Zap } from "lucide-react";
+import { Activity, Users, TrendingUp, Zap } from "lucide-react";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -21,7 +20,6 @@ const formatCompact = (num: number) => {
 
 export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     const { selectToken, hoverToken } = useSelectionStore();
-    const [copied, setCopied] = useState(false);
     const router = useRouter();
 
     const hasRisk = item.riskFlags.some(f => f.severity === 'critical' || f.severity === 'warn');

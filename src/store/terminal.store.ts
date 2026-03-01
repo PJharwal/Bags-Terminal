@@ -16,9 +16,6 @@ import { generateCredibilityMatrix, type RealTokenData } from '@/lib/credibility
 import { fetchTerminalTokenData, type GMGNHolder, type GMGNTrader } from '@/services/gmgn.service';
 import { bagsService } from '@/services/bags.service';
 
-// SOL price constant (per user spec)
-const SOL_PRICE = 140;
-
 // Transform GMGN holder data to WalletRow
 const transformHolder = (holder: GMGNHolder): WalletRow => ({
     wallet: holder.address.slice(0, 4) + '...' + holder.address.slice(-4),

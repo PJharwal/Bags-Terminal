@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useState, useRef } from "react";
-import { usePulseStore, type DisplayMode, type TierFilter } from "@/store/pulse.store";
+import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { PulseColumn } from "@/components/pulse/PulseColumn";
@@ -180,7 +180,7 @@ const ParallaxBackground = () => {
 
 export default function PulsePage() {
     const { items, getFilteredItems, filters, setFilters, addItem, setConnected, clearItems } = usePulseStore();
-    const { connect, isConnected, latestTokens, latestTrades } = useSocketStore();
+    const { connect, isConnected, latestTokens } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const [network, setNetwork] = useState<Network>('solana');
     const [isLoading, setIsLoading] = useState(false);
