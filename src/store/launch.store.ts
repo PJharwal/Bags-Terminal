@@ -7,13 +7,24 @@ import type {
   LaunchResult,
   SendTransactionFn,
   SolanaConnection,
+  TipConfig,
 } from '@/lib/bags-types';
+import { MAX_FEE_CLAIMERS } from '@/lib/bags-types';
 
 interface LaunchStore {
   // Form state
   metadata: BagsTokenMetadata;
   feeClaimers: FeeClaimerConfig[];
   initialBuyAmount: number;
+
+  // Image source mode
+  imageSourceMode: 'upload' | 'url';
+  imageUrl: string; // Direct URL (skips IPFS)
+
+  // Tip configuration
+  tipEnabled: boolean;
+  tipWallet: string;
+  tipAmountSol: number;
 
   // Upload state
   uploadedImage: File | null;
@@ -29,7 +40,12 @@ interface LaunchStore {
   // Actions
   updateMetadata: (updates: Partial<BagsTokenMetadata>) => void;
   setUploadedImage: (file: File | null) => void;
+  setImageSourceMode: (mode: 'upload' | 'url') => void;
+  setImageUrl: (url: string) => void;
   setInitialBuyAmount: (amount: number) => void;
+  setTipEnabled: (enabled: boolean) => void;
+  setTipWallet: (wallet: string) => void;
+  setTipAmountSol: (amount: number) => void;
   addFeeClaimer: (claimer: FeeClaimerConfig) => void;
   removeFeeClaimer: (id: string) => void;
   updateFeeClaimer: (id: string, updates: Partial<FeeClaimerConfig>) => void;
@@ -52,6 +68,11 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   metadata: { ...defaultMetadata },
   feeClaimers: [],
   initialBuyAmount: 0.1,
+  imageSourceMode: 'upload',
+  imageUrl: '',
+  tipEnabled: false,
+  tipWallet: '',
+  tipAmountSol: 0,
   uploadedImage: null,
   imagePreviewUrl: null,
   ipfsUrl: null,
@@ -73,11 +94,24 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     }
   },
 
+  setImageSourceMode: (mode) => set({ imageSourceMode: mode }),
+
+  setImageUrl: (url) => set({ imageUrl: url }),
+
   setInitialBuyAmount: (amount) => set({ initialBuyAmount: amount }),
 
-  addFeeClaimer: (claimer) => set((state) => ({
-    feeClaimers: [...state.feeClaimers, claimer],
-  })),
+  setTipEnabled: (enabled) => set({ tipEnabled: enabled }),
+
+  setTipWallet: (wallet) => set({ tipWallet: wallet }),
+
+  setTipAmountSol: (amount) => set({ tipAmountSol: amount }),
+
+  addFeeClaimer: (claimer) => set((state) => {
+    if (state.feeClaimers.length >= MAX_FEE_CLAIMERS) {
+      return state;
+    }
+    return { feeClaimers: [...state.feeClaimers, claimer] };
+  }),
 
   removeFeeClaimer: (id) => set((state) => ({
     feeClaimers: state.feeClaimers.filter((c) => c.id !== id),
@@ -129,35 +163,81 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     set({ status: 'uploading_image', error: null });
 
     try {
-      // Step 1: Upload image if needed
+      // Step 1: Resolve image URL
       let imageUrl = state.ipfsUrl;
-      if (!imageUrl && state.uploadedImage) {
+
+      if (state.imageSourceMode === 'url' && state.imageUrl) {
+        // Direct URL mode — skip IPFS upload entirely
+        imageUrl = state.imageUrl;
+      } else if (!imageUrl && state.uploadedImage) {
+        // Upload to IPFS
         const uploadResult = await bagsService.uploadTokenImage(state.uploadedImage);
         imageUrl = uploadResult.ipfsUrl;
         set({ ipfsUrl: imageUrl });
       }
       if (!imageUrl) throw new Error('No image available');
 
-      // Step 2: Create fee share config if needed
+      // Step 2: Create fee share config
+      // For >15 claimers, lookup tables are needed
       set({ status: 'creating_config' });
       let configKey = state.configKey;
       if (!configKey && state.feeClaimers.length > 0) {
-        configKey = await bagsService.createFeeShareConfig(state.feeClaimers);
+        if (state.feeClaimers.length > 15) {
+          // Create lookup tables first for large claimer sets
+          const lutConfig = await bagsService.getConfigLookupTableTransactions(
+            walletAddress,
+            state.feeClaimers.length
+          );
+
+          // Sign and send LUT creation transactions
+          const { Transaction, VersionedTransaction } = await import('@solana/web3.js');
+          for (const serializedTx of lutConfig.transactions) {
+            const txBuffer = Buffer.from(serializedTx, 'base64');
+            let tx;
+            try {
+              tx = VersionedTransaction.deserialize(txBuffer);
+            } catch {
+              tx = Transaction.from(txBuffer);
+            }
+            const sig = await sendTransaction(tx, connection);
+            await connection.confirmTransaction(sig, 'confirmed');
+          }
+
+          // Wait for slots to pass (required between LUT creation and extension)
+          await new Promise((r) => setTimeout(r, 2000));
+
+          configKey = await bagsService.createFeeShareConfig(
+            state.feeClaimers,
+            [lutConfig.lookupTableAddress]
+          );
+        } else {
+          configKey = await bagsService.createFeeShareConfig(state.feeClaimers);
+        }
         set({ configKey });
       }
       if (!configKey) throw new Error('No fee share config');
 
-      // Step 3: Create launch transaction
+      // Step 3: Create launch transaction with optional tip
       set({ status: 'generating_tx' });
       const fullMetadata: BagsTokenMetadata = {
         ...state.metadata,
         image: imageUrl,
+        ...(state.imageSourceMode === 'url' && state.imageUrl ? { imageUrl: state.imageUrl } : {}),
       };
+
+      const tip: TipConfig | undefined = state.tipEnabled && state.tipWallet && state.tipAmountSol > 0
+        ? {
+            tipWallet: state.tipWallet,
+            tipLamports: Math.floor(state.tipAmountSol * 1_000_000_000),
+          }
+        : undefined;
+
       const launchResult = await bagsService.createTokenLaunch(
         fullMetadata,
         configKey,
         state.initialBuyAmount,
-        walletAddress
+        walletAddress,
+        tip
       );
 
       // Step 4: Sign and send
@@ -196,6 +276,11 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     metadata: { ...defaultMetadata },
     feeClaimers: [],
     initialBuyAmount: 0.1,
+    imageSourceMode: 'upload',
+    imageUrl: '',
+    tipEnabled: false,
+    tipWallet: '',
+    tipAmountSol: 0,
     uploadedImage: null,
     imagePreviewUrl: null,
     ipfsUrl: null,

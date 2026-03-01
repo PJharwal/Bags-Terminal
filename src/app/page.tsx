@@ -382,7 +382,7 @@ export default function HomePage() {
       <footer className="py-12 mt-24 border-t border-white/10 bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="text-xs font-mono text-[#444]">
-            BAGS TERMINAL // SYSTEM V2.4.1
+            BAGS TERMINAL // SYSTEM V3.0.0
           </div>
           <div className="flex gap-6 text-xs font-mono text-[#888]">
             <a href="#" className="hover:text-[#39FF14] transition-colors">DOCS</a>
