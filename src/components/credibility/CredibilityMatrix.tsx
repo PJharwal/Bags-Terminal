@@ -5,7 +5,6 @@ import { useTerminalStore } from "@/store/terminal.store";
 import {
     Shield,
     AlertTriangle,
-    CheckCircle,
     Info,
     TrendingUp,
     TrendingDown,
@@ -103,7 +102,7 @@ function ScoreRow({
     );
 }
 
-export function CredibilityMatrix({ tokenId, layout, matrix: externalMatrix }: CredibilityMatrixProps) {
+export function CredibilityMatrix({ layout, matrix: externalMatrix }: CredibilityMatrixProps) {
     const storeMatrix = useTerminalStore(state => state.credibilityMatrix);
     const matrix = externalMatrix ?? storeMatrix;
 

@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatCurrency, formatNumber } from "@/lib/format";
-import { formatAge, getBondingColor, getRiskColor } from "@/lib/lifecycle";
+import { formatAge } from "@/lib/lifecycle";
 import { generateCredibilityMatrix } from "@/lib/credibility";
 import { CredibilityMatrix } from "@/components/credibility/CredibilityMatrix";
 import { motion, AnimatePresence } from "framer-motion";

@@ -2,8 +2,8 @@
 
 import { useTerminalStore } from "@/store/terminal.store";
 import { DrawerShell } from "./DrawerShell";
-import { formatCurrency, formatNumber, formatTimeAgo, getScoreColor } from "@/lib/format";
-import { Shield, AlertTriangle, Terminal, Activity, Zap, BarChart3, Users } from "lucide-react";
+import { formatCurrency, formatNumber, formatTimeAgo } from "@/lib/format";
+import { Shield, AlertTriangle, Terminal, BarChart3 } from "lucide-react";
 
 function StatBlock({ label, value, color = "text-[#EDEDED]" }: { label: string; value: string | number; color?: string }) {
     return (

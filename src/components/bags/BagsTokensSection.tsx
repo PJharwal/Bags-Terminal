@@ -12,7 +12,6 @@ import {
   X,
   ExternalLink,
   Award,
-  TrendingUp,
   RefreshCw,
   ChevronDown,
   ChevronUp,
@@ -48,7 +47,7 @@ function formatUsd(amount: number): string {
 }
 
 // Creator card component
-function CreatorCard({ creator, index }: { creator: BagsTokenCreator; index: number }) {
+function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) {
   const [copied, setCopied] = useState(false);
   const sharePercent = creator.royaltyBps / 100;
 

@@ -9,7 +9,12 @@ const PUBLIC_API_ROUTES = [
   'token-launch/lifetime-fees',
   'token-launch/creator/v3',
   'token-launch/claim-stats',
+  'token-launch/create-token-info',
   'fee-share/token/claim-events',
+  'fee-share/wallet/v2',
+  'partner/config',
+  'partner/claimable',
+  'partner/claim',
 ];
 
 function getApiBase(path: string): string {
@@ -19,12 +24,28 @@ function getApiBase(path: string): string {
   return BAGS_API_BASE;
 }
 
-// Simple in-memory rate limiter
+// Simple in-memory rate limiter with periodic cleanup
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_MAX = 60; // requests per window
 const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const CLEANUP_INTERVAL = 5 * 60 * 1000; // Clean up every 5 minutes
+
+// Periodic cleanup of expired entries to prevent memory leaks
+let lastCleanup = Date.now();
+
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  lastCleanup = now;
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
 
 function checkRateLimit(ip: string): boolean {
+  cleanupExpiredEntries();
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
 

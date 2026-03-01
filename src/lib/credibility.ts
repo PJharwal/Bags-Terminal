@@ -1,7 +1,7 @@
 // Credibility Analysis Engine
 // Generates interpretive analysis for token credibility using real data
 
-import type { CredibilityMatrix, CredibilityGrade, PatternFlag, PatternFlagType } from './types';
+import type { CredibilityMatrix, CredibilityGrade, PatternFlag } from './types';
 import type { TokenStatsData } from '@/types/token';
 
 // Type for real token data input

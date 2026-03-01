@@ -14,7 +14,7 @@ export default function LaunchPage() {
           LAUNCH<span className="text-[#39FF14]">_</span>TOKEN
         </h1>
         <p className="text-[11px] text-[#666] font-mono mt-1">
-          Create a Solana token with built-in fee sharing
+          Create a Solana token with built-in fee sharing — no API fees, up to 100 claimers
         </p>
       </div>
 

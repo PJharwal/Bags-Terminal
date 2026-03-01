@@ -1,6 +1,7 @@
 /**
  * Bags.fm Service Layer
  * Hybrid SDK + API service for token launches, swaps, fee claims, and social linking
+ * Updated for Bags API v3 with partner config, tips, multiple claimers, and fee-share/wallet/v2
  */
 
 import type {
@@ -14,10 +15,14 @@ import type {
   SocialLink,
   SocialProvider,
   ImageUploadResponse,
-  BagsApiResponse,
   BagsTokenCreator,
   BagsTokenCreatorWithStats,
   BagsTokenClaimEvent,
+  TipConfig,
+  PartnerConfig,
+  PartnerClaimInfo,
+  FeeShareWalletInfo,
+  LookupTableConfig,
 } from '@/lib/bags-types';
 
 const BAGS_API_BASE = '/api/bags';
@@ -128,8 +133,43 @@ async function uploadTokenImage(file: File): Promise<ImageUploadResponse> {
   throw new Error('Failed to upload image after retries');
 }
 
+/**
+ * Create token info with optional IPFS bypass.
+ * When imageUrl is provided, skips IPFS upload for images.
+ * When metadataUrl is provided, skips IPFS upload entirely.
+ */
+async function createTokenInfo(
+  metadata: BagsTokenMetadata
+): Promise<{ metadataUrl: string; imageUrl: string }> {
+  const body: Record<string, string> = {
+    name: metadata.name,
+    symbol: metadata.symbol,
+    description: metadata.description,
+  };
+
+  // If metadataUrl is provided, skip IPFS entirely
+  if (metadata.metadataUrl) {
+    body.metadataUrl = metadata.metadataUrl;
+  }
+
+  // If imageUrl is provided, skip IPFS for image
+  if (metadata.imageUrl) {
+    body.imageUrl = metadata.imageUrl;
+  } else if (metadata.image) {
+    body.image = metadata.image;
+  }
+
+  const result = await postBags<{ metadataUrl: string; imageUrl: string }>(
+    '/token-launch/create-token-info',
+    body
+  );
+  if (!result) throw new Error('Failed to create token info');
+  return result;
+}
+
 async function createFeeShareConfig(
-  claimers: FeeClaimerConfig[]
+  claimers: FeeClaimerConfig[],
+  additionalLookupTables?: string[]
 ): Promise<string> {
   const result = await postBags<{ configKey: string }>('/token/fee-config', {
     claimers: claimers.map((c) => ({
@@ -138,16 +178,34 @@ async function createFeeShareConfig(
       provider: c.provider,
       percentage: c.percentage,
     })),
+    ...(additionalLookupTables && { additionalLookupTables }),
   });
   if (!result) throw new Error('Failed to create fee share config');
   return result.configKey;
+}
+
+/**
+ * Get lookup table creation transactions for configs with >15 fee claimers.
+ * Must be called and confirmed before creating the fee share config.
+ */
+async function getConfigLookupTableTransactions(
+  walletAddress: string,
+  claimerCount: number
+): Promise<LookupTableConfig> {
+  const result = await postBags<LookupTableConfig>(
+    '/token/fee-config/lookup-table',
+    { walletAddress, claimerCount }
+  );
+  if (!result) throw new Error('Failed to get lookup table transactions');
+  return result;
 }
 
 async function createTokenLaunch(
   metadata: BagsTokenMetadata,
   configKey: string,
   initialBuyAmountSol: number,
-  walletAddress: string
+  walletAddress: string,
+  tip?: TipConfig
 ): Promise<{ transaction: string; tokenMint: string }> {
   const result = await postBags<{ transaction: string; tokenMint: string }>(
     '/token/launch',
@@ -156,6 +214,7 @@ async function createTokenLaunch(
       configKey,
       initialBuyAmountSol,
       walletAddress,
+      ...(tip && { tipWallet: tip.tipWallet, tipLamports: tip.tipLamports }),
     }
   );
   if (!result) throw new Error('Failed to create launch transaction');
@@ -181,16 +240,77 @@ async function getClaimHistory(wallet: string): Promise<ClaimEvent[]> {
   return result || [];
 }
 
+/**
+ * Create claim transactions (returns Transaction[] instead of VersionedTransaction[])
+ */
 async function createClaimTransaction(
   tokenMint: string,
   walletAddress: string
-): Promise<string> {
-  const result = await postBags<{ transaction: string }>('/creator/claim', {
+): Promise<string[]> {
+  const result = await postBags<{ transactions: string[] }>('/creator/claim', {
     tokenMint,
     walletAddress,
   });
   if (!result) throw new Error('Failed to create claim transaction');
-  return result.transaction;
+  // Support both single transaction (legacy) and array of transactions (v2)
+  return result.transactions || [result as unknown as string];
+}
+
+// ==========================================
+// Partner Configuration Methods
+// ==========================================
+
+/**
+ * Create a partner configuration key for receiving fees from multiple token launches
+ */
+async function createPartnerConfig(
+  walletAddress: string
+): Promise<PartnerConfig> {
+  const result = await postBags<PartnerConfig>('/partner/config', {
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to create partner config');
+  return result;
+}
+
+/**
+ * Get partner configuration for a wallet
+ */
+async function getPartnerConfig(wallet: string): Promise<PartnerConfig | null> {
+  return fetchBags<PartnerConfig>(`/partner/config?wallet=${wallet}`);
+}
+
+/**
+ * Get claimable partner fees
+ */
+async function getPartnerClaimable(partnerKey: string): Promise<PartnerClaimInfo | null> {
+  return fetchBags<PartnerClaimInfo>(`/partner/claimable?partnerKey=${partnerKey}`);
+}
+
+/**
+ * Create claim transactions for partner fees
+ */
+async function createPartnerClaimTransactions(
+  partnerKey: string,
+  walletAddress: string
+): Promise<string[]> {
+  const result = await postBags<{ transactions: string[] }>('/partner/claim', {
+    partnerKey,
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to create partner claim transactions');
+  return result.transactions;
+}
+
+// ==========================================
+// Fee Share Wallet v2 Methods
+// ==========================================
+
+/**
+ * Get fee share wallet info (v2) with support for GitHub, Kick, TikTok, and Twitter
+ */
+async function getFeeShareWalletInfo(wallet: string): Promise<FeeShareWalletInfo | null> {
+  return fetchBags<FeeShareWalletInfo>(`/fee-share/wallet/v2?wallet=${wallet}`);
 }
 
 // ==========================================
@@ -252,7 +372,7 @@ async function getTokenLifetimeFees(mint: string): Promise<number> {
 }
 
 /**
- * Get all fee earners/creators for a token
+ * Get all fee earners/creators for a token (v3 endpoint with full details)
  */
 async function getTokenCreators(mint: string): Promise<BagsTokenCreator[]> {
   const result = await fetchBags<{ response: BagsTokenCreator[] }>(
@@ -315,7 +435,9 @@ export const bagsService = {
 
   // Token Launch
   uploadTokenImage,
+  createTokenInfo,
   createFeeShareConfig,
+  getConfigLookupTableTransactions,
   createTokenLaunch,
 
   // Creator
@@ -323,6 +445,15 @@ export const bagsService = {
   getClaimableFees,
   getClaimHistory,
   createClaimTransaction,
+
+  // Partner Config
+  createPartnerConfig,
+  getPartnerConfig,
+  getPartnerClaimable,
+  createPartnerClaimTransactions,
+
+  // Fee Share Wallet v2
+  getFeeShareWalletInfo,
 
   // Social
   getSocialLinks,

@@ -2,8 +2,6 @@
 // Shared logic for wallet tagging and classification
 // Used by HoldersTable, TradersTable, and CredibilityMatrix
 
-import type { HolderData, TraderData } from '@/types/token';
-
 // Wallet tag types (from omnera)
 export type WalletTag =
     | 'sniper'

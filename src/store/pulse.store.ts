@@ -3,18 +3,6 @@ import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent } from '@/types/socket';
 import { tokenService, type Token } from '@/services/token.service';
 
-// BAGS token filter - tokens from bags.fm have CA ending in 'bags'
-// For broader filtering, we now include all tokens and attempt fee data fetch
-const isBagsToken = (mint: string): boolean => {
-    return mint.toLowerCase().endsWith('bags');
-};
-
-// Check if token could potentially be a BAGS token (for fee data fetching)
-const isPotentialBagsToken = (mint: string): boolean => {
-    // All tokens from the socket could potentially be BAGS tokens
-    // We'll try to fetch fee data and silently fail if not available
-    return true;
-};
 
 // Convert token service Token to PulseItem format
 const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
