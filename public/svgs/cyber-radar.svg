@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="100%" height="100%">
+  <style>
+    .grid { stroke: rgba(255, 255, 255, 0.05); stroke-width: 1; }
+    .radar-circle { fill: none; stroke: rgba(57, 255, 20, 0.3); stroke-width: 1; }
+    .radar-sweep { fill: url(#sweep-gradient); transform-origin: 250px 250px; animation: spin 4s linear infinite; }
+    .blip { fill: #39FF14; opacity: 0; animation: fade 4s infinite; }
+    .blip1 { animation-delay: 0.5s; }
+    .blip2 { animation-delay: 2.1s; }
+    .blip3 { animation-delay: 3.5s; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    @keyframes fade { 0%, 10% { opacity: 0; } 11% { opacity: 1; filter: drop-shadow(0 0 5px #39FF14); } 50%, 100% { opacity: 0; filter: none; } }
+    .center-dot { fill: #39FF14; filter: drop-shadow(0 0 5px #39FF14); }
+  </style>
+  <defs>
+    <linearGradient id="sweep-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="rgba(57, 255, 20, 0)"/>
+      <stop offset="95%" stop-color="rgba(57, 255, 20, 0.4)"/>
+      <stop offset="100%" stop-color="#39FF14"/>
+    </linearGradient>
+    <pattern id="radar-grid" width="25" height="25" patternUnits="userSpaceOnUse">
+      <path d="M 25 0 L 0 0 0 25" fill="none" class="grid" />
+    </pattern>
+    <clipPath id="radar-clip">
+      <circle cx="250" cy="250" r="230"/>
+    </clipPath>
+  </defs>
+  
+  <rect width="500" height="500" fill="#050505"/>
+  <rect width="500" height="500" fill="url(#radar-grid)"/>
+  
+  <g clip-path="url(#radar-clip)">
+    <circle cx="250" cy="250" r="230" class="radar-circle"/>
+    <circle cx="250" cy="250" r="172.5" class="radar-circle"/>
+    <circle cx="250" cy="250" r="115" class="radar-circle"/>
+    <circle cx="250" cy="250" r="57.5" class="radar-circle"/>
+    
+    <line x1="250" y1="20" x2="250" y2="480" stroke="rgba(57, 255, 20, 0.3)" stroke-width="1"/>
+    <line x1="20" y1="250" x2="480" y2="250" stroke="rgba(57, 255, 20, 0.3)" stroke-width="1"/>
+    
+    <!-- Using a simplified polygon for compatibility instead of arc path for the sweep -->
+    <path d="M250,250 L250,20 A230,230 0 0,1 480,250 Z" class="radar-sweep"/>
+    
+    <!-- Blips -->
+    <circle cx="330" cy="180" r="4" class="blip blip1"/>
+    <circle cx="150" cy="350" r="5" class="blip blip2"/>
+    <circle cx="380" cy="380" r="3" class="blip blip3"/>
+  </g>
+  
+  <circle cx="250" cy="250" r="6" class="center-dot"/>
+  <circle cx="250" cy="250" r="230" fill="none" stroke="#39FF14" stroke-width="2"/>
+</svg>

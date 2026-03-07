@@ -30,9 +30,9 @@ const valueColors: Record<RiskLevel, string> = {
 export function TokenAudit({ stats }: TokenAuditProps) {
     if (!stats) {
         return (
-            <div className="border border-[rgba(255,255,255,0.12)] bg-[#0A0A0A] p-4 animate-pulse">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED] font-sans">TOKEN AUDIT</h3>
-                <p className="text-[#444444] text-xs mt-2 font-mono">Initializing...</p>
+            <div className="card p-4">
+                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED]">TOKEN AUDIT</h3>
+                <div className="skeleton-shimmer h-4 w-24 mt-2" />
             </div>
         );
     }
@@ -42,9 +42,9 @@ export function TokenAudit({ stats }: TokenAuditProps) {
     const scoreColor = getScoreColor(audit.score);
 
     return (
-        <div className="border border-[rgba(255,255,255,0.12)] bg-[#0A0A0A] p-4 space-y-3 font-mono">
-            <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.12)] pb-2">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED] font-sans">TOKEN AUDIT</h3>
+        <div className="card p-4 space-y-3 font-mono">
+            <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
+                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED]">TOKEN AUDIT</h3>
                 <span className="text-sm font-bold" style={{ color: scoreColor }}>
                     {audit.score}/100
                 </span>

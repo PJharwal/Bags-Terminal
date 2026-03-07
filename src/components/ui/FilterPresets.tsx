@@ -20,7 +20,7 @@ export function FilterPresets() {
 
     return (
         <div className="space-y-2">
-            <div className="text-xs text-[#9AA0A6] uppercase tracking-wider font-medium">
+            <div className="label">
                 Presets
             </div>
             <div className="flex flex-col gap-1">
@@ -28,13 +28,13 @@ export function FilterPresets() {
                     <button
                         key={preset.id}
                         onClick={() => handlePresetClick(preset.id)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-all ${activePreset === preset.id
-                                ? "bg-[#2ECC71]/20 text-[#2ECC71] border border-[#2ECC71]/30"
-                                : "bg-white/5 text-[#9AA0A6] hover:bg-white/10 hover:text-white border border-transparent"
+                        className={`btn-press w-full text-left px-3 py-2.5 text-sm transition-all ${activePreset === preset.id
+                                ? "bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/20"
+                                : "bg-white/[0.02] text-[#888] hover:bg-white/[0.04] hover:text-[#EDEDED] border border-white/[0.04]"
                             }`}
                     >
-                        <div className="font-medium">{preset.name}</div>
-                        <div className="text-[10px] opacity-70 mt-0.5">{preset.description}</div>
+                        <div className="font-bold text-xs">{preset.name}</div>
+                        <div className="text-[9px] opacity-60 mt-0.5 font-mono">{preset.description}</div>
                     </button>
                 ))}
             </div>

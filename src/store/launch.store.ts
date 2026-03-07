@@ -26,6 +26,9 @@ interface LaunchStore {
   tipWallet: string;
   tipAmountSol: number;
 
+  // Partner key
+  partnerKey: string;
+
   // Upload state
   uploadedImage: File | null;
   imagePreviewUrl: string | null;
@@ -46,6 +49,7 @@ interface LaunchStore {
   setTipEnabled: (enabled: boolean) => void;
   setTipWallet: (wallet: string) => void;
   setTipAmountSol: (amount: number) => void;
+  setPartnerKey: (key: string) => void;
   addFeeClaimer: (claimer: FeeClaimerConfig) => void;
   removeFeeClaimer: (id: string) => void;
   updateFeeClaimer: (id: string, updates: Partial<FeeClaimerConfig>) => void;
@@ -73,6 +77,7 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   tipEnabled: false,
   tipWallet: '',
   tipAmountSol: 0,
+  partnerKey: '',
   uploadedImage: null,
   imagePreviewUrl: null,
   ipfsUrl: null,
@@ -110,6 +115,8 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   setTipWallet: (wallet) => set({ tipWallet: wallet }),
 
   setTipAmountSol: (amount) => set({ tipAmountSol: amount }),
+
+  setPartnerKey: (key) => set({ partnerKey: key }),
 
   addFeeClaimer: (claimer) => set((state) => {
     if (state.feeClaimers.length >= MAX_FEE_CLAIMERS) {
@@ -242,7 +249,7 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
         configKey,
         state.initialBuyAmount,
         walletAddress,
-        tip
+        (tip || state.partnerKey) ? { tip, ...(state.partnerKey && { partner: state.partnerKey }) } : undefined
       );
 
       // Step 4: Sign and send
@@ -286,6 +293,7 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     tipEnabled: false,
     tipWallet: '',
     tipAmountSol: 0,
+    partnerKey: '',
     uploadedImage: null,
     imagePreviewUrl: null,
     ipfsUrl: null,

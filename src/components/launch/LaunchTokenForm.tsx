@@ -2,7 +2,7 @@
 
 import { useRef } from 'react';
 import { useLaunchStore } from '@/store/launch.store';
-import { Upload, Image as ImageIcon, Link, Heart } from 'lucide-react';
+import { Upload, Image as ImageIcon, Link, Heart, Handshake } from 'lucide-react';
 
 const BUY_PRESETS = [0.1, 0.5, 1, 2];
 const TIP_PRESETS = [0.01, 0.05, 0.1];
@@ -25,6 +25,8 @@ export function LaunchTokenForm() {
     setTipEnabled,
     setTipWallet,
     setTipAmountSol,
+    partnerKey,
+    setPartnerKey,
   } = useLaunchStore();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -38,59 +40,59 @@ export function LaunchTokenForm() {
 
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="text-sm font-bold text-[#EDEDED] uppercase tracking-widest">Token Metadata</h2>
+      <h2 className="text-sm font-bold text-[#EDEDED] uppercase tracking-widest text-display">Token Metadata</h2>
 
       {/* Name */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Name</label>
+        <label className="label">Name</label>
         <input
           type="text"
           value={metadata.name}
           onChange={(e) => updateMetadata({ name: e.target.value.slice(0, 32) })}
-          className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+          className="input px-3 py-2 text-sm"
           placeholder="My Token"
           maxLength={32}
         />
-        <span className="text-[8px] text-[#444] font-mono text-right">{metadata.name.length}/32</span>
+        <span className="label text-right" style={{ fontSize: '8px' }}>{metadata.name.length}/32</span>
       </div>
 
       {/* Symbol */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Symbol</label>
+        <label className="label">Symbol</label>
         <input
           type="text"
           value={metadata.symbol}
           onChange={(e) => updateMetadata({ symbol: e.target.value.toUpperCase().slice(0, 10) })}
-          className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none uppercase"
+          className="input px-3 py-2 text-sm uppercase"
           placeholder="TKN"
           maxLength={10}
         />
-        <span className="text-[8px] text-[#444] font-mono text-right">{metadata.symbol.length}/10</span>
+        <span className="label text-right" style={{ fontSize: '8px' }}>{metadata.symbol.length}/10</span>
       </div>
 
       {/* Description */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Description</label>
+        <label className="label">Description</label>
         <textarea
           value={metadata.description}
           onChange={(e) => updateMetadata({ description: e.target.value.slice(0, 200) })}
-          className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none resize-none h-20"
+          className="input px-3 py-2 text-sm resize-none h-20"
           placeholder="A brief description of your token..."
           maxLength={200}
         />
-        <span className="text-[8px] text-[#444] font-mono text-right">{metadata.description.length}/200</span>
+        <span className="label text-right" style={{ fontSize: '8px' }}>{metadata.description.length}/200</span>
       </div>
 
       {/* Image Source Toggle */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Token Image</label>
+        <label className="label">Token Image</label>
         <div className="flex gap-2 mb-2">
           <button
             onClick={() => setImageSourceMode('upload')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-bold uppercase border transition-colors ${
+            className={`btn-ghost btn-press flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-bold uppercase ${
               imageSourceMode === 'upload'
-                ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                : 'border-[#333] text-[#888] hover:border-[#666]'
+                ? '!border-[#39FF14] !text-[#39FF14] bg-[#39FF14]/10'
+                : ''
             }`}
           >
             <Upload size={10} />
@@ -98,10 +100,10 @@ export function LaunchTokenForm() {
           </button>
           <button
             onClick={() => setImageSourceMode('url')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-bold uppercase border transition-colors ${
+            className={`btn-ghost btn-press flex items-center gap-1.5 px-3 py-1.5 text-[9px] font-bold uppercase ${
               imageSourceMode === 'url'
-                ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                : 'border-[#333] text-[#888] hover:border-[#666]'
+                ? '!border-[#39FF14] !text-[#39FF14] bg-[#39FF14]/10'
+                : ''
             }`}
           >
             <Link size={10} />
@@ -122,7 +124,7 @@ export function LaunchTokenForm() {
             )}
             <button
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-3 py-2 border border-[#333] text-[10px] font-bold text-[#888] uppercase tracking-wider hover:border-[#39FF14] hover:text-[#39FF14] transition-all"
+              className="btn-ghost btn-press flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-wider"
             >
               <Upload size={12} />
               {imagePreviewUrl ? 'Change' : 'Upload'}
@@ -141,7 +143,7 @@ export function LaunchTokenForm() {
               type="url"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+              className="input px-3 py-2 text-[11px]"
               placeholder="https://example.com/token-image.png"
             />
             <span className="text-[8px] text-[#444] font-mono">
@@ -158,16 +160,16 @@ export function LaunchTokenForm() {
 
       {/* Initial Buy Amount */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Initial Buy (SOL)</label>
+        <label className="label">Initial Buy (SOL)</label>
         <div className="grid grid-cols-4 gap-2">
           {BUY_PRESETS.map((amount) => (
             <button
               key={amount}
               onClick={() => setInitialBuyAmount(amount)}
-              className={`py-2 text-[10px] font-mono font-bold border transition-colors ${
+              className={`btn-ghost btn-press py-2 text-[10px] font-mono font-bold ${
                 initialBuyAmount === amount
-                  ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                  : 'border-[#333] text-[#888] hover:border-[#666]'
+                  ? '!border-[#39FF14] !text-[#39FF14] bg-[#39FF14]/10'
+                  : ''
               }`}
             >
               {amount}
@@ -179,7 +181,7 @@ export function LaunchTokenForm() {
             type="number"
             value={initialBuyAmount}
             onChange={(e) => setInitialBuyAmount(parseFloat(e.target.value) || 0)}
-            className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+            className="w-full input px-3 py-2 text-sm"
             placeholder="0.1"
             step="0.1"
             min="0"
@@ -191,7 +193,7 @@ export function LaunchTokenForm() {
       {/* Tip Configuration */}
       <div className="flex flex-col gap-1.5 pt-3 border-t border-white/10">
         <div className="flex items-center justify-between">
-          <label className="text-[9px] text-[#666] uppercase tracking-widest flex items-center gap-1.5">
+          <label className="label flex items-center gap-1.5">
             <Heart size={10} />
             Optional Tip
           </label>
@@ -215,7 +217,7 @@ export function LaunchTokenForm() {
               type="text"
               value={tipWallet}
               onChange={(e) => setTipWallet(e.target.value)}
-              className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+              className="input px-3 py-2 text-[11px]"
               placeholder="Tip wallet address..."
             />
             <div className="grid grid-cols-3 gap-2">
@@ -223,10 +225,10 @@ export function LaunchTokenForm() {
                 <button
                   key={amount}
                   onClick={() => setTipAmountSol(amount)}
-                  className={`py-1.5 text-[9px] font-mono font-bold border transition-colors ${
+                  className={`btn-ghost btn-press py-1.5 text-[9px] font-mono font-bold ${
                     tipAmountSol === amount
-                      ? 'border-[#FFD700] text-[#FFD700] bg-[#FFD700]/10'
-                      : 'border-[#333] text-[#888] hover:border-[#666]'
+                      ? '!border-[#FFD700] !text-[#FFD700] bg-[#FFD700]/10'
+                      : ''
                   }`}
                 >
                   {amount} SOL
@@ -238,7 +240,7 @@ export function LaunchTokenForm() {
                 type="number"
                 value={tipAmountSol}
                 onChange={(e) => setTipAmountSol(parseFloat(e.target.value) || 0)}
-                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+                className="w-full input px-3 py-2 text-[11px]"
                 placeholder="0.01"
                 step="0.01"
                 min="0"
@@ -247,6 +249,24 @@ export function LaunchTokenForm() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Partner Key (Optional) */}
+      <div className="flex flex-col gap-1.5 pt-3 border-t border-white/10">
+        <label className="label flex items-center gap-1.5">
+          <Handshake size={10} />
+          Partner Key (Optional)
+        </label>
+        <input
+          type="text"
+          value={partnerKey}
+          onChange={(e) => setPartnerKey(e.target.value)}
+          className="input px-3 py-2 text-[11px]"
+          placeholder="Partner key for fee attribution..."
+        />
+        <span className="label" style={{ fontSize: '8px' }}>
+          Attribute launch fees to a partner wallet
+        </span>
       </div>
     </div>
   );

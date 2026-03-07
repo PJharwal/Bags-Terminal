@@ -131,11 +131,11 @@ export default function DeployersPage() {
                             </p>
                         </div>
                         <div className="flex items-center gap-4">
-                            <div className={`flex items-center gap-2 ${isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'} border ${isConnected ? 'border-[#39FF14]' : 'border-[#FF003C]'} px-3 py-1 bg-black/50`}>
+                            <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2`}>
                                 {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
                                 <span className="text-xs font-bold">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
                             </div>
-                            <div className="flex items-center gap-2 text-[#888] border border-white/10 px-3 py-1 bg-black/50">
+                            <div className="badge-muted flex items-center gap-2">
                                 <Database size={14} />
                                 <span className="text-xs font-bold">{deployers.length} DEPLOYERS</span>
                             </div>
@@ -149,7 +149,7 @@ export default function DeployersPage() {
                             placeholder="SEARCH_WALLET_OR_ALIAS..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            className="w-full bg-[#050505] border border-white/10 p-3 pl-10 text-sm text-[#EDEDED] focus:border-[#39FF14] focus:outline-none placeholder-[#444] font-mono uppercase"
+                            className="input w-full pl-10 uppercase"
                         />
                         <Search className="absolute left-3 top-3.5 text-[#666]" size={16} />
                     </div>
@@ -161,12 +161,12 @@ export default function DeployersPage() {
 
                     {filteredDeployers.length > 0 ? (
                         <table className="w-full text-sm relative z-10">
-                            <thead className="sticky top-0 bg-[#0A0A0A] z-20 border-b border-white/10">
+                            <thead className="table-header sticky top-0 z-20">
                                 <tr>
-                                    <th className="text-left py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Identity</th>
-                                    <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Reputation</th>
-                                    <th className="text-center py-3 px-4 text-[10px] text-[#666] font-bold uppercase tracking-widest">Launches</th>
-                                    <th className="text-right py-3 px-6 text-[10px] text-[#666] font-bold uppercase tracking-widest">Vol_Total</th>
+                                    <th className="text-left py-3 px-6">Identity</th>
+                                    <th className="text-center py-3 px-4">Reputation</th>
+                                    <th className="text-center py-3 px-4">Launches</th>
+                                    <th className="text-right py-3 px-6">Vol_Total</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-white/5">
@@ -174,7 +174,7 @@ export default function DeployersPage() {
                                     <tr
                                         key={deployer.wallet}
                                         onClick={() => setSelectedDeployer(deployer)}
-                                        className={`cursor-pointer transition-all duration-100 group hover:bg-[#39FF14]/5 ${selectedDeployer?.wallet === deployer.wallet
+                                        className={`table-row cursor-pointer group ${selectedDeployer?.wallet === deployer.wallet
                                                 ? "bg-[#39FF14]/10 border-l-2 border-[#39FF14]"
                                                 : "border-l-2 border-transparent"
                                             }`}
@@ -200,9 +200,9 @@ export default function DeployersPage() {
                                                 <span className={`text-sm font-bold ${getScoreColor(deployer.avg_score)}`}>
                                                     {deployer.avg_score}
                                                 </span>
-                                                <div className="w-16 h-1 bg-[#333]">
+                                                <div className="progress-bar w-16">
                                                     <div
-                                                        className={`h-full ${deployer.avg_score > 70 ? 'bg-[#39FF14]' : 'bg-[#FF003C]'}`}
+                                                        className="progress-bar-fill"
                                                         style={{ width: `${deployer.avg_score}%` }}
                                                     />
                                                 </div>
@@ -241,7 +241,7 @@ export default function DeployersPage() {
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="w-[400px] border-l border-white/10 bg-[#080808] overflow-y-auto custom-scrollbar shadow-2xl z-30"
+                        className="glass-heavy w-[400px] border-l border-white/10 overflow-y-auto custom-scrollbar shadow-2xl z-30"
                     >
                         {/* Dossier Header */}
                         <div className="p-6 border-b border-white/10 bg-[#0A0A0A] sticky top-0 z-10">
@@ -251,7 +251,7 @@ export default function DeployersPage() {
                                 </h2>
                                 <button
                                     onClick={() => setSelectedDeployer(null)}
-                                    className="text-[#666] hover:text-[#EDEDED] uppercase text-[10px] font-bold tracking-widest border border-[#333] px-2 py-1 hover:border-[#EDEDED] transition-colors"
+                                    className="btn-ghost uppercase text-[10px] font-bold tracking-widest"
                                 >
                                     CLOSE [ESC]
                                 </button>
@@ -268,14 +268,14 @@ export default function DeployersPage() {
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="bg-black/50 p-2 border border-white/10">
-                                    <div className="text-[9px] text-[#666] uppercase tracking-widest">Win_Rate</div>
-                                    <div className={`text-xl font-bold ${selectedDeployer.success_rate > 50 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                                <div className="stat-card">
+                                    <div className="label">Win_Rate</div>
+                                    <div className={`text-xl font-bold ${selectedDeployer.success_rate > 50 ? 'number-glow-green' : 'number-glow-red'}`}>
                                         {selectedDeployer.success_rate}%
                                     </div>
                                 </div>
-                                <div className="bg-black/50 p-2 border border-white/10">
-                                    <div className="text-[9px] text-[#666] uppercase tracking-widest">Total_Vol</div>
+                                <div className="stat-card">
+                                    <div className="label">Total_Vol</div>
                                     <div className="text-xl font-bold text-white">
                                         {selectedDeployer.total_volume >= 1000000
                                             ? `${(selectedDeployer.total_volume / 1000000).toFixed(1)}M`
@@ -294,14 +294,14 @@ export default function DeployersPage() {
                             {selectedDeployer.risk_flags.length > 0 ? (
                                 <div className="space-y-2">
                                     {selectedDeployer.risk_flags.map((flag) => (
-                                        <div key={flag} className="flex items-center gap-3 p-3 bg-[#FF003C]/5 border border-[#FF003C]/20 text-[#FF003C]">
+                                        <div key={flag} className="badge-red flex items-center gap-3 p-3">
                                             <AlertTriangle size={14} />
                                             <span className="text-xs font-bold uppercase">{flag.replace(/_/g, ' ')}</span>
                                         </div>
                                     ))}
                                 </div>
                             ) : (
-                                <div className="p-3 bg-[#39FF14]/5 border border-[#39FF14]/20 text-[#39FF14] flex items-center gap-3">
+                                <div className="badge-green p-3 flex items-center gap-3">
                                     <Shield size={14} />
                                     <span className="text-xs font-bold uppercase">NO_ACTIVE_FLAGS</span>
                                 </div>
@@ -321,7 +321,7 @@ export default function DeployersPage() {
                                             <span className="font-bold text-[#EDEDED]">{token.symbol}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'text-[#39FF14]' : 'text-[#888]'}`}>
+                                            <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'badge-green' : 'badge-muted'}`}>
                                                 {token.state}
                                             </span>
                                             <span className="text-xs font-mono text-[#666]">

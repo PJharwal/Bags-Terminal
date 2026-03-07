@@ -1,7 +1,8 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Twitter, Coins } from "lucide-react";
+import { Copy, ExternalLink, Globe, Twitter } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
+import { BagsLogo } from "@/components/ui/BagsLogo";
 
 // Provider icon mapping
 const providerIcons: Record<string, string> = {
@@ -49,7 +50,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
     const priceChangeSign = token.priceChange24h >= 0 ? "+" : "";
 
     return (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#0A0A0A]">
+        <div className="glass-heavy gradient-border flex items-center justify-between px-4 py-3">
             {/* Left: Token Info */}
             <div className="flex items-center gap-4">
                 {/* Token Image & Symbol */}
@@ -70,6 +71,11 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
                             <span className="text-sm font-bold text-[#EDEDED]">{token.symbol}</span>
+                            {token.hasBagsFees && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#39FF14]/10 border border-[#39FF14]/20 text-[8px] text-[#39FF14] font-bold uppercase">
+                                    <BagsLogo size={10} /> BAGS
+                                </span>
+                            )}
                             <span className="text-xs text-[#666]">{token.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
@@ -92,12 +98,12 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
 
                 {/* Price */}
                 <div className="flex flex-col">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">Price</span>
+                    <span className="label">Price</span>
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-bold text-[#EDEDED]">
                             ${formatPrice(token.priceUsd)}
                         </span>
-                        <span className={`text-[10px] font-mono ${priceChangeColor}`}>
+                        <span className={`text-[10px] font-mono ${token.priceChange24h >= 0 ? 'number-glow-green' : 'number-glow-red'}`}>
                             {priceChangeSign}{token.priceChange24h.toFixed(1)}%
                         </span>
                     </div>
@@ -113,13 +119,13 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <StatItem label="HOLDERS" value={formatNumber(token.holders)} />
 
                 {/* Fees - highlighted if has Bags fees */}
-                <div className="flex flex-col">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">FEES</span>
+                <div className={`flex flex-col ${token.hasBagsFees ? "px-2 py-1 bg-[#FFD700]/5 border border-[#FFD700]/10 rounded" : ""}`}>
+                    <span className={`${token.hasBagsFees ? "label-gold" : "label"} flex items-center gap-1`}>
+                        {token.hasBagsFees && <BagsLogo size={10} />}
+                        FEES
+                    </span>
                     <div className="flex items-center gap-1">
-                        {token.hasBagsFees && (
-                            <Coins size={10} className="text-[#FFD700]" />
-                        )}
-                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "text-[#FFD700]" : "text-[#EDEDED]"}`}>
+                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "number-glow-gold" : "text-[#EDEDED]"}`}>
                             {formatSOL(token.lifetimeFees)} SOL
                         </span>
                     </div>
@@ -128,7 +134,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 {/* Fee Earners Badge */}
                 {token.hasBagsFees && token.feeEarners.length > 0 && (
                     <div className="flex flex-col">
-                        <span className="text-[9px] text-[#666] uppercase tracking-widest">EARNERS</span>
+                        <span className="label">EARNERS</span>
                         <div className="flex items-center gap-1">
                             {token.topEarner && (
                                 <span className="text-[10px] text-[#00F0FF] font-mono">
@@ -151,11 +157,11 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
 
                 {/* Bonding Progress */}
                 <div className="flex flex-col">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">BONDING</span>
+                    <span className="label">BONDING</span>
                     <div className="flex items-center gap-2">
-                        <div className="w-16 h-1.5 bg-[#333] rounded-full overflow-hidden">
+                        <div className="progress-bar w-16">
                             <div
-                                className="h-full bg-gradient-to-r from-[#39FF14] to-[#00F0FF]"
+                                className="progress-bar-fill"
                                 style={{ width: `${token.bondingProgress}%` }}
                             />
                         </div>
@@ -195,7 +201,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
 function StatItem({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex flex-col">
-            <span className="text-[9px] text-[#666] uppercase tracking-widest">{label}</span>
+            <span className="label">{label}</span>
             <span className="text-xs font-bold text-[#EDEDED] font-mono">{value}</span>
         </div>
     );
@@ -204,7 +210,7 @@ function StatItem({ label, value }: { label: string; value: string }) {
 function LinkButton({ icon, title }: { icon: React.ReactNode; title: string }) {
     return (
         <button
-            className="p-1.5 bg-[#1A1A1A] border border-white/10 rounded hover:border-[#39FF14] hover:text-[#39FF14] text-[#666] transition-colors"
+            className="btn-ghost btn-press p-1.5"
             title={title}
         >
             {icon}

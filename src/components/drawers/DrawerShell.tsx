@@ -52,15 +52,15 @@ export function DrawerShell({ children, title, width = "md" }: DrawerShellProps)
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className={`fixed top-14 right-0 h-[calc(100vh-56px)] ${widthClasses[width]} bg-[#080808] border-l border-white/10 z-50 flex flex-col font-mono shadow-2xl`}
+                        className={`fixed top-14 right-0 h-[calc(100vh-56px)] ${widthClasses[width]} glass-heavy border-l border-white/[0.06] z-50 flex flex-col font-mono shadow-[0_0_60px_rgba(0,0,0,0.8)]`}
                     >
                         {/* Header */}
                         {title && (
-                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0A0A0A]">
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] gradient-border relative">
                                 <h3 className="text-sm font-bold uppercase tracking-widest text-[#EDEDED]">{title}</h3>
                                 <button
                                     onClick={closeDrawer}
-                                    className="p-1 text-[#666] hover:text-[#EDEDED] border border-transparent hover:border-[#333] transition-colors"
+                                    className="btn-ghost p-1.5 text-[#666] hover:text-[#EDEDED]"
                                 >
                                     <X size={16} />
                                 </button>

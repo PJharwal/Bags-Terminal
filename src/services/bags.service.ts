@@ -205,7 +205,11 @@ async function createTokenLaunch(
   configKey: string,
   initialBuyAmountSol: number,
   walletAddress: string,
-  tip?: TipConfig
+  options?: {
+    tip?: TipConfig;
+    partner?: string;              // Partner key for fee attribution
+    partnerConfig?: PartnerConfig;  // Full partner config object
+  }
 ): Promise<{ transaction: string; tokenMint: string }> {
   const result = await postBags<{ transaction: string; tokenMint: string }>(
     '/token/launch',
@@ -214,7 +218,9 @@ async function createTokenLaunch(
       configKey,
       initialBuyAmountSol,
       walletAddress,
-      ...(tip && { tipWallet: tip.tipWallet, tipLamports: tip.tipLamports }),
+      ...(options?.tip && { tipWallet: options.tip.tipWallet, tipLamports: options.tip.tipLamports }),
+      ...(options?.partner && { partner: options.partner }),
+      ...(options?.partnerConfig && { partnerConfig: options.partnerConfig }),
     }
   );
   if (!result) throw new Error('Failed to create launch transaction');
@@ -392,34 +398,59 @@ async function getTokenClaimStats(mint: string): Promise<BagsTokenCreatorWithSta
 }
 
 /**
- * Get claim events history for a token
+ * Get claim events history for a token.
+ * v1.2.0: supports time-based filtering via mode, from, to params.
  */
 async function getTokenClaimEvents(
   mint: string,
-  limit: number = 50,
-  offset: number = 0
+  options: {
+    limit?: number;
+    offset?: number;
+    mode?: 'all' | 'range';
+    from?: number; // Unix timestamp (seconds)
+    to?: number;   // Unix timestamp (seconds)
+  } = {}
 ): Promise<BagsTokenClaimEvent[]> {
+  const { limit = 50, offset = 0, mode, from, to } = options;
+  const params = new URLSearchParams({
+    tokenMint: mint,
+    limit: String(limit),
+    offset: String(offset),
+  });
+  if (mode) params.set('mode', mode);
+  if (from !== undefined) params.set('from', String(from));
+  if (to !== undefined) params.set('to', String(to));
+
   const result = await fetchBags<{ events: BagsTokenClaimEvent[] }>(
-    `/fee-share/token/claim-events?tokenMint=${mint}&limit=${limit}&offset=${offset}`
+    `/fee-share/token/claim-events?${params.toString()}`
   );
   return result?.events || [];
 }
 
 /**
  * Get complete fee info for a token (lifetime fees + creators)
+ * Cached for 60s to prevent API flooding
  */
+const feeInfoCache = new Map<string, { data: { lifetimeFees: number; creators: BagsTokenCreator[] } | null; ts: number }>();
+
 async function getTokenFeeInfo(mint: string): Promise<{
   lifetimeFees: number;
   creators: BagsTokenCreator[];
 } | null> {
+  const cached = feeInfoCache.get(mint);
+  if (cached && Date.now() - cached.ts < 60_000) return cached.data;
+
   try {
     const [lifetimeFees, creators] = await Promise.all([
       getTokenLifetimeFees(mint),
       getTokenCreators(mint),
     ]);
-    return { lifetimeFees, creators };
+    const data = { lifetimeFees, creators };
+    feeInfoCache.set(mint, { data, ts: Date.now() });
+    return data;
   } catch (error) {
     console.error('Failed to get token fee info:', error);
+    feeInfoCache.set(mint, { data: null, ts: Date.now() });
     return null;
   }
 }

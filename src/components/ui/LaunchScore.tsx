@@ -18,12 +18,12 @@ export function LaunchScore({ score, size = "md", showLabel = false }: LaunchSco
     return (
         <div className="flex items-center gap-2">
             <div
-                className={`${sizeClasses[size]} ${getScoreBgColor(score)} rounded-lg flex items-center justify-center font-mono font-bold ${getScoreColor(score)}`}
+                className={`${sizeClasses[size]} ${getScoreBgColor(score)} flex items-center justify-center font-mono font-bold ${getScoreColor(score)} border border-current/20 transition-all duration-300`}
             >
                 {score}
             </div>
             {showLabel && (
-                <span className="text-xs text-[#9AA0A6]">Launch Score</span>
+                <span className="label">Launch Score</span>
             )}
         </div>
     );

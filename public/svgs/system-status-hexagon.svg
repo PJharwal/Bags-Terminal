@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" width="100%" height="100%">
+  <style>
+    .bg { fill: transparent; }
+    .hex-outer { fill: none; stroke: rgba(255, 255, 255, 0.12); stroke-width: 2; transform-origin: center; transform-box: fill-box; animation: spinSlow 20s linear infinite reverse;}
+    .hex-middle { fill: none; stroke: #00F0FF; stroke-width: 1.5; stroke-dasharray: 20 10; transform-origin: center; transform-box: fill-box; animation: spinSlow 15s linear infinite; }
+    .hex-inner { fill: none; stroke: #FF003C; stroke-width: 3; transform-origin: center; transform-box: fill-box; animation: pulseHex 2s ease-in-out infinite; }
+    .core { fill: #EDEDED; transform-origin: center; transform-box: fill-box; animation: pulseHex 2s ease-in-out infinite 1s; }
+    
+    @keyframes spinSlow { 100% { transform: rotate(360deg); } }
+    @keyframes pulseHex { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.05); opacity: 1; filter: drop-shadow(0 0 10px #FF003C); } }
+    
+    .status-text { font-family: monospace; fill: #FF003C; font-size: 10px; font-weight: bold; letter-spacing: 2px; animation: blink 2s infinite; }
+    @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0.3; } }
+  </style>
+
+  <rect width="300" height="300" class="bg" />
+
+  <g transform="translate(150, 150)">
+    <!-- Pointy topped hexagons -->
+    <polygon points="0,-120 103.9,-60 103.9,60 0,120 -103.9,60 -103.9,-60" class="hex-outer" />
+    <polygon points="0,-80 69.3,-40 69.3,40 0,80 -69.3,40 -69.3,-40" class="hex-middle" />
+    <polygon points="0,-40 34.6,-20 34.6,20 0,40 -34.6,20 -34.6,-20" class="hex-inner" />
+    
+    <!-- Core -->
+    <circle cx="0" cy="0" r="8" class="core" />
+    
+    <!-- HUD details -->
+    <line x1="-140" y1="0" x2="-125" y2="0" stroke="#EDEDED" stroke-width="2" />
+    <line x1="125" y1="0" x2="140" y2="0" stroke="#EDEDED" stroke-width="2" />
+    <line x1="0" y1="-140" x2="0" y2="-125" stroke="#EDEDED" stroke-width="2" />
+    <line x1="0" y1="125" x2="0" y2="140" stroke="#EDEDED" stroke-width="2" />
+    
+    <text x="-35" y="110" class="status-text">CRITICAL</text>
+  </g>
+</svg>

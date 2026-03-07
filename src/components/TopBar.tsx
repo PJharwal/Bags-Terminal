@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Terminal, Bell } from "lucide-react";
+import { Bell } from "lucide-react";
 import { WalletButton } from "@/components/wallet/WalletButton";
+import { BagsLogo } from "@/components/ui/BagsLogo";
 
 const navItems = [
     { href: "/", label: "HOME" },
@@ -30,16 +31,16 @@ export default function TopBar() {
 
     return (
         <header
-            className={`h-14 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-50 transition-all duration-200 border-b ${scrolled
-                    ? "bg-[#050505] border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
+            className={`accent-line-top h-14 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${scrolled
+                    ? "glass-heavy border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
                     : "bg-[#050505] border-white/10"
                 } font-mono`}
         >
             {/* Logo & Nav */}
             <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-8 h-8 bg-[#EDEDED] flex items-center justify-center group-hover:bg-[#39FF14] transition-colors duration-75">
-                        <Terminal size={18} strokeWidth={2.5} className="text-black" />
+                    <div className="w-8 h-8 bg-[#EDEDED] flex items-center justify-center group-hover:bg-[#39FF14] transition-all duration-150 group-hover:shadow-[0_0_10px_rgba(57,255,20,0.3)]">
+                        <BagsLogo size={20} />
                     </div>
                     <span className="text-sm font-display font-bold tracking-tighter group-hover:text-[#39FF14] transition-colors">
                         BAGS<span className="text-[#888]">_</span>TERM
@@ -57,7 +58,7 @@ export default function TopBar() {
                                 }`}
                         >
                             {item.label}
-                            <div className={`absolute bottom-0 left-4 right-4 h-[1px] bg-[#39FF14] transition-transform duration-200 origin-left ${pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
+                            <div className={`absolute bottom-0 left-4 right-4 h-[1px] bg-[#39FF14] transition-all duration-300 origin-left ${pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
                                     ? "scale-x-100"
                                     : "scale-x-0 group-hover:scale-x-100"
                                 }`} />
@@ -72,7 +73,7 @@ export default function TopBar() {
                 <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold tracking-widest text-[#39FF14]">
                     <div className="flex gap-0.5">
                        {[1, 2, 3].map(i => (
-                         <div key={i} className={`w-[2px] h-2 bg-[#39FF14] ${i === 3 ? 'animate-pulse' : ''}`} />
+                         <div key={i} className={`w-[2px] bg-[#39FF14]/70 ${i === 1 ? 'h-1' : i === 2 ? 'h-1.5' : 'h-2 animate-pulse'}`} />
                        ))}
                     </div>
                     MAINNET<span className="text-[#444]">_</span>ONLINE
@@ -80,9 +81,9 @@ export default function TopBar() {
 
                 {/* System Controls */}
                 <div className="flex items-center gap-2">
-                    <button className="p-2 text-[#888] hover:text-[#FF003C] transition-colors relative group">
+                    <button className="p-2 text-[#888] hover:text-[#FF003C] transition-all duration-150 relative group hover:bg-white/5">
                         <Bell size={16} />
-                        <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#FF003C] group-hover:animate-ping" />
+                        <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_4px_rgba(255,0,60,0.6)] group-hover:animate-ping" />
                     </button>
 
                     <WalletButton />

@@ -6,8 +6,8 @@ import { Rocket } from 'lucide-react';
 export function EmptyState() {
   return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <div className="w-16 h-16 border border-[#333] flex items-center justify-center">
-        <Rocket size={24} className="text-[#444]" />
+      <div className="w-16 h-16 border border-white/[0.06] flex items-center justify-center bg-[#0A0A0A]">
+        <Rocket size={24} className="text-[#333]" />
       </div>
       <div className="flex flex-col items-center gap-1">
         <span className="text-sm font-bold text-[#EDEDED]">No tokens launched yet</span>
@@ -17,7 +17,7 @@ export function EmptyState() {
       </div>
       <Link
         href="/launch"
-        className="flex items-center gap-2 px-5 py-2.5 bg-[#39FF14] text-black text-[11px] font-bold uppercase tracking-wider hover:brightness-110 transition-all"
+        className="btn-primary flex items-center gap-2 px-5 py-2.5 text-[11px]"
       >
         <Rocket size={12} />
         Launch Your First Token

@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Coins, Users } from 'lucide-react';
+import { Terminal, TrendingUp, Rocket, BarChart3, Wallet } from 'lucide-react';
+import { BagsLogo } from '@/components/ui/BagsLogo';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { usePulseStore } from '@/store/pulse.store';
+import { ReferralBanner } from '@/components/referral/ReferralBanner';
 import { useSocketStore } from '@/store/socket.store';
-import { bagsService } from '@/services/bags.service';
 import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
 
@@ -25,24 +26,6 @@ const TickerToken = ({ token }: { token: PulseItem }) => (
 
 // Enhanced BAGS Token Card with fee data
 const BagsTokenCard = ({ token }: { token: PulseItem }) => {
-  const [feeData, setFeeData] = useState<{ lifetimeFees: number; creatorsCount: number } | null>(null);
-
-  useEffect(() => {
-    let mounted = true;
-    bagsService.getTokenFeeInfo(token.tokenId)
-      .then((info) => {
-        if (mounted && info) {
-          setFeeData({
-            lifetimeFees: info.lifetimeFees,
-            creatorsCount: info.creators.length,
-          });
-        }
-      })
-      .catch(() => {
-        // Token might not have fee data yet
-      });
-    return () => { mounted = false; };
-  }, [token.tokenId]);
 
   const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
   const colors = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
@@ -52,7 +35,8 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
     <Link href={`/terminal/${token.tokenId}`}>
       <motion.div
         whileHover={{ y: -4 }}
-        className="group bg-[#0A0A0A] border border-white/10 hover:border-[#39FF14] p-4 transition-all cursor-pointer h-full"
+        whileTap={{ scale: 0.98 }}
+        className="card group p-4 cursor-pointer h-full"
       >
         <div className="flex items-start gap-3 mb-3">
           {token.logoUrl ? (
@@ -67,11 +51,6 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
               <span className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors truncate">
                 {token.symbol}
               </span>
-              {feeData && feeData.lifetimeFees > 0 && (
-                <div className="inline-flex items-center gap-0.5 text-[#FFD700]" title="Fee earner">
-                  <Coins size={10} />
-                </div>
-              )}
             </div>
             <div className="text-xs text-[#666] truncate">{token.name}</div>
           </div>
@@ -86,9 +65,9 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
           <div className="flex justify-between items-center">
             <span className="text-xs text-[#888] font-mono">Bonding</span>
             <div className="flex items-center gap-2">
-              <div className="w-16 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+              <div className="progress-bar w-16">
                 <div
-                  className={`h-full transition-all ${token.bondingProgress >= 85 ? 'bg-[#39FF14]' : 'bg-[#444]'}`}
+                  className={`progress-bar-fill ${token.bondingProgress >= 85 ? 'glow' : ''}`}
                   style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
                 />
               </div>
@@ -103,27 +82,6 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
             <span className="text-sm font-mono text-white">{token.holders || '—'}</span>
           </div>
 
-          {/* Fee Earnings Row */}
-          {feeData && feeData.lifetimeFees > 0 && (
-            <div className="flex justify-between items-center pt-1 border-t border-white/5">
-              <span className="text-xs text-[#FFD700] font-mono flex items-center gap-1">
-                <Coins size={10} /> Earnings
-              </span>
-              <span className="text-sm font-mono text-[#FFD700] font-bold">
-                {feeData.lifetimeFees < 1 ? feeData.lifetimeFees.toFixed(3) : feeData.lifetimeFees.toFixed(2)} SOL
-              </span>
-            </div>
-          )}
-
-          {/* Fee Earners Count */}
-          {feeData && feeData.creatorsCount > 0 && (
-            <div className="flex justify-between items-center">
-              <span className="text-xs text-[#888] font-mono flex items-center gap-1">
-                <Users size={10} /> Fee Earners
-              </span>
-              <span className="text-sm font-mono text-white">{feeData.creatorsCount}</span>
-            </div>
-          )}
         </div>
 
         {/* State badge */}
@@ -197,8 +155,8 @@ export default function HomePage() {
             {/* Hero — Not Connected */}
             <section className="pt-24 pb-16 px-6">
               <div className="max-w-6xl mx-auto text-center">
-                <div className="inline-flex items-center gap-2 border border-[#39FF14] px-3 py-1 text-[10px] text-[#39FF14] uppercase tracking-widest mb-8">
-                  <span className={`w-1.5 h-1.5 ${isConnected ? 'bg-[#39FF14]' : 'bg-[#FF003C]'} animate-pulse`} />
+                <div className={`inline-flex items-center gap-2 px-3 py-1 text-[10px] uppercase tracking-widest mb-8 ${isConnected ? 'badge-green' : 'badge-muted'}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14] shadow-[0_0_6px_rgba(57,255,20,0.6)]' : 'bg-[#FF003C] shadow-[0_0_6px_rgba(255,0,60,0.6)]'} animate-pulse`} />
                   {isConnected ? 'System Online' : 'Connecting...'}
                 </div>
 
@@ -225,9 +183,10 @@ export default function HomePage() {
                 <motion.button
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
+                  whileTap={{ scale: 0.97 }}
                   transition={{ delay: 0.2 }}
                   onClick={() => setVisible(true)}
-                  className="group relative px-12 py-5 bg-[#EDEDED] text-black font-bold uppercase tracking-wider overflow-hidden"
+                  className="group relative px-12 py-5 bg-[#EDEDED] text-black font-bold uppercase tracking-wider overflow-hidden transition-all duration-150 hover:shadow-[0_0_20px_rgba(57,255,20,0.2)]"
                 >
                   <div className="absolute inset-0 bg-[#39FF14] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                   <span className="relative z-10 group-hover:text-black flex items-center gap-3">
@@ -279,12 +238,17 @@ export default function HomePage() {
                   <p className="text-xl text-[#888] font-mono">{shortenedAddress}</p>
                 </motion.div>
 
+                <div className="mb-8">
+                  <ReferralBanner />
+                </div>
+
                 {/* Quick Actions */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
                   <Link href="/launch">
                     <motion.div
                       whileHover={{ y: -4 }}
-                      className="group bg-[#0A0A0A] border border-white/10 hover:border-[#39FF14] p-6 transition-all cursor-pointer"
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
                     >
                       <Rocket className="text-[#39FF14] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
@@ -297,7 +261,8 @@ export default function HomePage() {
                   <Link href="/creator">
                     <motion.div
                       whileHover={{ y: -4 }}
-                      className="group bg-[#0A0A0A] border border-white/10 hover:border-[#39FF14] p-6 transition-all cursor-pointer"
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
                     >
                       <BarChart3 className="text-[#00F0FF] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
@@ -310,7 +275,8 @@ export default function HomePage() {
                   <Link href="/pulse">
                     <motion.div
                       whileHover={{ y: -4 }}
-                      className="group bg-[#0A0A0A] border border-white/10 hover:border-[#39FF14] p-6 transition-all cursor-pointer"
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
                     >
                       <Terminal className="text-[#FAFF00] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
@@ -334,7 +300,7 @@ export default function HomePage() {
                     </h2>
                     <Link
                       href="/pulse"
-                      className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
+                      className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-all duration-200 hover:tracking-[0.2em]"
                     >
                       View All →
                     </Link>
@@ -356,7 +322,7 @@ export default function HomePage() {
                   <h2 className="text-2xl font-display font-bold">Trending BAGS</h2>
                   <Link
                     href="/pulse"
-                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-colors"
+                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-all duration-200 hover:tracking-[0.2em]"
                   >
                     View All →
                   </Link>
@@ -380,15 +346,16 @@ export default function HomePage() {
       </div>
 
       {/* Footer */}
-      <footer className="py-12 mt-24 border-t border-white/10 bg-[#050505]">
+      <footer className="gradient-border py-12 mt-24 border-t border-white/10 bg-[#050505]">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="text-xs font-mono text-[#444]">
+          <div className="flex items-center gap-3 text-xs font-mono text-[#444]">
+            <BagsLogo size={16} />
             BAGS TERMINAL // SYSTEM V3.0.0
           </div>
           <div className="flex gap-6 text-xs font-mono text-[#888]">
-            <a href="#" className="hover:text-[#39FF14] transition-colors">DOCS</a>
-            <a href="#" className="hover:text-[#39FF14] transition-colors">API</a>
-            <a href="#" className="hover:text-[#39FF14] transition-colors">STATUS</a>
+            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>
+            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">API</a>
+            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">STATUS</a>
           </div>
         </div>
       </footer>

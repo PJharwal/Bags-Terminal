@@ -20,7 +20,7 @@ export function TerminalToolbar() {
 function ToolbarButton({ icon, title, active = false }: { icon: React.ReactNode; title: string; active?: boolean }) {
     return (
         <button
-            className={`p-2 rounded transition-colors ${active
+            className={`p-2 transition-colors ${active
                     ? 'bg-[#39FF14]/20 text-[#39FF14]'
                     : 'text-[#666] hover:text-[#EDEDED] hover:bg-white/5'
                 }`}

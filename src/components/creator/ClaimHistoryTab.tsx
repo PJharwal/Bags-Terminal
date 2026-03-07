@@ -24,7 +24,7 @@ export function ClaimHistoryTab() {
         return (
           <div
             key={event.id}
-            className="flex items-center justify-between p-3 bg-[#0A0A0A] border border-white/10"
+            className="card flex items-center justify-between p-3"
           >
             <div className="flex flex-col gap-0.5">
               <div className="flex items-center gap-2">

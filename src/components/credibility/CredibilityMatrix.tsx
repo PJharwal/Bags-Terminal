@@ -108,8 +108,8 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
 
     if (!matrix) {
         return (
-            <div className={`${layout === 'terminal' ? 'p-4' : 'p-3'} bg-[#0A0A0A] border border-white/10`}>
-                <div className="flex items-center gap-2 text-[#666] text-xs">
+            <div className={`${layout === 'terminal' ? 'p-4' : 'p-3'} card`}>
+                <div className="flex items-center gap-2 text-[#555] text-xs">
                     <Shield size={14} />
                     <span className="font-mono uppercase tracking-wider">Loading credibility...</span>
                 </div>
@@ -123,12 +123,12 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
         const gradeColor = getGradeColor(matrix.overallGrade);
 
         return (
-            <div className="p-3 bg-[#0A0A0A] border border-white/10">
+            <div className="card p-3">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                        <Shield size={12} className="text-[#666]" />
-                        <span className="text-[10px] text-[#666] uppercase tracking-widest font-mono">Credibility</span>
+                        <Shield size={12} className="text-[#555]" />
+                        <span className="label">Credibility</span>
                     </div>
                     <div className="flex items-center gap-2">
                         <span
@@ -155,9 +155,9 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
 
     // Full Terminal layout
     return (
-        <div className="bg-[#0A0A0A] border border-white/10">
+        <div className="card">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+            <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">
                     <Shield size={14} className="text-[#39FF14]" />
                     <span className="text-xs font-bold text-[#EDEDED] uppercase tracking-wider">
@@ -205,7 +205,7 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
             {/* Confidence Band */}
             <div className="px-4 py-2 border-b border-white/10">
                 <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-[#666] uppercase tracking-wider">Confidence Band</span>
+                    <span className="label">Confidence Band</span>
                     <div className="flex items-center gap-2">
                         <span className="text-xs font-mono text-[#EDEDED]">
                             {matrix.confidenceBand.range[0]} – {matrix.confidenceBand.range[1]}
@@ -218,7 +218,7 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
 
             {/* Patterns Section */}
             <div className="px-4 py-2">
-                <div className="text-[10px] text-[#666] uppercase tracking-wider mb-2">Patterns</div>
+                <div className="label mb-2">Patterns</div>
                 <div className="space-y-0.5">
                     {matrix.behaviorPatterns.length > 0 ? (
                         matrix.behaviorPatterns.map((pattern, idx) => (

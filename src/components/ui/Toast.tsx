@@ -69,10 +69,10 @@ function ToastItem({ toast: t }: { toast: Toast }) {
   const Icon = ICONS[t.type];
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2 bg-[#0A0A0A] border ${COLORS[t.type]} shadow-lg animate-in slide-in-from-right`}>
+    <div className={`flex items-center gap-2 px-3 py-2.5 bg-[#0A0A0A]/95 backdrop-blur-sm border ${COLORS[t.type]} shadow-[0_8px_32px_rgba(0,0,0,0.4)] toast-enter`}>
       <Icon size={12} />
       <span className="text-[10px] font-mono flex-1">{t.message}</span>
-      <button onClick={() => removeToast(t.id)} className="text-[#666] hover:text-[#EDEDED]">
+      <button onClick={() => removeToast(t.id)} className="text-[#666] hover:text-[#EDEDED] transition-colors duration-100 hover:scale-110 active:scale-90">
         <X size={10} />
       </button>
     </div>
