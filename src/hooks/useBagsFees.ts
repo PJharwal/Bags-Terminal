@@ -13,6 +13,7 @@ interface UseBagsFeesOptions {
   fetchClaimStats?: boolean;
   fetchClaimEvents?: boolean;
   claimEventsLimit?: number;
+  timeRange?: { from: number; to: number };
 }
 
 interface UseBagsFeesReturn {
@@ -35,6 +36,7 @@ export function useBagsFees(
     fetchClaimStats = false,
     fetchClaimEvents = false,
     claimEventsLimit = 50,
+    timeRange,
   } = options;
 
   const [lifetimeFees, setLifetimeFees] = useState<number>(0);
@@ -81,7 +83,9 @@ export function useBagsFees(
       // Optionally fetch claim events
       if (fetchClaimEvents) {
         const events = await bagsService
-          .getTokenClaimEvents(tokenMint, claimEventsLimit)
+          .getTokenClaimEvents(tokenMint, timeRange
+            ? { limit: claimEventsLimit, mode: 'range', from: timeRange.from, to: timeRange.to }
+            : { limit: claimEventsLimit })
           .catch(() => []);
         if (mountedRef.current) setClaimEvents(events);
       }
@@ -94,7 +98,7 @@ export function useBagsFees(
         setIsLoading(false);
       }
     }
-  }, [tokenMint, fetchClaimStats, fetchClaimEvents, claimEventsLimit]);
+  }, [tokenMint, fetchClaimStats, fetchClaimEvents, claimEventsLimit, timeRange?.from, timeRange?.to]);
 
   // Initial fetch and when tokenMint changes
   useEffect(() => {

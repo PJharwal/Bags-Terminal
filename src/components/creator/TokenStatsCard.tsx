@@ -15,7 +15,7 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
   const launchDate = new Date(token.createdAt).toLocaleDateString();
 
   return (
-    <div className="flex flex-col gap-3 p-4 bg-[#0A0A0A] border border-white/10 hover:border-white/20 transition-colors">
+    <div className="card flex flex-col gap-3 p-4">
       {/* Header */}
       <div className="flex items-center gap-3">
         {token.image ? (
@@ -33,24 +33,24 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col p-2 bg-[#1A1A1A]">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Launch</span>
+        <div className="stat-card flex flex-col p-2">
+          <span className="label">Launch</span>
           <span className="text-[10px] font-mono text-[#EDEDED]">{launchDate}</span>
         </div>
-        <div className="flex flex-col p-2 bg-[#1A1A1A]">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Market Cap</span>
+        <div className="stat-card flex flex-col p-2">
+          <span className="label">Market Cap</span>
           <span className="text-[10px] font-mono text-[#EDEDED]">
             ${token.marketCap.toLocaleString()}
           </span>
         </div>
-        <div className="flex flex-col p-2 bg-[#1A1A1A]">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Total Earned</span>
+        <div className="stat-card flex flex-col p-2">
+          <span className="label label-green">Total Earned</span>
           <span className="text-[10px] font-mono text-[#39FF14]">
             {token.totalFeesEarned.toFixed(4)} SOL
           </span>
         </div>
-        <div className="flex flex-col p-2 bg-[#1A1A1A]">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Claimable</span>
+        <div className="stat-card flex flex-col p-2">
+          <span className="label label-green">Claimable</span>
           <span className="text-[10px] font-mono text-[#39FF14] font-bold">
             {claimable.toFixed(4)} SOL
           </span>
@@ -62,7 +62,7 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
         <button
           onClick={onClaim}
           disabled={claimable <= 0 || isClaiming}
-          className="flex-1 flex items-center justify-center gap-1 py-2 text-[10px] font-bold uppercase tracking-wider bg-[#39FF14] text-black hover:brightness-110 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          className="btn-primary flex-1 flex items-center justify-center gap-1 py-2 text-[10px] disabled:opacity-30 disabled:cursor-not-allowed"
         >
           {isClaiming ? (
             <Loader2 size={10} className="animate-spin" />
@@ -71,7 +71,7 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
         </button>
         <Link
           href={`/terminal/${token.mint}`}
-          className="flex items-center justify-center gap-1 px-3 py-2 border border-[#333] text-[10px] font-bold text-[#888] uppercase hover:border-[#39FF14] hover:text-[#39FF14] transition-all"
+          className="btn-ghost flex items-center justify-center gap-1 px-3 py-2 text-[10px] font-bold uppercase"
         >
           <ExternalLink size={10} />
           View

@@ -7,8 +7,8 @@ import { Shield, AlertTriangle, Terminal, BarChart3 } from "lucide-react";
 
 function StatBlock({ label, value, color = "text-[#EDEDED]" }: { label: string; value: string | number; color?: string }) {
     return (
-        <div className="p-3 bg-black/20 border border-white/5 hover:border-white/10 transition-colors group">
-            <div className="text-[9px] text-[#666] uppercase tracking-widest mb-1 font-mono group-hover:text-[#888] transition-colors">{label}</div>
+        <div className="stat-card p-3 group">
+            <div className="label mb-1 group-hover:text-[#888] transition-colors">{label}</div>
             <div className={`text-sm font-bold font-mono ${color}`}>{value}</div>
         </div>
     );
@@ -76,7 +76,7 @@ export function TokenDrawer() {
                             </div>
                         )}
                         {selectedToken.insider_pct > 30 && (
-                             <div className="flex items-center gap-3 p-3 bg-[#F1C40F]/5 border border-[#F1C40F]/20 text-[#F1C40F]">
+                             <div className="flex items-center gap-3 p-3 bg-[#FAFF00]/5 border border-[#FAFF00]/20 text-[#FAFF00]">
                                 <AlertTriangle size={14} />
                                 <span className="text-xs font-bold uppercase">HIGH_INSIDER_HOLDINGS ({selectedToken.insider_pct}%)</span>
                             </div>
@@ -123,7 +123,7 @@ export function TokenDrawer() {
                             </div>
                             <div className="h-1 bg-[#111] w-full">
                                 <div
-                                    className={`h-full ${selectedToken.insider_pct > 20 ? 'bg-[#FF003C]' : 'bg-[#F1C40F]'}`}
+                                    className={`h-full ${selectedToken.insider_pct > 20 ? 'bg-[#FF003C]' : 'bg-[#FAFF00]'}`}
                                     style={{ width: `${selectedToken.insider_pct}%` }}
                                 />
                             </div>
@@ -132,7 +132,7 @@ export function TokenDrawer() {
                         <div>
                             <div className="flex justify-between text-[10px] mb-1">
                                 <span className="text-[#888]">DEV_WALLET</span>
-                                <span className={selectedToken.dev_pct > 5 ? 'text-[#F1C40F]' : 'text-[#EDEDED]'}>
+                                <span className={selectedToken.dev_pct > 5 ? 'text-[#FAFF00]' : 'text-[#EDEDED]'}>
                                     {selectedToken.dev_pct}%
                                 </span>
                             </div>
@@ -149,7 +149,7 @@ export function TokenDrawer() {
                         <h3 className="text-xs font-bold uppercase tracking-widest text-[#666] mb-3 flex items-center gap-2">
                             <Terminal size={12} /> DEPLOYER_ID
                         </h3>
-                        <div className="p-4 bg-black/40 border border-white/5 space-y-3">
+                        <div className="stat-card p-4 space-y-3">
                             <div className="flex justify-between items-center">
                                 <span className="text-[10px] text-[#666]">WALLET</span>
                                 <span className="text-xs font-mono text-[#888]">{deployerInfo.wallet.slice(0, 8)}...</span>

@@ -18,16 +18,16 @@ function formatAge(seconds: number): string {
 
 function getRiskColor(severity: string): string {
     switch (severity) {
-        case 'critical': return 'bg-[#E74C3C]';
-        case 'warn': return 'bg-[#F1C40F]';
-        default: return 'bg-[#2ECC71]';
+        case 'critical': return 'bg-[#FF003C]';
+        case 'warn': return 'bg-[#FAFF00]';
+        default: return 'bg-[#39FF14]';
     }
 }
 
 function getBondingColor(progress: number): string {
-    if (progress >= 85) return 'text-[#2ECC71]';
-    if (progress >= 50) return 'text-[#F1C40F]';
-    return 'text-[#9AA0A6]';
+    if (progress >= 85) return 'text-[#39FF14]';
+    if (progress >= 50) return 'text-[#FAFF00]';
+    return 'text-[#666]';
 }
 
 export function PulseCard({ item }: PulseCardProps) {
@@ -40,17 +40,17 @@ export function PulseCard({ item }: PulseCardProps) {
             onClick={() => selectToken(item.tokenId, 'pulse')}
             onMouseEnter={() => hoverToken(item.tokenId)}
             onMouseLeave={() => hoverToken(null)}
-            className={`p-3 rounded-lg border cursor-pointer transition-all ${isSelected
-                    ? 'bg-[#4C8DFF]/10 border-[#4C8DFF]/30'
+            className={`card p-3 cursor-pointer ${isSelected
+                    ? 'bg-[#39FF14]/5 !border-[#39FF14]/20 shadow-[0_0_12px_rgba(57,255,20,0.06)]'
                     : isHovered
-                        ? 'bg-white/[0.04] border-white/10'
-                        : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.04]'
+                        ? '!border-white/10'
+                        : ''
                 }`}
         >
             {/* Header: Symbol + Deployer */}
             <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-md bg-white/10 flex items-center justify-center text-[10px] font-bold">
+                    <div className="w-7 h-7 bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-[10px] font-bold">
                         {item.symbol.slice(1, 3)}
                     </div>
                     <div>
@@ -58,7 +58,7 @@ export function PulseCard({ item }: PulseCardProps) {
                             <span className="font-medium text-sm">{item.symbol}</span>
                             <BagsFeeIndicator tokenMint={item.tokenId} size="sm" />
                         </div>
-                        <div className="text-[10px] text-[#9AA0A6] font-mono">@{item.deployer}</div>
+                        <div className="text-[10px] text-[#555] font-mono">@{item.deployer}</div>
                     </div>
                 </div>
                 {/* Risk dots */}
@@ -76,27 +76,27 @@ export function PulseCard({ item }: PulseCardProps) {
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-x-3 gap-y-1 text-[10px]">
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">Age</span>
+                    <span className="text-[#555]">Age</span>
                     <span className="font-mono">{formatAge(item.ageSeconds)}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">Holders</span>
+                    <span className="text-[#555]">Holders</span>
                     <span className="font-mono">{formatNumber(item.holders)}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">Tx</span>
+                    <span className="text-[#555]">Tx</span>
                     <span className="font-mono">{formatNumber(item.txCount)}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">MC</span>
+                    <span className="text-[#555]">MC</span>
                     <span className="font-mono">{formatCurrency(item.marketCap)}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">Liq</span>
+                    <span className="text-[#555]">Liq</span>
                     <span className="font-mono">{formatCurrency(item.liquidity)}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <span className="text-[#9AA0A6]">Bond</span>
+                    <span className="text-[#555]">Bond</span>
                     <span className={`font-mono font-bold ${getBondingColor(item.bondingProgress)}`}>
                         {item.bondingProgress}%
                     </span>

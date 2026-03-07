@@ -58,8 +58,8 @@ export function TransactionSummary() {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-4 bg-[#0A0A0A] border border-white/10">
-      <h3 className="text-[10px] font-bold text-[#666] uppercase tracking-widest">Transaction Summary</h3>
+    <div className="card flex flex-col gap-3 p-4">
+      <h3 className="label">Transaction Summary</h3>
 
       {/* Cost Breakdown */}
       <div className="flex flex-col gap-2">
@@ -91,8 +91,8 @@ export function TransactionSummary() {
 
       {/* Large claimer set notice */}
       {feeClaimers.length > 15 && (
-        <div className="p-2 bg-[#00F0FF]/10 border border-[#00F0FF]/30">
-          <span className="text-[9px] text-[#00F0FF] font-mono">
+        <div className="badge-blue p-2.5">
+          <span className="text-[9px] font-mono">
             {feeClaimers.length} fee claimers — additional lookup table TX will be created
           </span>
         </div>
@@ -100,8 +100,8 @@ export function TransactionSummary() {
 
       {/* Balance Warning */}
       {connected && !hasSufficientBalance && (
-        <div className="p-2 bg-[#FF003C]/10 border border-[#FF003C]/30">
-          <span className="text-[9px] text-[#FF003C] font-mono">
+        <div className="badge-red p-2.5">
+          <span className="text-[9px] font-mono">
             Insufficient balance. Need {totalCost.toFixed(3)} SOL, have {(balance || 0).toFixed(3)} SOL
           </span>
         </div>
@@ -109,25 +109,25 @@ export function TransactionSummary() {
 
       {/* Status */}
       {isProcessing && (
-        <div className="flex items-center gap-2 p-2 bg-[#39FF14]/10 border border-[#39FF14]/30">
-          <Loader2 size={12} className="text-[#39FF14] animate-spin" />
-          <span className="text-[9px] text-[#39FF14] font-mono">{STATUS_LABELS[status]}</span>
+        <div className="badge-green flex items-center gap-2 p-2.5">
+          <Loader2 size={12} className="animate-spin" />
+          <span className="text-[9px] font-mono">{STATUS_LABELS[status]}</span>
         </div>
       )}
 
       {status === 'success' && result && (
-        <div className="flex items-center gap-2 p-2 bg-[#39FF14]/10 border border-[#39FF14]/30">
-          <CheckCircle2 size={12} className="text-[#39FF14]" />
-          <span className="text-[9px] text-[#39FF14] font-mono">
+        <div className="badge-green flex items-center gap-2 p-2.5">
+          <CheckCircle2 size={12} />
+          <span className="text-[9px] font-mono">
             Token launched! Redirecting to terminal...
           </span>
         </div>
       )}
 
       {status === 'error' && error && (
-        <div className="flex items-center gap-2 p-2 bg-[#FF003C]/10 border border-[#FF003C]/30">
-          <XCircle size={12} className="text-[#FF003C]" />
-          <span className="text-[9px] text-[#FF003C] font-mono">{error}</span>
+        <div className="badge-red flex items-center gap-2 p-2.5">
+          <XCircle size={12} />
+          <span className="text-[9px] font-mono">{error}</span>
         </div>
       )}
 
@@ -135,7 +135,7 @@ export function TransactionSummary() {
       <button
         onClick={handleLaunch}
         disabled={!canLaunch}
-        className="flex items-center justify-center gap-2 w-full py-3 text-sm font-bold uppercase tracking-wider bg-[#39FF14] text-black hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+        className="btn-primary flex items-center justify-center gap-2 w-full py-3 text-sm"
       >
         <Rocket size={14} />
         {!connected

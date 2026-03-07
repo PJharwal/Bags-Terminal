@@ -19,6 +19,7 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
+import { BagsLogo } from "@/components/ui/BagsLogo";
 import {
   bagsTokensService,
   type BagsTokenInfo,
@@ -58,7 +59,7 @@ function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) 
   };
 
   return (
-    <div className="flex items-center gap-3 p-3 bg-[#111] rounded border border-white/5">
+    <div className="flex items-center gap-3 p-3 stat-card">
       <div className="relative">
         {creator.pfp ? (
           <img
@@ -128,7 +129,7 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
   return (
     <motion.div
       layout
-      className="bg-[#0A0A0A] border border-[#FFD700]/30 rounded overflow-hidden"
+      className="card card-gold overflow-hidden"
     >
       {/* Main card */}
       <div
@@ -335,7 +336,7 @@ function AddTokenModal({
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="bg-[#0A0A0A] border border-white/10 rounded-lg w-full max-w-md p-6"
+        className="card w-full max-w-md p-6"
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-mono font-bold">Add BAGS Token</h3>
@@ -473,14 +474,12 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
   const totalCreators = tokens.reduce((sum, t) => sum + t.creators.length, 0);
 
   return (
-    <div className="bg-[#050505] border border-[#FFD700]/20 rounded-lg overflow-hidden">
+    <div className="bg-[#050505] border border-[#FFD700]/15 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-[#FFD700]/20 bg-gradient-to-r from-[#FFD700]/10 to-transparent">
+      <div className="p-4 border-b border-[#FFD700]/10 bg-gradient-to-r from-[#FFD700]/5 to-transparent">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-[#FFD700]/20 rounded">
-              <Coins className="text-[#FFD700]" size={24} />
-            </div>
+            <BagsLogo size={28} />
             <div>
               <h2 className="text-xl font-bold font-mono flex items-center gap-2">
                 BAGS Fee-Sharing Tokens
@@ -515,18 +514,18 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
         {/* Stats summary */}
         {tokens.length > 0 && (
           <div className="grid grid-cols-3 gap-4 mt-4">
-            <div className="bg-[#0A0A0A] rounded p-3">
-              <div className="text-[10px] text-[#888] uppercase tracking-wider">Tokens Tracked</div>
+            <div className="stat-card p-3">
+              <div className="label">Tokens Tracked</div>
               <div className="text-2xl font-mono font-bold text-white">{tokens.length}</div>
             </div>
-            <div className="bg-[#0A0A0A] rounded p-3">
-              <div className="text-[10px] text-[#888] uppercase tracking-wider">Total Fees Earned</div>
+            <div className="stat-card p-3">
+              <div className="label label-gold">Total Fees Earned</div>
               <div className="text-2xl font-mono font-bold text-[#FFD700]">
                 {formatSol(totalLifetimeFees)} SOL
               </div>
             </div>
-            <div className="bg-[#0A0A0A] rounded p-3">
-              <div className="text-[10px] text-[#888] uppercase tracking-wider">Total Creators</div>
+            <div className="stat-card p-3">
+              <div className="label">Total Creators</div>
               <div className="text-2xl font-mono font-bold text-white">{totalCreators}</div>
             </div>
           </div>

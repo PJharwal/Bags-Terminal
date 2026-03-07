@@ -95,10 +95,9 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                             </span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <span className={`${item.bondingProgress > 80 ? 'text-[#39FF14]' : 'text-[#00F0FF]'}`}>
-                                {item.bondingProgress}%
+                            <span className={`px-1 py-px rounded text-[9px] ${item.bondingProgress > 80 ? 'badge-green' : 'badge-muted'}`}>
+                                {item.bondingProgress}% BOND
                             </span>
-                            <span className="text-[#444]">BOND</span>
                         </div>
                     </div>
                 </div>
@@ -108,7 +107,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     {/* Trade/Terminal Button */}
                     <button
                         onClick={handleOpenTerminal}
-                        className="p-1.5 bg-[#1A1A1A] border border-white/10 hover:border-[#00F0FF] hover:bg-[#00F0FF]/10 text-[#666] hover:text-[#00F0FF] transition-all"
+                        className="btn-ghost p-1.5"
                         title="Open Terminal"
                     >
                         <TrendingUp size={12} />
@@ -117,7 +116,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     {/* Buy Now Button */}
                     <button
                         onClick={handleBuyNow}
-                        className="px-2 py-1 bg-[#39FF14] hover:brightness-110 text-black text-[9px] font-bold uppercase tracking-wider transition-all"
+                        className="btn-primary px-2 py-1 text-[9px]"
                         title="Buy Now"
                     >
                         <span className="flex items-center gap-1">

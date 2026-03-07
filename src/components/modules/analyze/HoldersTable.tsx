@@ -23,24 +23,24 @@ export function HoldersTable({ data }: HoldersTableProps) {
     };
 
     return (
-        <div className="border border-[rgba(255,255,255,0.12)] bg-[#0A0A0A] overflow-hidden">
-            <div className="p-4 border-b border-[rgba(255,255,255,0.12)]">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED] font-sans uppercase">Top Holders</h3>
+        <div className="card overflow-hidden">
+            <div className="p-4 border-b border-white/[0.06]">
+                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED] uppercase">Top Holders</h3>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm font-mono">
-                    <thead className="bg-[#111111] border-b border-[rgba(255,255,255,0.12)] text-[#888888]">
+                    <thead className="table-header text-[#555]">
                         <tr>
-                            <th className="p-4 font-medium uppercase text-xs">Holder</th>
-                            <th className="p-4 font-medium text-right uppercase text-xs">Balance</th>
-                            <th className="p-4 font-medium text-right uppercase text-xs">Value</th>
-                            <th className="p-4 font-medium text-right uppercase text-xs">%</th>
-                            <th className="p-4 font-medium text-center uppercase text-xs">Tags</th>
+                            <th className="p-4 font-medium uppercase text-[10px] tracking-widest">Holder</th>
+                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">Balance</th>
+                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">Value</th>
+                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">%</th>
+                            <th className="p-4 font-medium text-center uppercase text-[10px] tracking-widest">Tags</th>
                         </tr>
                     </thead>
-                    <tbody className="divide-y divide-[rgba(255,255,255,0.05)]">
+                    <tbody>
                         {data.map((holder) => (
-                            <tr key={holder.address} className="group hover:bg-white/5 transition-colors">
+                            <tr key={holder.address} className="table-row group">
                                 <td className="p-4 text-xs text-[#888888]">
                                     <div className="flex flex-col">
                                         <span className="text-[#EDEDED] font-medium">
@@ -61,7 +61,7 @@ export function HoldersTable({ data }: HoldersTableProps) {
                                 <td className="p-4 text-center">
                                     <div className="flex flex-wrap gap-1 justify-center">
                                         {holder.maker_token_tags?.map((tag) => (
-                                            <span key={tag} className="px-1.5 py-0.5 border border-[rgba(255,255,255,0.1)] bg-white/5 text-[10px] text-[#888888] uppercase tracking-wider">
+                                            <span key={tag} className="badge badge-muted text-[9px] px-1.5 py-0.5">
                                                 {tag.replace("_", " ")}
                                             </span>
                                         ))}

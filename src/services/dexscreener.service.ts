@@ -4,8 +4,9 @@
  * Docs: https://docs.dexscreener.com/api/reference
  */
 
-// Use the Next.js API proxy to avoid CORS issues
-const DEXSCREENER_BASE = '/api/dexscreener';
+// DexScreener has permissive CORS (Access-Control-Allow-Origin: *)
+// Call directly to avoid proxy overhead; fall back to proxy if needed
+const DEXSCREENER_BASE = 'https://api.dexscreener.com';
 
 export interface DexScreenerPair {
   chainId: string;

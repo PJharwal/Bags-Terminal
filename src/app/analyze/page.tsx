@@ -126,10 +126,8 @@ export default function AnalyzePage() {
         <h1 className="text-2xl font-display font-bold text-[#EDEDED] tracking-tight">
           ANALYZE<span className="text-[#39FF14]">_</span>MODULE
         </h1>
-        <div className="text-[#888888] font-mono text-sm border border-[rgba(255,255,255,0.12)] px-3 py-1 bg-[#0A0A0A]">
-          STATUS: <span className={isConnected ? "text-[#39FF14] animate-pulse" : "text-[#FF003C]"}>
-            {isConnected ? "CONNECTED" : "DISCONNECTED"}
-          </span>
+        <div className={`${isConnected ? 'badge-green' : 'badge-red'} font-mono text-sm`}>
+          STATUS: {isConnected ? "CONNECTED" : "DISCONNECTED"}
           {isConnected && <span className="ml-2 text-xs">({latestTokens.length} TOKENS)</span>}
         </div>
       </div>
@@ -143,14 +141,14 @@ export default function AnalyzePage() {
               value={tokenAddress}
               onChange={(e) => setTokenAddress(e.target.value)}
               placeholder="Enter Solana token mint address..."
-              className="w-full bg-[#0A0A0A] border border-white/10 p-4 pl-12 text-sm text-[#EDEDED] focus:border-[#39FF14] focus:outline-none placeholder-[#444] font-mono"
+              className="input w-full pl-12"
             />
             <Search className="absolute left-4 top-4.5 text-[#666]" size={18} />
           </div>
           <button
             type="submit"
             disabled={isLoading}
-            className="px-8 py-4 bg-[#39FF14] text-black font-bold text-sm uppercase tracking-wider hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -172,7 +170,7 @@ export default function AnalyzePage() {
                 key={token.mint}
                 type="button"
                 onClick={() => handleQuickSelect(token.mint, token.symbol)}
-                className="px-2 py-1 text-[10px] border border-white/10 text-[#888] hover:border-[#39FF14] hover:text-[#39FF14] transition-colors"
+                className="btn-ghost px-2 py-1 text-[10px]"
               >
                 ${token.symbol}
               </button>
@@ -183,9 +181,9 @@ export default function AnalyzePage() {
 
       {/* Error Display */}
       {error && (
-        <div className="p-4 bg-[#FF003C]/10 border border-[#FF003C]/30 flex items-center gap-3 text-[#FF003C]">
+        <div className="badge-red p-4 flex items-center gap-3 text-sm">
           <AlertCircle size={18} />
-          <span className="text-sm">{error}</span>
+          <span>{error}</span>
         </div>
       )}
 
@@ -212,9 +210,9 @@ export default function AnalyzePage() {
       {/* Empty State */}
       {!stats && !isLoading && !error && (
         <div className="text-center py-16 text-[#666]">
-          <Search size={48} className="mx-auto mb-4 opacity-30" />
-          <p className="text-lg mb-2">Enter a token address to analyze</p>
-          <p className="text-sm">Get detailed holder distribution, trader analysis, and risk assessment</p>
+          <Search size={48} className="mx-auto mb-6 opacity-20" />
+          <p className="text-lg mb-2 text-[#888]">Enter a token address to analyze</p>
+          <p className="text-sm text-[#555]">Get detailed holder distribution, trader analysis, and risk assessment</p>
         </div>
       )}
     </div>

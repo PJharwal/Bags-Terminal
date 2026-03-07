@@ -7,10 +7,10 @@ interface InsiderIndicatorProps {
 
 export function InsiderIndicator({ percentage, size = "md" }: InsiderIndicatorProps) {
     const getColor = () => {
-        if (percentage <= 10) return "text-[#2ECC71] bg-[#2ECC71]/20";
-        if (percentage <= 25) return "text-[#F1C40F] bg-[#F1C40F]/20";
-        if (percentage <= 40) return "text-[#E67E22] bg-[#E67E22]/20";
-        return "text-[#E74C3C] bg-[#E74C3C]/20";
+        if (percentage <= 10) return "text-[#39FF14] bg-[#39FF14]/10";
+        if (percentage <= 25) return "text-[#FAFF00] bg-[#FAFF00]/10";
+        if (percentage <= 40) return "text-[#FF6B35] bg-[#FF6B35]/10";
+        return "text-[#FF003C] bg-[#FF003C]/10";
     };
 
     const getRiskLabel = () => {
@@ -27,7 +27,7 @@ export function InsiderIndicator({ percentage, size = "md" }: InsiderIndicatorPr
 
     return (
         <div className="flex items-center gap-1.5">
-            <span className={`${sizeClasses[size]} ${getColor()} rounded font-mono`}>
+            <span className={`badge ${sizeClasses[size]} ${getColor()} font-mono`}>
                 {percentage}%
             </span>
             {size === "md" && (

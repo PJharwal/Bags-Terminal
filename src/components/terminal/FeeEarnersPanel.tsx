@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ChevronDown, ChevronUp, ExternalLink, Copy, Check } from "lucide-react";
+import { BagsLogo } from "@/components/ui/BagsLogo";
 import type { TokenFeeEarner } from "@/lib/types";
 
 interface FeeEarnersPanelProps {
@@ -51,14 +52,15 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
     const sortedEarners = [...feeEarners].sort((a, b) => b.royaltyBps - a.royaltyBps);
 
     return (
-        <div className={`bg-[#0D0D0D] border border-white/10 rounded-lg overflow-hidden ${className}`}>
+        <div className={`bg-[#0D0D0D] border border-white/10 overflow-hidden ${className}`}>
             {/* Header */}
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
             >
                 <div className="flex items-center gap-3">
-                    <span className="text-[10px] text-[#666] uppercase tracking-widest">Fee Earners</span>
+                    <BagsLogo size={14} />
+                    <span className="label">Fee Earners</span>
                     <span className="text-xs font-bold text-[#FFD700]">
                         {formatSOL(lifetimeFees)} SOL
                     </span>
@@ -77,7 +79,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
             {isExpanded && (
                 <div className="border-t border-white/10">
                     {/* Column Headers */}
-                    <div className="grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2 bg-[#0A0A0A] text-[9px] text-[#666] uppercase tracking-widest">
+                    <div className="table-header grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2 text-[9px] text-[#666] uppercase tracking-widest">
                         <span>Earner</span>
                         <span className="text-right">Share</span>
                         <span className="text-right">Claimed</span>
@@ -88,7 +90,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                         {sortedEarners.map((earner, idx) => (
                             <div
                                 key={`${earner.wallet}-${idx}`}
-                                className="grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2.5 hover:bg-white/5 transition-colors"
+                                className="table-row grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2.5"
                             >
                                 {/* Earner Info */}
                                 <div className="flex items-center gap-2 overflow-hidden">

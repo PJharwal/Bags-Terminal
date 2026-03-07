@@ -169,10 +169,14 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
                 bagsService.getTokenFeeInfo(tokenId).catch(() => null),
             ]);
 
-            const { tokenInfo, security, holders, traders } = gmgnData;
+            const { tokenInfo, security, holders, traders, source } = gmgnData;
 
             if (!tokenInfo) {
-                throw new Error('Failed to fetch token info from GMGN');
+                throw new Error('Token not found. Could not fetch data from any provider.');
+            }
+
+            if (source === 'dexscreener') {
+                console.log('Using DexScreener fallback for token data');
             }
 
             // Extract data from enriched response

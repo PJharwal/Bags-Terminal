@@ -24,8 +24,11 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
 
     return (
         <span
-            className={`${sizeClasses[size]} ${getStatusBgColor(status)} ${getStatusColor(status)} rounded font-medium uppercase tracking-wide`}
+            className={`badge ${sizeClasses[size]} ${getStatusBgColor(status)} ${getStatusColor(status)} font-medium`}
         >
+            {status === 'live' && (
+                <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+            )}
             {statusLabels[status]}
         </span>
     );

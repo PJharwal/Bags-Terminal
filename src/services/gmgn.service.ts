@@ -100,22 +100,26 @@ export interface GMGNWalletDistribution {
   unrealized_profit: number;
 }
 
-// Helper to handle API responses
+// Helper to handle API responses — fails fast with 5s timeout
 async function fetchGMGN<T>(endpoint: string): Promise<T | null> {
   try {
-    const response = await fetch(`${GMGN_BASE}${endpoint}`);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
+    const response = await fetch(`${GMGN_BASE}${endpoint}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
     if (!response.ok) {
-      console.error(`GMGN API error: ${response.status} ${response.statusText}`);
       return null;
     }
     const data = await response.json();
-    // Handle wrapped responses with code/data structure
     if (data && typeof data === 'object' && 'data' in data) {
       return data.data as T;
     }
     return data as T;
-  } catch (error) {
-    console.error(`GMGN API fetch error for ${endpoint}:`, error);
+  } catch {
     return null;
   }
 }
@@ -165,7 +169,9 @@ export const gmgnService = {
 };
 
 // Combined fetch for terminal token loading
+// Falls back to DexScreener if GMGN is unavailable
 export async function fetchTerminalTokenData(tokenId: string) {
+  // Try GMGN first
   const [tokenInfo, security, holders, traders] = await Promise.all([
     gmgnService.getTokenEnriched(tokenId),
     gmgnService.getTokenSecurity(tokenId),
@@ -173,11 +179,61 @@ export async function fetchTerminalTokenData(tokenId: string) {
     gmgnService.getTokenTraders(tokenId, 50),
   ]);
 
+  if (tokenInfo) {
+    return {
+      tokenInfo,
+      security,
+      holders: holders?.list || [],
+      traders: traders?.list || [],
+      source: 'gmgn' as const,
+    };
+  }
+
+  // GMGN failed — fall back to DexScreener
+  console.log('GMGN unavailable, falling back to DexScreener for', tokenId);
+  const { dexScreenerService } = await import('./dexscreener.service');
+  const dexData = await dexScreenerService.getTokenPairs(tokenId);
+
+  if (!dexData) {
+    return { tokenInfo: null, security: null, holders: [], traders: [], source: 'none' as const };
+  }
+
+  // Transform DexScreener data into the shape the terminal expects
+  const syntheticTokenInfo = {
+    info: {
+      address: dexData.address,
+      symbol: dexData.symbol,
+      name: dexData.name,
+      decimals: 9,
+      price: dexData.price,
+      price_change_24h: dexData.priceChange24h,
+      volume_24h: dexData.volume24h,
+      market_cap: dexData.marketCap,
+      liquidity: dexData.liquidity,
+      logo: dexData.logo,
+      holder_count: 0,
+      creation_timestamp: dexData.createdAt ? Math.floor(dexData.createdAt / 1000) : undefined,
+    } as GMGNTokenInfo,
+    stats: {
+      smart_degen_count: 0,
+      renowned_count: 0,
+      fresh_wallet_count: 0,
+      dex_bot_count: 0,
+      insider_count: 0,
+      following_count: 0,
+      dev_count: 0,
+      bluechip_owner_count: 0,
+      bundler_count: 0,
+      sniper_count: 0,
+    } as GMGNTokenStats,
+  };
+
   return {
-    tokenInfo,
-    security,
-    holders: holders?.list || [],
-    traders: traders?.list || [],
+    tokenInfo: syntheticTokenInfo,
+    security: null,
+    holders: [],
+    traders: [],
+    source: 'dexscreener' as const,
   };
 }
 

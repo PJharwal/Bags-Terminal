@@ -81,10 +81,8 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
         <Link href={`/terminal/${token.tokenId}`}>
             <motion.div
                 whileHover={{ y: -4 }}
-                className={`group bg-[#0A0A0A] border p-4 transition-all cursor-pointer h-full ${
-                    hasFeeData
-                        ? 'border-[#FFD700]/30 hover:border-[#FFD700]'
-                        : 'border-white/10 hover:border-[#39FF14]'
+                className={`group card p-4 cursor-pointer h-full ${
+                    hasFeeData ? 'card-gold' : ''
                 }`}
             >
                 {/* Header with token info */}
@@ -132,9 +130,9 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                             <Percent size={10} /> Bonding
                         </span>
                         <div className="flex items-center gap-2">
-                            <div className="w-16 h-1.5 bg-[#1A1A1A] rounded-full overflow-hidden">
+                            <div className="progress-bar w-16 h-1.5">
                                 <div
-                                    className={`h-full transition-all ${token.bondingProgress >= 85 ? 'bg-[#39FF14]' : 'bg-[#444]'}`}
+                                    className={`progress-bar-fill ${token.bondingProgress >= 85 ? 'bg-[#39FF14] glow' : 'bg-[#444]'}`}
                                     style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
                                 />
                             </div>
@@ -204,17 +202,17 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
                 {/* State badge */}
                 <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                    <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded ${
-                        token.state === 'MIGRATED' ? 'bg-[#39FF14]/20 text-[#39FF14]' :
-                        token.state === 'FINAL_STRETCH' ? 'bg-[#FAFF00]/20 text-[#FAFF00]' :
-                        'bg-white/10 text-[#888]'
+                    <span className={`text-[9px] px-2 py-0.5 rounded ${
+                        token.state === 'MIGRATED' ? 'badge badge-green' :
+                        token.state === 'FINAL_STRETCH' ? 'badge badge-yellow' :
+                        'badge badge-muted'
                     }`}>
                         {token.state === 'MIGRATED' ? 'LP Live' :
                          token.state === 'FINAL_STRETCH' ? 'Near Migration' :
                          'Bonding'}
                     </span>
                     {hasFeeData && (
-                        <span className="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-[#FFD700]/20 text-[#FFD700]">
+                        <span className="text-[9px] px-2 py-0.5 rounded badge badge-gold">
                             Fee Sharing
                         </span>
                     )}
@@ -267,8 +265,8 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
     const hasFeeData = feeData && (feeData.lifetimeFees > 0 || feeData.creatorsCount > 0);
 
     return (
-        <tr className={`border-b border-white/5 hover:bg-white/[0.03] cursor-pointer transition-colors ${
-            hasFeeData ? 'bg-[#FFD700]/5' : ''
+        <tr className={`table-row cursor-pointer ${
+            hasFeeData ? 'table-row-gold' : ''
         }`}>
             <td className="p-4 text-[#666] font-mono text-sm">{index + 1}</td>
             <td className="p-4">
@@ -303,7 +301,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
             <td className="p-4 text-right font-mono text-white">{formatCurrency(token.marketCap)}</td>
             <td className="p-4 text-right">
                 <div className="flex items-center justify-end gap-2">
-                    <div className="w-12 h-1 bg-[#1A1A1A] rounded-full overflow-hidden">
+                    <div className="progress-bar w-12 h-1">
                         <div
                             className={`h-full ${token.bondingProgress >= 85 ? 'bg-[#39FF14]' : 'bg-[#444]'}`}
                             style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
@@ -350,17 +348,17 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
             </td>
             <td className="p-4 text-right">
                 <div className="flex items-center justify-end gap-1">
-                    <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded ${
-                        token.state === 'MIGRATED' ? 'bg-[#39FF14]/20 text-[#39FF14]' :
-                        token.state === 'FINAL_STRETCH' ? 'bg-[#FAFF00]/20 text-[#FAFF00]' :
-                        'bg-white/10 text-[#888]'
+                    <span className={`text-[9px] px-2 py-0.5 rounded ${
+                        token.state === 'MIGRATED' ? 'badge badge-green' :
+                        token.state === 'FINAL_STRETCH' ? 'badge badge-yellow' :
+                        'badge badge-muted'
                     }`}>
                         {token.state === 'MIGRATED' ? 'LP Live' :
                          token.state === 'FINAL_STRETCH' ? 'Near Migration' :
                          'Bonding'}
                     </span>
                     {hasFeeData && (
-                        <span className="text-[8px] font-mono uppercase px-1.5 py-0.5 rounded bg-[#FFD700]/20 text-[#FFD700]">
+                        <span className="text-[8px] px-1.5 py-0.5 rounded badge badge-gold">
                             FEE
                         </span>
                     )}
@@ -445,7 +443,7 @@ export default function TrendingPage() {
                     </div>
 
                     {/* View Mode Toggle */}
-                    <div className="flex items-center gap-2 bg-[#0A0A0A] border border-white/10 rounded p-1">
+                    <div className="flex items-center gap-2 stat-card rounded p-1">
                         <button
                             onClick={() => setViewMode("all")}
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded ${
@@ -488,9 +486,9 @@ export default function TrendingPage() {
                                 <button
                                     key={filter}
                                     onClick={() => setActiveFilter(i)}
-                                    className={`px-3 py-1.5 text-xs uppercase tracking-wider border transition-colors ${activeFilter === i
-                                        ? "border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10"
-                                        : "border-white/10 text-[#888] hover:border-white/20 hover:text-white"
+                                    className={`btn-ghost px-3 py-1.5 text-xs uppercase tracking-wider ${activeFilter === i
+                                        ? "!border-[#39FF14] !text-[#39FF14] bg-[#39FF14]/10"
+                                        : ""
                                     }`}
                                 >
                                     {filter}
@@ -500,7 +498,7 @@ export default function TrendingPage() {
                         <div className="flex gap-1">
                             <button
                                 onClick={() => setView("grid")}
-                                className={`p-2 border transition-colors ${view === "grid" ? "border-[#39FF14] text-[#39FF14]" : "border-white/10 text-[#888]"}`}
+                                className={`btn-ghost p-2 ${view === "grid" ? "!border-[#39FF14] !text-[#39FF14]" : ""}`}
                             >
                                 <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z" />
@@ -508,7 +506,7 @@ export default function TrendingPage() {
                             </button>
                             <button
                                 onClick={() => setView("table")}
-                                className={`p-2 border transition-colors ${view === "table" ? "border-[#39FF14] text-[#39FF14]" : "border-white/10 text-[#888]"}`}
+                                className={`btn-ghost p-2 ${view === "table" ? "!border-[#39FF14] !text-[#39FF14]" : ""}`}
                             >
                                 <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z" />
@@ -519,26 +517,26 @@ export default function TrendingPage() {
 
             {/* Stats Bar */}
             <div className="max-w-7xl mx-auto mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
-                <div className="bg-[#0A0A0A] border border-white/10 p-4">
-                    <div className="text-[10px] text-[#888] uppercase tracking-widest mb-1">Total Tokens</div>
+                <div className="stat-card p-4">
+                    <div className="label mb-1">Total Tokens</div>
                     <div className="text-2xl font-bold text-white">{allBagsTokens.length}</div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-white/10 p-4">
-                    <div className="text-[10px] text-[#888] uppercase tracking-widest mb-1 flex items-center gap-1">
+                <div className="stat-card p-4">
+                    <div className="label mb-1 flex items-center gap-1">
                         <Zap size={10} className="text-[#39FF14]" /> LP Live
                     </div>
                     <div className="text-2xl font-bold text-[#39FF14]">{items.MIGRATED.length}</div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-white/10 p-4">
-                    <div className="text-[10px] text-[#888] uppercase tracking-widest mb-1">Near Migration</div>
+                <div className="stat-card p-4">
+                    <div className="label mb-1">Near Migration</div>
                     <div className="text-2xl font-bold text-[#FAFF00]">{items.FINAL_STRETCH.length}</div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-white/10 p-4">
-                    <div className="text-[10px] text-[#888] uppercase tracking-widest mb-1">Bonding</div>
+                <div className="stat-card p-4">
+                    <div className="label mb-1">Bonding</div>
                     <div className="text-2xl font-bold text-white">{items.NEW.length}</div>
                 </div>
-                <div className="bg-[#0A0A0A] border border-[#FFD700]/30 p-4">
-                    <div className="text-[10px] text-[#FFD700] uppercase tracking-widest mb-1 flex items-center gap-1">
+                <div className="stat-card p-4 !border-[#FFD700]/20">
+                    <div className="label label-gold mb-1 flex items-center gap-1">
                         <Coins size={10} /> Fee Sharing
                     </div>
                     <div className="text-2xl font-bold text-[#FFD700]">
@@ -581,10 +579,10 @@ export default function TrendingPage() {
 
             {/* Table View */}
             {!isLoading && view === "table" && filteredTokens.length > 0 && (
-                <div className="max-w-7xl mx-auto bg-[#0A0A0A] border border-white/10 overflow-x-auto">
+                <div className="max-w-7xl mx-auto card overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="text-[#888] text-[10px] uppercase tracking-widest border-b border-white/10">
+                            <tr className="table-header text-[#888] text-[10px] uppercase tracking-widest">
                                 <th className="text-left p-4 w-12">#</th>
                                 <th className="text-left p-4">Token</th>
                                 <th className="text-right p-4">Market Cap</th>

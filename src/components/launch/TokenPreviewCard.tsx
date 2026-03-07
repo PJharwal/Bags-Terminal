@@ -5,7 +5,7 @@ import { Image as ImageIcon, Users, Percent, Heart, Link } from 'lucide-react';
 import { MAX_FEE_CLAIMERS } from '@/lib/bags-types';
 
 export function TokenPreviewCard() {
-  const { metadata, feeClaimers, initialBuyAmount, imagePreviewUrl, imageSourceMode, imageUrl, tipEnabled, tipAmountSol } = useLaunchStore();
+  const { metadata, feeClaimers, initialBuyAmount, imagePreviewUrl, imageSourceMode, imageUrl, tipEnabled, tipAmountSol, partnerKey } = useLaunchStore();
 
   const totalPercentage = feeClaimers.reduce((sum, c) => sum + c.percentage, 0);
   const creatorShare = feeClaimers.length > 0 ? 100 - totalPercentage : 100;
@@ -13,8 +13,8 @@ export function TokenPreviewCard() {
   const displayImage = imageSourceMode === 'url' ? imageUrl : imagePreviewUrl;
 
   return (
-    <div className="flex flex-col gap-4 p-4 bg-[#0A0A0A] border border-white/10">
-      <h3 className="text-[10px] font-bold text-[#666] uppercase tracking-widest">Preview</h3>
+    <div className="card flex flex-col gap-4 p-4">
+      <h3 className="label">Preview</h3>
 
       {/* Token Header */}
       <div className="flex items-center gap-3">
@@ -49,8 +49,8 @@ export function TokenPreviewCard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2">
-        <div className="flex flex-col gap-1 p-2 bg-[#1A1A1A] border border-white/5">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Claimers</span>
+        <div className="stat-card flex flex-col gap-1 p-2.5">
+          <span className="label" style={{ fontSize: '8px' }}>Claimers</span>
           <div className="flex items-center gap-1">
             <Users size={10} className="text-[#39FF14]" />
             <span className="text-xs font-mono text-[#EDEDED]">
@@ -59,8 +59,8 @@ export function TokenPreviewCard() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col gap-1 p-2 bg-[#1A1A1A] border border-white/5">
-          <span className="text-[8px] text-[#666] uppercase tracking-widest">Creator Share</span>
+        <div className="stat-card flex flex-col gap-1 p-2.5">
+          <span className="label" style={{ fontSize: '8px' }}>Creator Share</span>
           <div className="flex items-center gap-1">
             <Percent size={10} className="text-[#39FF14]" />
             <span className="text-xs font-mono text-[#EDEDED]">{creatorShare}%</span>
@@ -69,18 +69,28 @@ export function TokenPreviewCard() {
       </div>
 
       {/* Initial Buy */}
-      <div className="flex justify-between items-center p-2 bg-[#1A1A1A] border border-white/5">
-        <span className="text-[9px] text-[#666] uppercase tracking-widest">Initial Buy</span>
+      <div className="stat-card flex justify-between items-center p-2.5">
+        <span className="label">Initial Buy</span>
         <span className="text-xs font-mono text-[#EDEDED]">{initialBuyAmount} SOL</span>
       </div>
 
       {/* Tip */}
       {tipEnabled && tipAmountSol > 0 && (
-        <div className="flex justify-between items-center p-2 bg-[#FFD700]/5 border border-[#FFD700]/20">
-          <span className="text-[9px] text-[#FFD700] uppercase tracking-widest flex items-center gap-1">
+        <div className="stat-card flex justify-between items-center p-2.5 !border-[#FFD700]/20 !bg-[linear-gradient(135deg,rgba(255,215,0,0.03)_0%,#0D0D0D_100%)]">
+          <span className="label label-gold flex items-center gap-1">
             <Heart size={8} /> Tip
           </span>
           <span className="text-xs font-mono text-[#FFD700]">{tipAmountSol} SOL</span>
+        </div>
+      )}
+
+      {/* Partner Key */}
+      {partnerKey && (
+        <div className="stat-card flex justify-between items-center p-2.5 !border-[#00F0FF]/20 !bg-[linear-gradient(135deg,rgba(0,240,255,0.03)_0%,#0D0D0D_100%)]">
+          <span className="label flex items-center gap-1" style={{ color: 'rgba(0, 240, 255, 0.6)' }}>
+            Partner
+          </span>
+          <span className="text-[10px] font-mono text-[#00F0FF]">{partnerKey.slice(0,6)}...{partnerKey.slice(-4)}</span>
         </div>
       )}
 

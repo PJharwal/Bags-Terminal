@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 100" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <style>
+    .bg { fill: transparent; }
+    .trace { fill: none; stroke: rgba(255, 255, 255, 0.2); stroke-width: 2; stroke-linejoin: bevel; }
+    .trace-highlight { fill: none; stroke: #FAFF00; stroke-width: 2; stroke-linejoin: bevel; opacity: 0; filter: drop-shadow(0 0 4px #FAFF00); }
+    .pad { fill: #0A0A0A; stroke: rgba(255, 255, 255, 0.3); stroke-width: 1.5; }
+    .flare { fill: #FAFF00; filter: drop-shadow(0 0 3px #FAFF00); opacity: 0; }
+    
+    @keyframes march { 0% { stroke-dashoffset: 200; opacity: 1; } 90% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+    @keyframes blink { 0%, 10% { opacity: 0; } 11%, 15% { opacity: 1; } 16%, 100% { opacity: 0; } }
+    @keyframes padpulse { 0%, 100% { border-color: rgba(255,255,255,0.3); } 50% { stroke: #FAFF00; } }
+
+    .glow1 { stroke-dasharray: 200; animation: march 3s linear infinite; }
+    .glow2 { stroke-dasharray: 300; animation: march 4s linear infinite 1s; }
+    .f1 { animation: blink 3s infinite 2.9s; }
+  </style>
+
+  <rect width="100%" height="100%" class="bg" />
+
+  <g transform="translate(0, 50)">
+    <!-- Circuit Trace 1 -->
+    <path class="trace" d="M 0,-30 L 50,-30 L 70,-10 L 200,-10 L 220,-30 L 400,-30 L 420,10 L 550,10 L 570,30 L 600,30" />
+    <path class="trace-highlight glow1" d="M 0,-30 L 50,-30 L 70,-10 L 200,-10 L 220,-30 L 400,-30 L 420,10 L 550,10 L 570,30 L 600,30" />
+    
+    <!-- Circuit Trace 2 -->
+    <path class="trace" d="M 0,20 L 100,20 L 120,40 L 300,40 L 320,0 L 450,0 L 470,-20 L 600,-20" />
+    <path class="trace-highlight glow2" d="M 0,20 L 100,20 L 120,40 L 300,40 L 320,0 L 450,0 L 470,-20 L 600,-20" />
+    
+    <!-- Nodes/Pads -->
+    <circle cx="50" cy="-30" r="4" class="pad" />
+    <circle cx="200" cy="-10" r="4" class="pad" />
+    <circle cx="400" cy="-30" r="4" class="pad" />
+    <circle cx="550" cy="10" r="4" class="pad" />
+    
+    <!-- Flares at the end of paths for that spark effect -->
+    <circle cx="600" cy="30" r="3" class="flare f1" />
+    
+    <!-- Small tech details -->
+    <rect x="18" y="-34" width="8" height="8" fill="rgba(255,255,255,0.1)" />
+    <rect x="25" y="-34" width="2" height="8" fill="rgba(255,255,255,0.3)" />
+    
+    <text x="5" y="-38" font-family="monospace" font-size="8" fill="#666">TR-01</text>
+    <text x="5" y="12" font-family="monospace" font-size="8" fill="#666">TR-02</text>
+  </g>
+  
+  <!-- Border outline structure -->
+  <line x1="0" y1="1" x2="600" y2="1" stroke="rgba(255, 255, 255, 0.4)" stroke-width="2" />
+  <line x1="0" y1="99" x2="600" y2="99" stroke="rgba(255, 255, 255, 0.1)" stroke-width="1" />
+</svg>

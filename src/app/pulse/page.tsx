@@ -71,9 +71,9 @@ const processApiTokenData = (data: RawTokenData, targetState: PulseState): Pulse
 const FilterButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
     <button
         onClick={onClick}
-        className={`px-3 py-1 text-[10px] font-mono font-bold uppercase tracking-wider border transition-all ${active
-            ? 'bg-[#39FF14] text-black border-[#39FF14]'
-            : 'bg-transparent text-[#888] border-[#333] hover:border-[#EDEDED] hover:text-[#EDEDED]'
+        className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all ${active
+            ? 'btn-primary'
+            : 'btn-ghost'
             }`}
     >
         {children}
@@ -82,7 +82,7 @@ const FilterButton = ({ active, onClick, children }: { active: boolean; onClick:
 
 const StatDisplay = ({ label, value, color = "text-[#EDEDED]" }: { label: string; value: string; color?: string }) => (
     <div className="flex flex-col">
-        <span className="text-[9px] text-[#666] uppercase tracking-widest font-mono">{label}</span>
+        <span className="label">{label}</span>
         <span className={`text-sm font-display font-bold ${color}`}>{value}</span>
     </div>
 );
@@ -102,7 +102,7 @@ function PulseHeader({
     isLoading: boolean;
 }) {
     return (
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#050505]">
+        <div className="flex items-center justify-between px-6 py-4 glass-heavy gradient-border">
             <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2 text-[#39FF14]">
                     <Activity size={18} />
@@ -125,7 +125,7 @@ function PulseHeader({
                 <button
                     onClick={onRefresh}
                     disabled={isLoading}
-                    className="p-1.5 border border-[#333] hover:border-[#39FF14] transition-colors disabled:opacity-50"
+                    className="btn-ghost p-1.5 disabled:opacity-50"
                     title="Refresh data"
                 >
                     <RefreshCw size={12} className={`text-[#888] ${isLoading ? 'animate-spin' : ''}`} />
@@ -133,14 +133,14 @@ function PulseHeader({
             </div>
 
             <div className="flex items-center gap-4">
-                <div className="flex border border-[#333]">
+                <div className="flex">
                     {(['solana', 'base', 'ethereum'] as Network[]).map((net) => (
                         <button
                             key={net}
                             onClick={() => onNetworkChange(net)}
-                            className={`px-4 py-1.5 text-[10px] font-mono font-bold uppercase transition-colors ${network === net
-                                ? 'bg-[#EDEDED] text-black'
-                                : 'text-[#666] hover:text-[#EDEDED]'
+                            className={`px-4 py-1.5 text-[10px] font-bold uppercase transition-all ${network === net
+                                ? 'btn-primary'
+                                : 'btn-ghost'
                                 }`}
                         >
                             {net}
@@ -348,7 +348,7 @@ export default function PulsePage() {
             />
 
             {/* Filter / Stats Bar */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 bg-[#0A0A0A]/50 backdrop-blur-md z-10">
+            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 glass z-10">
                 <div className="flex items-center gap-4">
                     <div className="flex gap-2">
                         <FilterButton active={filters.tierFilter === 'all'} onClick={() => setFilters({ tierFilter: 'all' })}>ALL</FilterButton>
@@ -358,7 +358,7 @@ export default function PulsePage() {
                     <div className="h-4 w-[1px] bg-[#333]" />
                     <button
                         onClick={() => setFilters({ hideRisky: !filters.hideRisky })}
-                        className={`flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 border transition-colors ${filters.hideRisky ? 'border-[#FF003C] text-[#FF003C]' : 'border-[#333] text-[#666]'
+                        className={`btn-ghost flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 ${filters.hideRisky ? '!border-[#FF003C] !text-[#FF003C]' : ''
                             }`}
                     >
                         <ShieldAlert size={12} />
@@ -368,10 +368,9 @@ export default function PulsePage() {
                     <button
                         onClick={() => {
                             setFilters({ bagsOnly: !filters.bagsOnly });
-                            // Refresh data when toggling filter
                             setTimeout(handleRefresh, 100);
                         }}
-                        className={`flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 border transition-colors ${filters.bagsOnly ? 'border-[#39FF14] text-[#39FF14]' : 'border-[#333] text-[#666]'
+                        className={`btn-ghost flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 ${filters.bagsOnly ? '!border-[#39FF14] !text-[#39FF14]' : ''
                             }`}
                     >
                         {filters.bagsOnly ? 'BAGS_ONLY: ON' : 'BAGS_ONLY: OFF'}
@@ -397,11 +396,11 @@ export default function PulsePage() {
                 <div className="flex-1 grid grid-cols-3 divide-x divide-white/10">
                     {/* NEW Column */}
                     <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                        <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center bg-[#0A0A0A]">
+                        <div className="px-4 py-3 table-header flex justify-between items-center">
                             <span className="text-xs font-bold text-[#39FF14] flex items-center gap-2">
                                 <Zap size={14} /> INCOMING
                             </span>
-                            <span className="text-[10px] text-[#666] font-mono">{items.NEW.length} items</span>
+                            <span className="label">{items.NEW.length} items</span>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                             {isLoading ? (
@@ -420,11 +419,11 @@ export default function PulsePage() {
 
                     {/* FINAL STRETCH Column */}
                     <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                        <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center bg-[#0A0A0A]">
+                        <div className="px-4 py-3 table-header flex justify-between items-center">
                             <span className="text-xs font-bold text-[#00F0FF] flex items-center gap-2">
                                 <Cpu size={14} /> PROCESSING
                             </span>
-                            <span className="text-[10px] text-[#666] font-mono">{items.FINAL_STRETCH.length} items</span>
+                            <span className="label">{items.FINAL_STRETCH.length} items</span>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                             {isLoading ? (
@@ -443,11 +442,11 @@ export default function PulsePage() {
 
                     {/* MIGRATED Column */}
                     <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                        <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center bg-[#0A0A0A]">
+                        <div className="px-4 py-3 table-header flex justify-between items-center">
                             <span className="text-xs font-bold text-[#FF003C] flex items-center gap-2">
                                 <Layers size={14} /> FINALIZED
                             </span>
-                            <span className="text-[10px] text-[#666] font-mono">{items.MIGRATED.length} items</span>
+                            <span className="label">{items.MIGRATED.length} items</span>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
                             {isLoading ? (

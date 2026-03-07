@@ -46,7 +46,7 @@ export class ErrorBoundary extends Component<Props, State> {
           )}
           <button
             onClick={this.handleReset}
-            className="flex items-center gap-1 px-3 py-1.5 text-[9px] font-bold uppercase text-[#888] border border-[#333] hover:border-[#EDEDED] hover:text-[#EDEDED] transition-all"
+            className="btn-press flex items-center gap-1 px-3 py-1.5 text-[9px] font-bold uppercase text-[#888] border border-[#333] hover:border-[#EDEDED] hover:text-[#EDEDED]"
           >
             <RotateCcw size={10} />
             Retry

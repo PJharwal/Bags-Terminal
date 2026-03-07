@@ -22,13 +22,33 @@ export default function TerminalIndexPage() {
         connect();
     }, [connect]);
 
-    // Fetch trending tokens from GMGN
+    // Fetch trending tokens — try GMGN first, fall back to DexScreener
     const fetchTrending = useCallback(async () => {
         setIsLoadingTrending(true);
         try {
+            // Try GMGN first
             const data = await gmgnService.getTrending('1h');
-            if (data?.rank) {
+            if (data?.rank && data.rank.length > 0) {
                 setTrendingTokens(data.rank.slice(0, 6));
+                return;
+            }
+
+            // Fall back to DexScreener
+            const { dexScreenerService } = await import('@/services/dexscreener.service');
+            const dexTokens = await dexScreenerService.getTrendingSolana();
+            if (dexTokens.length > 0) {
+                setTrendingTokens(
+                    dexTokens.slice(0, 6).map(t => ({
+                        address: t.address,
+                        symbol: t.symbol,
+                        name: t.name,
+                        price: t.price,
+                        price_change_percent: t.priceChange24h,
+                        volume_24h: t.volume24h,
+                        market_cap: t.marketCap,
+                        logo: t.logo,
+                    }))
+                );
             }
         } catch (error) {
             console.error('Failed to fetch trending:', error);
@@ -51,7 +71,7 @@ export default function TerminalIndexPage() {
     return (
         <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-[#0A0A0A]">
+            <div className="glass gradient-border flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-3">
                     <Terminal size={20} className="text-[#39FF14]" />
                     <h1 className="text-lg font-bold tracking-tight">TERMINAL</h1>
@@ -71,7 +91,7 @@ export default function TerminalIndexPage() {
                 <section className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
                         <TrendingUp size={14} className="text-[#39FF14]" />
-                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest">Trending Tokens (1h)</h2>
+                        <h2 className="label">Trending Tokens (1h)</h2>
                         {isLoadingTrending && <Loader2 size={12} className="animate-spin text-[#666]" />}
                     </div>
                     {trendingTokens.length > 0 ? (
@@ -90,7 +110,7 @@ export default function TerminalIndexPage() {
                         </div>
                     ) : (
                         <div className="text-[#666] text-sm py-4">
-                            {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Make sure GMGN server is running.'}
+                            {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Try refreshing.'}
                         </div>
                     )}
                 </section>
@@ -98,7 +118,7 @@ export default function TerminalIndexPage() {
                 {/* Recent from Pulse */}
                 {recentTokens.length > 0 && (
                     <section className="mb-8">
-                        <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Recent from Live Feed</h2>
+                        <h2 className="label mb-4">Recent from Live Feed</h2>
                         <div className="grid grid-cols-4 gap-3">
                             {recentTokens.map((token) => (
                                 <TokenCard
@@ -129,12 +149,12 @@ export default function TerminalIndexPage() {
 
                 {/* Search / Paste Address */}
                 <section className="mt-8">
-                    <h2 className="text-[10px] text-[#666] uppercase tracking-widest mb-4">Or Enter Token Address</h2>
+                    <h2 className="label mb-4">Or Enter Token Address</h2>
                     <div className="flex gap-4 max-w-xl">
                         <input
                             type="text"
                             placeholder="Paste Solana token mint address..."
-                            className="flex-1 bg-[#1A1A1A] border border-[#333] px-4 py-3 text-sm font-mono text-[#EDEDED] placeholder-[#666] focus:border-[#39FF14] focus:outline-none"
+                            className="input flex-1"
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter') {
                                     const input = e.currentTarget.value.trim();
@@ -143,7 +163,7 @@ export default function TerminalIndexPage() {
                             }}
                         />
                         <button
-                            className="px-6 py-3 bg-[#39FF14] text-black font-bold text-sm uppercase tracking-wider hover:brightness-110 transition-all"
+                            className="btn-primary"
                             onClick={() => {
                                 const input = document.querySelector('input')?.value.trim();
                                 if (input) handleOpenTerminal(input);
@@ -178,7 +198,7 @@ function TokenCard({
     return (
         <button
             onClick={onClick}
-            className="group flex items-center justify-between p-4 bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] transition-colors text-left"
+            className="card group flex items-center justify-between p-4 text-left"
         >
             <div className="flex flex-col gap-1">
                 <span className="text-sm font-bold text-[#EDEDED]">{symbol}</span>

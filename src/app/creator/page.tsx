@@ -1,12 +1,15 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DashboardTabs } from '@/components/creator/DashboardTabs';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { useCreatorStore } from '@/store/creator.store';
 import { useSocialStore } from '@/store/social.store';
 import { SocialLinkManager } from '@/components/social/SocialLinkManager';
-import { Wallet } from 'lucide-react';
+import { FeeEarningsCard } from '@/components/share/FeeEarningsCard';
+import { PortfolioCard } from '@/components/share/PortfolioCard';
+import { Wallet, Share2 } from 'lucide-react';
+import { BagsLogo } from '@/components/ui/BagsLogo';
 
 export default function CreatorPage() {
   const { connected, publicKey } = useBagsWallet();
@@ -23,12 +26,12 @@ export default function CreatorPage() {
   if (!connected) {
     return (
       <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="flex flex-col items-center justify-center gap-4">
-          <div className="w-16 h-16 border border-[#333] flex items-center justify-center">
-            <Wallet size={24} className="text-[#444]" />
+        <div className="card flex flex-col items-center justify-center gap-5 p-12">
+          <div className="w-16 h-16 border border-white/10 flex items-center justify-center bg-[linear-gradient(135deg,rgba(57,255,20,0.05)_0%,transparent_100%)]">
+            <Wallet size={24} className="text-[#39FF14]/40" />
           </div>
-          <span className="text-sm font-bold text-[#EDEDED]">Connect your wallet</span>
-          <span className="text-[10px] text-[#666] font-mono">
+          <span className="text-sm font-bold text-[#EDEDED] text-display">Connect your wallet</span>
+          <span className="label text-center">
             Connect your wallet to view your created tokens and claim fees
           </span>
         </div>
@@ -41,11 +44,12 @@ export default function CreatorPage() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#EDEDED] tracking-tight font-mono">
+          <h1 className="text-xl font-bold text-[#EDEDED] tracking-tight text-display flex items-center gap-2">
+            <BagsLogo size={18} />
             CREATOR<span className="text-[#39FF14]">_</span>DASHBOARD
           </h1>
-          <p className="text-[11px] text-[#666] font-mono mt-1">
-            Manage tokens, claim fees, and link social accounts
+          <p className="label mt-2">
+            Manage tokens, claim fees on bags.fm, and link social accounts
           </p>
         </div>
         <SocialLinkManager />
@@ -53,6 +57,85 @@ export default function CreatorPage() {
 
       {/* Dashboard Content */}
       <DashboardTabs />
+
+      {/* Share Cards Section */}
+      {publicKey && <CreatorShareCards wallet={publicKey} />}
+    </div>
+  );
+}
+
+function CreatorShareCards({ wallet }: { wallet: string }) {
+  const [open, setOpen] = useState(false);
+  const [activeCard, setActiveCard] = useState<'fees' | 'portfolio'>('fees');
+  const { createdTokens, claimableEarnings, claimHistory } = useCreatorStore();
+
+  const totalFeesEarned = createdTokens.reduce((sum, t) => sum + t.totalFeesEarned, 0);
+  const totalFeesClaimed = createdTokens.reduce((sum, t) => sum + (t.totalFeesEarned - t.claimableFees), 0);
+  const totalMarketCap = createdTokens.reduce((sum, t) => sum + t.marketCap, 0);
+  const bestToken = createdTokens.length > 0
+    ? createdTokens.reduce((best, t) => t.marketCap > best.marketCap ? t : best)
+    : undefined;
+  const topToken = createdTokens.length > 0
+    ? createdTokens.reduce((best, t) => t.totalFeesEarned > best.totalFeesEarned ? t : best)
+    : undefined;
+
+  return (
+    <div className="mt-6 border-t border-white/5 pt-6">
+      <button
+        onClick={() => setOpen(!open)}
+        className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-[#888] hover:text-[#39FF14] transition-colors mb-4"
+      >
+        <Share2 size={14} />
+        Share Your Stats
+        <span className="text-[#666]">{open ? '−' : '+'}</span>
+      </button>
+
+      {open && (
+        <div className="max-w-lg">
+          <div className="flex gap-2 mb-4">
+            <button
+              onClick={() => setActiveCard('fees')}
+              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+                activeCard === 'fees'
+                  ? 'border-[#FFD700]/30 text-[#FFD700] bg-[#FFD700]/5'
+                  : 'border-white/10 text-[#666]'
+              }`}
+            >
+              Fee Earnings
+            </button>
+            <button
+              onClick={() => setActiveCard('portfolio')}
+              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+                activeCard === 'portfolio'
+                  ? 'border-[#00F0FF]/30 text-[#00F0FF] bg-[#00F0FF]/5'
+                  : 'border-white/10 text-[#666]'
+              }`}
+            >
+              Portfolio
+            </button>
+          </div>
+
+          {activeCard === 'fees' ? (
+            <FeeEarningsCard
+              totalFeesEarned={totalFeesEarned}
+              totalFeesClaimed={totalFeesClaimed}
+              tokensCreated={createdTokens.length}
+              claimCount={claimHistory.length}
+              topToken={topToken ? { symbol: topToken.symbol, fees: topToken.totalFeesEarned } : undefined}
+              walletAddress={wallet}
+            />
+          ) : (
+            <PortfolioCard
+              tokensCreated={createdTokens.length}
+              totalMarketCap={totalMarketCap}
+              totalVolume={0}
+              totalFeesEarned={totalFeesEarned}
+              bestToken={bestToken ? { symbol: bestToken.symbol, marketCap: bestToken.marketCap } : undefined}
+              walletAddress={wallet}
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }
