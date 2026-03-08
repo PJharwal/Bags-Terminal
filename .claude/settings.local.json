@@ -11,7 +11,12 @@
       "Grep(*)",
       "Read(*)",
       "NotebookEdit(*)",
-      "Skill(*)"
+      "Skill(*)",
+      "Bash(git pull:*)",
+      "Bash(nslookup:*)",
+      "Bash(tee:*)",
+      "Bash(git push:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [
       "Bash(rm *)",
