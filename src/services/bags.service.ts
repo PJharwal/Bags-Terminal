@@ -496,11 +496,9 @@ async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
 
 async function getLaunchFeed(options: {
   limit?: number;
-  offset?: number;
 } = {}): Promise<BagsLaunchFeedItem[]> {
-  const { limit = 50, offset = 0 } = options;
   const result = await fetchBags<{ response: Array<Record<string, unknown>> }>(
-    `/token-launch/feed?limit=${limit}&offset=${offset}`
+    '/token-launch/feed'
   );
   const items = result?.response || [];
   return items.map((item) => ({
