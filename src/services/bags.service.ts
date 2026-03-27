@@ -8,6 +8,7 @@ import type {
   SwapQuote,
   SwapParams,
   BagsTokenMetadata,
+  BagsConfigType,
   FeeClaimerConfig,
   BagsCreatedToken,
   FeeClaimInfo,
@@ -167,6 +168,10 @@ async function createTokenInfo(
     body.image = metadata.image;
   }
 
+  if (metadata.twitterUrl) body.twitter = metadata.twitterUrl;
+  if (metadata.websiteUrl) body.website = metadata.websiteUrl;
+  if (metadata.telegramUrl) body.telegram = metadata.telegramUrl;
+
   const result = await postBags<{ metadataUrl: string; imageUrl: string }>(
     '/token-launch/create-token-info',
     body
@@ -177,7 +182,8 @@ async function createTokenInfo(
 
 async function createFeeShareConfig(
   claimers: FeeClaimerConfig[],
-  additionalLookupTables?: string[]
+  additionalLookupTables?: string[],
+  bagsConfigType?: BagsConfigType
 ): Promise<string> {
   const result = await postBags<{ configKey: string }>('/token/fee-config', {
     claimers: claimers.map((c) => ({
@@ -187,6 +193,7 @@ async function createFeeShareConfig(
       percentage: c.percentage,
     })),
     ...(additionalLookupTables && { additionalLookupTables }),
+    ...(bagsConfigType && { configType: bagsConfigType }),
   });
   if (!result) throw new Error('Failed to create fee share config');
   return result.configKey;
