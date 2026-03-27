@@ -17,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased text-[#E6E8EB]">
+      <body className="antialiased text-[#EDEDED]">
         <WalletProviderWrapper>
           <TopBar />
           <main className="min-h-screen pt-14 flex flex-col">

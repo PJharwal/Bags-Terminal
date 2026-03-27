@@ -6,7 +6,7 @@ import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency, getScoreColor } from "@/lib/format";
 import type { PulseItem } from "@/lib/types";
-import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff } from "lucide-react";
+import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff, Loader2 } from "lucide-react";
 
 // Aggregate deployers from tokens
 interface AggregatedDeployer {
@@ -159,7 +159,14 @@ export default function DeployersPage() {
                 <div className="flex-1 overflow-y-auto custom-scrollbar relative">
                     <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-5 pointer-events-none fixed" />
 
-                    {filteredDeployers.length > 0 ? (
+                    {!isConnected && filteredDeployers.length === 0 ? (
+                        <div className="flex-1 flex items-center justify-center">
+                            <div className="flex items-center gap-3 text-[#666]">
+                                <Loader2 size={16} className="animate-spin" />
+                                <span className="text-sm font-mono">LOADING_DATA...</span>
+                            </div>
+                        </div>
+                    ) : filteredDeployers.length > 0 ? (
                         <table className="w-full text-sm relative z-10">
                             <thead className="table-header sticky top-0 z-20">
                                 <tr>
@@ -221,13 +228,9 @@ export default function DeployersPage() {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-64 text-[#666]">
-                            <Database size={32} className="mb-4 opacity-50" />
-                            <p className="text-sm">
-                                {isConnected
-                                    ? 'No deployers found. Waiting for BAGS tokens...'
-                                    : 'Connecting to live feed...'}
-                            </p>
+                        <div className="flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+                            <Database size={32} className="mb-4 opacity-30" />
+                            <p className="text-sm font-mono">No deployers found. Waiting for tokens...</p>
                         </div>
                     )}
                 </div>
