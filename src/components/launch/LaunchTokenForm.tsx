@@ -2,7 +2,8 @@
 
 import { useRef } from 'react';
 import { useLaunchStore } from '@/store/launch.store';
-import { Upload, Image as ImageIcon, Link, Heart, Handshake } from 'lucide-react';
+import { Upload, Image as ImageIcon, Link, Heart, Handshake, Globe, MessageCircle } from 'lucide-react';
+import { BAGS_CONFIG_TYPES } from '@/lib/bags-types';
 
 const BUY_PRESETS = [0.1, 0.5, 1, 2];
 const TIP_PRESETS = [0.01, 0.05, 0.1];
@@ -25,6 +26,14 @@ export function LaunchTokenForm() {
     setTipEnabled,
     setTipWallet,
     setTipAmountSol,
+    twitterUrl,
+    websiteUrl,
+    telegramUrl,
+    bagsConfigType,
+    setTwitterUrl,
+    setWebsiteUrl,
+    setTelegramUrl,
+    setBagsConfigType,
     partnerKey,
     setPartnerKey,
   } = useLaunchStore();
@@ -81,6 +90,69 @@ export function LaunchTokenForm() {
           maxLength={200}
         />
         <span className="label text-right" style={{ fontSize: '8px' }}>{metadata.description.length}/200</span>
+      </div>
+
+      {/* Social Links */}
+      <div className="space-y-3">
+        <label className="label">Social Links (Optional)</label>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#666] w-16 shrink-0 font-mono">Twitter</span>
+            <input
+              type="url"
+              placeholder="https://x.com/yourproject"
+              value={twitterUrl}
+              onChange={(e) => setTwitterUrl(e.target.value)}
+              className="input flex-1 text-xs"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#666] w-16 shrink-0 font-mono">Website</span>
+            <input
+              type="url"
+              placeholder="https://yourproject.com"
+              value={websiteUrl}
+              onChange={(e) => setWebsiteUrl(e.target.value)}
+              className="input flex-1 text-xs"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#666] w-16 shrink-0 font-mono">Telegram</span>
+            <input
+              type="url"
+              placeholder="https://t.me/yourgroup"
+              value={telegramUrl}
+              onChange={(e) => setTelegramUrl(e.target.value)}
+              className="input flex-1 text-xs"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Bonding Curve Config */}
+      <div className="space-y-3">
+        <label className="label">Fee Config</label>
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { id: BAGS_CONFIG_TYPES.DEFAULT, label: 'Standard', desc: '2% pre + 2% post' },
+            { id: BAGS_CONFIG_TYPES.LOW_PRE_HIGH_POST, label: 'Growth', desc: '0.25% pre + 1% post' },
+            { id: BAGS_CONFIG_TYPES.HIGH_PRE_LOW_POST, label: 'Early', desc: '1% pre + 0.25% post' },
+            { id: BAGS_CONFIG_TYPES.HIGH_BOTH, label: 'Max Earn', desc: '10% pre + 10% post' },
+          ].map((config) => (
+            <button
+              key={config.id}
+              onClick={() => setBagsConfigType(config.id)}
+              className={`p-2 border text-left transition-colors ${
+                bagsConfigType === config.id
+                  ? 'border-[#39FF14]/40 bg-[#39FF14]/5'
+                  : 'border-white/6 hover:border-white/10'
+              }`}
+            >
+              <div className="text-[10px] font-bold text-[#EDEDED]">{config.label}</div>
+              <div className="text-[9px] text-[#666] font-mono">{config.desc}</div>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Image Source Toggle */}

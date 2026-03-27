@@ -1,11 +1,11 @@
 'use client';
 
 import { useLaunchStore } from '@/store/launch.store';
-import { Image as ImageIcon, Users, Percent, Heart, Link } from 'lucide-react';
+import { Image as ImageIcon, Users, Percent, Heart, Link, Globe, MessageCircle } from 'lucide-react';
 import { MAX_FEE_CLAIMERS } from '@/lib/bags-types';
 
 export function TokenPreviewCard() {
-  const { metadata, feeClaimers, initialBuyAmount, imagePreviewUrl, imageSourceMode, imageUrl, tipEnabled, tipAmountSol, partnerKey } = useLaunchStore();
+  const { metadata, feeClaimers, initialBuyAmount, imagePreviewUrl, imageSourceMode, imageUrl, tipEnabled, tipAmountSol, partnerKey, twitterUrl, websiteUrl, telegramUrl } = useLaunchStore();
 
   const totalPercentage = feeClaimers.reduce((sum, c) => sum + c.percentage, 0);
   const creatorShare = feeClaimers.length > 0 ? 100 - totalPercentage : 100;
@@ -46,6 +46,27 @@ export function TokenPreviewCard() {
       <p className="text-[10px] text-[#888] font-mono leading-relaxed">
         {metadata.description || 'No description provided.'}
       </p>
+
+      {/* Social Links */}
+      {(twitterUrl || websiteUrl || telegramUrl) && (
+        <div className="flex items-center gap-3">
+          {twitterUrl && (
+            <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="text-[#666] hover:text-[#EDEDED] transition-colors" title="Twitter">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            </a>
+          )}
+          {websiteUrl && (
+            <a href={websiteUrl} target="_blank" rel="noopener noreferrer" className="text-[#666] hover:text-[#EDEDED] transition-colors" title="Website">
+              <Globe size={12} />
+            </a>
+          )}
+          {telegramUrl && (
+            <a href={telegramUrl} target="_blank" rel="noopener noreferrer" className="text-[#666] hover:text-[#EDEDED] transition-colors" title="Telegram">
+              <MessageCircle size={12} />
+            </a>
+          )}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-2">
