@@ -9,6 +9,7 @@ import type {
   PartnerConfig,
   PartnerClaimInfo,
   FeeShareWalletInfo,
+  FeeShareAdminToken,
 } from '@/lib/bags-types';
 
 interface CreatorStore {
@@ -27,6 +28,10 @@ interface CreatorStore {
   // Fee share wallet v2
   feeShareWalletInfo: FeeShareWalletInfo | null;
 
+  // Fee share admin
+  adminTokens: FeeShareAdminToken[];
+  isLoadingAdmin: boolean;
+
   // Actions
   loadCreatedTokens: (wallet: string) => Promise<void>;
   loadClaimableEarnings: (wallet: string) => Promise<void>;
@@ -41,6 +46,9 @@ interface CreatorStore {
 
   // Fee share wallet v2
   loadFeeShareWalletInfo: (wallet: string) => Promise<void>;
+
+  // Fee share admin
+  loadAdminTokens: (wallet: string) => Promise<void>;
 }
 
 export const useCreatorStore = create<CreatorStore>((set, get) => ({
@@ -54,6 +62,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   partnerClaimable: null,
   isLoadingPartner: false,
   feeShareWalletInfo: null,
+  adminTokens: [],
+  isLoadingAdmin: false,
 
   loadCreatedTokens: async (wallet) => {
     try {
@@ -61,6 +71,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ createdTokens: tokens });
     } catch (err) {
       console.error('Failed to load created tokens:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 
@@ -70,6 +81,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ claimableEarnings: earnings });
     } catch (err) {
       console.error('Failed to load claimable earnings:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 
@@ -79,21 +91,25 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ claimHistory: history });
     } catch (err) {
       console.error('Failed to load claim history:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 
   refreshAll: async (wallet) => {
     set({ isLoading: true, error: null });
     try {
-      await Promise.all([
+      const results = await Promise.allSettled([
         get().loadCreatedTokens(wallet),
         get().loadClaimableEarnings(wallet),
         get().loadClaimHistory(wallet),
         get().loadPartnerConfig(wallet),
         get().loadFeeShareWalletInfo(wallet),
+        get().loadAdminTokens(wallet),
       ]);
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to refresh' });
+      const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (rejected.length > 0) {
+        set({ error: rejected[0].reason instanceof Error ? rejected[0].reason.message : 'Failed to refresh' });
+      }
     } finally {
       set({ isLoading: false });
     }
@@ -103,7 +119,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
     set({ claimingToken: tokenMint });
 
     try {
-      const serializedTxs = await bagsService.createClaimTransaction(tokenMint, walletAddress);
+      const serializedTxs = await bagsService.getClaimTransactionsV3(tokenMint, walletAddress);
       const { Transaction, VersionedTransaction } = await import('@solana/web3.js');
 
       // Process all claim transactions (v2 returns Transaction[] instead of VersionedTransaction[])
@@ -193,6 +209,19 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ feeShareWalletInfo: info });
     } catch (err) {
       console.error('Failed to load fee share wallet info:', err);
+    }
+  },
+
+  // Fee share admin
+  loadAdminTokens: async (wallet) => {
+    set({ isLoadingAdmin: true });
+    try {
+      const tokens = await bagsService.getAdminTokens(wallet);
+      set({ adminTokens: tokens });
+    } catch (err) {
+      console.error('Failed to load admin tokens:', err);
+    } finally {
+      set({ isLoadingAdmin: false });
     }
   },
 }));

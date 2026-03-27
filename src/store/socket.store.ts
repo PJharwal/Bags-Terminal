@@ -38,9 +38,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   connect: () => {
     const { socket } = get();
-    if (socket?.connected) return;
-
-    console.log('Connecting to socket:', config.baseServerUrl);
+    if (socket) return;
 
     const newSocket = io(config.baseServerUrl, {
       transports: ['websocket'],
@@ -51,7 +49,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     newSocket.on('connect', () => {
-      console.log('Socket connected:', newSocket.id);
       set({ isConnected: true });
 
       // Sync with pulse store
@@ -64,7 +61,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Socket disconnected');
       set({ isConnected: false });
 
       // Sync with pulse store
@@ -75,14 +71,11 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       console.error('Socket connection error:', error.message);
     });
 
-    newSocket.on('subscribed', (data: { room: string }) => {
-      console.log('Subscribed to room:', data.room);
+    newSocket.on('subscribed', (_data: { room: string }) => {
     });
 
     // Handle new token events
     newSocket.on('new_token', (token: NewTokenEvent) => {
-      console.log('New token:', token.symbol, token.mint);
-
       // Add to all tokens
       set((state) => ({
         latestTokens: [token, ...state.latestTokens].slice(0, 50)
@@ -90,7 +83,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
       // Track BAGS tokens separately (CA ends with 'bags')
       if (isBagsToken(token.mint)) {
-        console.log('BAGS token found:', token.symbol, token.mint);
         set((state) => ({
           bagsTokens: [token, ...state.bagsTokens].slice(0, 50)
         }));
@@ -121,8 +113,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     // Handle migration events
     newSocket.on('migration', (migration: MigrationEvent) => {
-      console.log('Migration:', migration.symbol, migration.mint, '->', migration.to_dex);
-
       // Update pulse store - transition to MIGRATED state for all tokens
       usePulseStore.getState().transitionItem(migration.mint, 'MIGRATED');
     });
@@ -138,7 +128,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     }, 30000);
 
     newSocket.on('pong', () => {
-      console.log('Pong received');
     });
 
     set({ socket: newSocket });
@@ -160,7 +149,6 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     const { socket } = get();
     if (socket?.connected) {
       socket.emit('subscribe', { room });
-      console.log('Subscribing to:', room);
     }
   },
 

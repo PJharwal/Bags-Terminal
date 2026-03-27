@@ -3,21 +3,61 @@ import { NextRequest, NextResponse } from 'next/server';
 const GMGN_LOCAL = process.env.GMGN_LOCAL_URL || 'http://localhost:8000';
 const GMGN_PUBLIC = 'https://gmgn.ai/api/v1/sol';
 
-// Common headers to mimic browser requests to GMGN
 const GMGN_HEADERS = {
   'Content-Type': 'application/json',
   'Accept': 'application/json',
   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
 };
 
-/**
- * Proxy requests to GMGN — tries local server first, falls back to public API
- */
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_MAX = 60;
+const RATE_LIMIT_WINDOW = 60000;
+const CLEANUP_INTERVAL = 5 * 60 * 1000;
+
+let lastCleanup = Date.now();
+
+function cleanupExpiredEntries() {
+  const now = Date.now();
+  if (now - lastCleanup < CLEANUP_INTERVAL) return;
+  lastCleanup = now;
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) {
+      rateLimitMap.delete(ip);
+    }
+  }
+}
+
+function checkRateLimit(ip: string): boolean {
+  cleanupExpiredEntries();
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+function getClientIp(request: NextRequest): string {
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp;
+  const xReal = request.headers.get('x-real-ip');
+  if (xReal) return xReal;
+  const forwarded = request.headers.get('x-forwarded-for');
+  return forwarded?.split(',')[0]?.trim() || 'unknown';
+}
+
 async function fetchWithFallback(pathStr: string, searchParams: string) {
   const localUrl = `${GMGN_LOCAL}/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
   const publicUrl = `${GMGN_PUBLIC}/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
 
-  // Try local GMGN server first (1.5s timeout)
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 1500);
@@ -35,7 +75,6 @@ async function fetchWithFallback(pathStr: string, searchParams: string) {
     // Local server unavailable — try public API
   }
 
-  // Fall back to public GMGN API (3s timeout)
   try {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 3000);
@@ -60,6 +99,11 @@ export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const clientIp = getClientIp(request);
+  if (!checkRateLimit(clientIp)) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+
   const { path } = await params;
   const pathStr = path.join('/');
   const searchParams = request.nextUrl.searchParams.toString();
@@ -88,6 +132,11 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const clientIp = getClientIp(request);
+  if (!checkRateLimit(clientIp)) {
+    return NextResponse.json({ error: 'Rate limit exceeded' }, { status: 429 });
+  }
+
   const { path } = await params;
   const pathStr = path.join('/');
   const url = `${GMGN_LOCAL}/${pathStr}`;

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, TrendingUp, Rocket, BarChart3, Wallet } from 'lucide-react';
+import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Activity, Search, Users } from 'lucide-react';
 import { BagsLogo } from '@/components/ui/BagsLogo';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
@@ -243,14 +243,84 @@ export default function HomePage() {
                 </div>
 
                 {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-12">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                  <Link href="/pulse">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
+                    >
+                      <Activity className="text-[#FAFF00] mb-3" size={24} />
+                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
+                        Pulse Monitor
+                      </div>
+                      <div className="text-xs text-[#666] mt-1">Real-time BAGS activity</div>
+                    </motion.div>
+                  </Link>
+
+                  <Link href="/terminal">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
+                    >
+                      <Terminal className="text-[#39FF14] mb-3" size={24} />
+                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
+                        Terminal
+                      </div>
+                      <div className="text-xs text-[#666] mt-1">Browse & trade tokens</div>
+                    </motion.div>
+                  </Link>
+
+                  <Link href="/trending">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
+                    >
+                      <TrendingUp className="text-[#FF003C] mb-3" size={24} />
+                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
+                        Trending
+                      </div>
+                      <div className="text-xs text-[#666] mt-1">Top performing tokens</div>
+                    </motion.div>
+                  </Link>
+
+                  <Link href="/deployers">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
+                    >
+                      <Users className="text-[#FF00FF] mb-3" size={24} />
+                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
+                        Deployers
+                      </div>
+                      <div className="text-xs text-[#666] mt-1">Track deployer wallets</div>
+                    </motion.div>
+                  </Link>
+
+                  <Link href="/analyze">
+                    <motion.div
+                      whileHover={{ y: -4 }}
+                      whileTap={{ scale: 0.97 }}
+                      className="card group p-6 cursor-pointer"
+                    >
+                      <Search className="text-[#00F0FF] mb-3" size={24} />
+                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
+                        Analyze
+                      </div>
+                      <div className="text-xs text-[#666] mt-1">Deep token analysis</div>
+                    </motion.div>
+                  </Link>
+
                   <Link href="/launch">
                     <motion.div
                       whileHover={{ y: -4 }}
                       whileTap={{ scale: 0.97 }}
                       className="card group p-6 cursor-pointer"
                     >
-                      <Rocket className="text-[#39FF14] mb-3" size={24} />
+                      <Rocket className="text-[#FF6B35] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
                         Launch Token
                       </div>
@@ -269,20 +339,6 @@ export default function HomePage() {
                         Creator Dashboard
                       </div>
                       <div className="text-xs text-[#666] mt-1">Track earnings & claims</div>
-                    </motion.div>
-                  </Link>
-
-                  <Link href="/pulse">
-                    <motion.div
-                      whileHover={{ y: -4 }}
-                      whileTap={{ scale: 0.97 }}
-                      className="card group p-6 cursor-pointer"
-                    >
-                      <Terminal className="text-[#FAFF00] mb-3" size={24} />
-                      <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
-                        Live Pulse
-                      </div>
-                      <div className="text-xs text-[#666] mt-1">Real-time BAGS activity</div>
                     </motion.div>
                   </Link>
                 </div>
@@ -353,9 +409,8 @@ export default function HomePage() {
             BAGS TERMINAL // SYSTEM V3.0.0
           </div>
           <div className="flex gap-6 text-xs font-mono text-[#888]">
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">API</a>
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">STATUS</a>
+            <a href="https://docs.bags.fm" target="_blank" rel="noopener noreferrer" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>
+            <a href="https://docs.bags.fm/api-reference" target="_blank" rel="noopener noreferrer" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">API</a>
           </div>
         </div>
       </footer>

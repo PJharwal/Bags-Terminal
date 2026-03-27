@@ -183,8 +183,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
             const info = tokenInfo.info;
             const stats = tokenInfo.stats;
 
-            // Transform Bags creators to fee earners
-            const feeEarners = bagsFeeData?.creators.map(transformCreator) || [];
+            // Fetch claim stats in parallel with main data (if we have fee info)
+            const claimStats = bagsFeeData
+                ? await bagsService.getTokenClaimStats(tokenId).catch(() => [])
+                : [];
+
+            // Transform Bags creators to fee earners and merge claim data
+            const feeEarners = (bagsFeeData?.creators.map(transformCreator) || []).map(earner => {
+                const stats = claimStats.find(s => s.wallet === earner.wallet);
+                return stats
+                    ? { ...earner, totalClaimed: parseFloat(stats.totalClaimed) || 0 }
+                    : earner;
+            });
             const lifetimeFees = bagsFeeData?.lifetimeFees || 0;
 
             // Find top earner (highest royalty %)

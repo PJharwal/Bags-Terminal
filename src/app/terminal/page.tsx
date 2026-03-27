@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
@@ -14,6 +14,7 @@ export default function TerminalIndexPage() {
     const { items } = usePulseStore();
     const { connect, isConnected } = useSocketStore();
 
+    const inputRef = useRef<HTMLInputElement>(null);
     const [trendingTokens, setTrendingTokens] = useState<GMGNTrendingToken[]>([]);
     const [isLoadingTrending, setIsLoadingTrending] = useState(false);
 
@@ -152,6 +153,7 @@ export default function TerminalIndexPage() {
                     <h2 className="label mb-4">Or Enter Token Address</h2>
                     <div className="flex gap-4 max-w-xl">
                         <input
+                            ref={inputRef}
                             type="text"
                             placeholder="Paste Solana token mint address..."
                             className="input flex-1"
@@ -165,7 +167,7 @@ export default function TerminalIndexPage() {
                         <button
                             className="btn-primary"
                             onClick={() => {
-                                const input = document.querySelector('input')?.value.trim();
+                                const input = inputRef.current?.value.trim();
                                 if (input) handleOpenTerminal(input);
                             }}
                         >

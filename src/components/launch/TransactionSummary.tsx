@@ -52,8 +52,8 @@ export function TransactionSummary() {
       setTimeout(() => {
         router.push(`/terminal/${launchResult.tokenMint}`);
       }, 2000);
-    } catch {
-      // Error is handled in store
+    } catch (err) {
+      console.error('Launch failed:', err);
     }
   };
 

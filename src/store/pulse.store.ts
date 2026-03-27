@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent } from '@/types/socket';
 import { tokenService, type Token } from '@/services/token.service';
+import { SOL_PRICE } from '@/lib/constants';
 
 
 // Convert token service Token to PulseItem format
@@ -42,9 +43,6 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         protocolSource: 'pumpfun',
     };
 };
-
-// SOL price for USD calculations (per user spec: use constant 140)
-const SOL_PRICE = 140;
 
 // Convert socket NewTokenEvent to PulseItem
 const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
@@ -251,12 +249,8 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         }
 
         if (itemToMove) {
-            itemToMove.state = newState;
-            itemToMove.updatedAt = Date.now();
-            if (newState === 'MIGRATED') {
-                itemToMove.bondingProgress = 100;
-            }
-            newItems[newState] = [itemToMove, ...newItems[newState]];
+            const updatedItem = { ...itemToMove, state: newState, updatedAt: Date.now(), ...(newState === 'MIGRATED' ? { bondingProgress: 100 } : {}) };
+            newItems[newState] = [updatedItem, ...newItems[newState]];
         }
 
         return { items: newItems, lastUpdate: Date.now() };
@@ -313,6 +307,11 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
             filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
         }
 
+        // BAGS-only filter
+        if (filters.bagsOnly) {
+            filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
+        }
+
         return filtered;
     },
 
@@ -324,7 +323,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
 
         // Only load if we don't have data yet
         const totalItems = items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
-        if (totalItems > 0) {
+        if (get().isInitialLoading || totalItems > 0) {
             return;
         }
 

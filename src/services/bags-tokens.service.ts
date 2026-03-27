@@ -5,6 +5,7 @@
  */
 
 import { bagsService } from './bags.service';
+import { SOL_PRICE } from '@/lib/constants';
 import type { BagsTokenCreator, BagsTokenCreatorWithStats, BagsTokenClaimEvent } from '@/lib/bags-types';
 
 // Known BAGS tokens - these are real tokens deployed on bags.fm
@@ -134,7 +135,7 @@ export async function validateBagsToken(mint: string): Promise<{
  */
 export async function fetchBagsTokenFeeData(
   token: BagsTokenInfo,
-  solPrice: number = 140
+  solPrice: number = SOL_PRICE
 ): Promise<BagsTokenWithFeeData> {
   try {
     const [lifetimeFees, creators, claimStats] = await Promise.all([
@@ -172,7 +173,7 @@ export async function fetchBagsTokenFeeData(
  * Fetch fee data for all known BAGS tokens
  */
 export async function fetchAllBagsTokensFeeData(
-  solPrice: number = 140
+  solPrice: number = SOL_PRICE
 ): Promise<BagsTokenWithFeeData[]> {
   const allTokens = getAllBagsTokens();
 

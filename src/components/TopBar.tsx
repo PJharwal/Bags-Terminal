@@ -3,18 +3,19 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
-import { Bell } from "lucide-react";
+
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 
 const navItems = [
     { href: "/", label: "HOME" },
+    { href: "/pulse", label: "PULSE" },
     { href: "/terminal", label: "TERMINAL" },
     { href: "/trending", label: "TRENDING" },
+    { href: "/deployers", label: "DEPLOYERS" },
     { href: "/analyze", label: "ANALYZE" },
     { href: "/launch", label: "LAUNCH" },
     { href: "/creator", label: "CREATOR" },
-    { href: "/pulse", label: "PULSE" },
 ];
 
 export default function TopBar() {
@@ -81,11 +82,6 @@ export default function TopBar() {
 
                 {/* System Controls */}
                 <div className="flex items-center gap-2">
-                    <button className="p-2 text-[#888] hover:text-[#FF003C] transition-all duration-150 relative group hover:bg-white/5">
-                        <Bell size={16} />
-                        <span className="absolute top-2 right-2 w-1.5 h-1.5 rounded-full bg-[#FF003C] shadow-[0_0_4px_rgba(255,0,60,0.6)] group-hover:animate-ping" />
-                    </button>
-
                     <WalletButton />
                 </div>
             </div>

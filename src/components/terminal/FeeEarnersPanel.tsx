@@ -42,8 +42,8 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
         return null;
     }
 
-    const handleCopyWallet = (wallet: string) => {
-        navigator.clipboard.writeText(wallet);
+    const handleCopyWallet = async (wallet: string) => {
+        await navigator.clipboard.writeText(wallet);
         setCopiedWallet(wallet);
         setTimeout(() => setCopiedWallet(null), 2000);
     };
