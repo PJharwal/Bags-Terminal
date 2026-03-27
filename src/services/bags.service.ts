@@ -27,6 +27,10 @@ import type {
   BagsLaunchFeedItem,
   BagsPoolData,
   FeeShareAdminToken,
+  DexscreenerOrder,
+  DexscreenerAvailability,
+  ClaimTransactionV3,
+  BagsPool,
 } from '@/lib/bags-types';
 
 const BAGS_API_BASE = '/api/bags';
@@ -538,6 +542,77 @@ async function updateFeeShareConfig(
 }
 
 // ==========================================
+// Dexscreener Integration Methods
+// ==========================================
+
+async function createDexscreenerOrder(
+  tokenMint: string,
+  walletAddress: string
+): Promise<DexscreenerOrder> {
+  const result = await postBags<DexscreenerOrder>('/solana/dexscreener/create-order', {
+    tokenMint,
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to create Dexscreener order');
+  return result;
+}
+
+async function checkDexscreenerAvailability(tokenMint: string): Promise<DexscreenerAvailability> {
+  const result = await fetchBags<DexscreenerAvailability>(
+    `/solana/dexscreener/order-availability?tokenMint=${tokenMint}`
+  );
+  if (!result) throw new Error('Failed to check Dexscreener availability');
+  return result;
+}
+
+async function submitDexscreenerPayment(
+  orderId: string,
+  signedTransaction: string
+): Promise<{ success: boolean }> {
+  const result = await postBags<{ success: boolean }>('/solana/dexscreener/submit-payment', {
+    orderId,
+    signedTransaction,
+  });
+  if (!result) throw new Error('Failed to submit Dexscreener payment');
+  return result;
+}
+
+// ==========================================
+// V3 Auto-Claim Methods
+// ==========================================
+
+async function getClaimTransactionsV3(
+  tokenMint: string,
+  walletAddress: string
+): Promise<string[]> {
+  const result = await fetchBags<{ transactions: string[] }>(
+    `/token-launch/claim-txs/v3?tokenMint=${tokenMint}&wallet=${walletAddress}`
+  );
+  return result?.transactions || [];
+}
+
+// ==========================================
+// All Pools Methods
+// ==========================================
+
+async function getAllPools(): Promise<BagsPool[]> {
+  const result = await fetchBags<BagsPool[]>('/solana/bags/pools');
+  return result || [];
+}
+
+// ==========================================
+// Transaction Submission
+// ==========================================
+
+async function sendTransaction(signedTransaction: string): Promise<{ signature: string }> {
+  const result = await postBags<{ signature: string }>('/solana/send-transaction', {
+    transaction: signedTransaction,
+  });
+  if (!result) throw new Error('Failed to send transaction');
+  return result;
+}
+
+// ==========================================
 // Export Service
 // ==========================================
 
@@ -597,6 +672,20 @@ export const bagsService = {
   getAdminTokens,
   transferFeeShareAdmin,
   updateFeeShareConfig,
+
+  // Dexscreener
+  createDexscreenerOrder,
+  checkDexscreenerAvailability,
+  submitDexscreenerPayment,
+
+  // V3 Auto-Claim
+  getClaimTransactionsV3,
+
+  // Pools
+  getAllPools,
+
+  // Transaction
+  sendTransaction,
 };
 
 export default bagsService;

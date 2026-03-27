@@ -455,3 +455,43 @@ export interface TransferAdminResult {
 export interface UpdateFeeShareConfigResult {
   transaction: string;
 }
+
+// ==========================================
+// Dexscreener Integration Types
+// ==========================================
+
+export interface DexscreenerOrder {
+  orderId: string;
+  tokenMint: string;
+  paymentTransaction: string;
+  amount: number;
+  status: 'pending' | 'paid' | 'completed' | 'failed';
+}
+
+export interface DexscreenerAvailability {
+  available: boolean;
+  tokenMint: string;
+  reason?: string;
+}
+
+// ==========================================
+// V3 Claim Types
+// ==========================================
+
+export interface ClaimTransactionV3 {
+  transactions: string[];
+  tokenMint: string;
+}
+
+// ==========================================
+// Pools Types
+// ==========================================
+
+export interface BagsPool {
+  tokenMint: string;
+  meteoraDbcPoolKey: string | null;
+  dammV2PoolKey: string | null;
+  name?: string;
+  symbol?: string;
+  image?: string;
+}

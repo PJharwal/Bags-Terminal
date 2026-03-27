@@ -3,6 +3,7 @@
 import { Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { BagsCreatedToken } from '@/lib/bags-types';
+import { DexListingButton } from './DexListingButton';
 
 interface TokenStatsCardProps {
   token: BagsCreatedToken;
@@ -77,6 +78,9 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
           View
         </Link>
       </div>
+
+      {/* Dexscreener Listing */}
+      <DexListingButton tokenMint={token.mint} />
     </div>
   );
 }
