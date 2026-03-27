@@ -23,6 +23,14 @@ import type {
   PartnerClaimInfo,
   FeeShareWalletInfo,
   LookupTableConfig,
+  BagsLeaderboardItem,
+  BagsLaunchFeedItem,
+  BagsPoolData,
+  FeeShareAdminToken,
+  DexscreenerOrder,
+  DexscreenerAvailability,
+  ClaimTransactionV3,
+  BagsPool,
 } from '@/lib/bags-types';
 
 const BAGS_API_BASE = '/api/bags';
@@ -432,6 +440,7 @@ async function getTokenClaimEvents(
  * Cached for 60s to prevent API flooding
  */
 const feeInfoCache = new Map<string, { data: { lifetimeFees: number; creators: BagsTokenCreator[] } | null; ts: number }>();
+const FEE_CACHE_MAX = 200;
 
 async function getTokenFeeInfo(mint: string): Promise<{
   lifetimeFees: number;
@@ -446,13 +455,182 @@ async function getTokenFeeInfo(mint: string): Promise<{
       getTokenCreators(mint),
     ]);
     const data = { lifetimeFees, creators };
+    if (feeInfoCache.size >= FEE_CACHE_MAX) {
+      const firstKey = feeInfoCache.keys().next().value;
+      if (firstKey) feeInfoCache.delete(firstKey);
+    }
     feeInfoCache.set(mint, { data, ts: Date.now() });
     return data;
   } catch (error) {
     console.error('Failed to get token fee info:', error);
+    if (feeInfoCache.size >= FEE_CACHE_MAX) {
+      const firstKey = feeInfoCache.keys().next().value;
+      if (firstKey) feeInfoCache.delete(firstKey);
+    }
     feeInfoCache.set(mint, { data: null, ts: Date.now() });
     return null;
   }
+}
+
+// ==========================================
+// Leaderboard Methods (SDK v1.3.4)
+// ==========================================
+
+async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
+  const result = await fetchBags<{ response: BagsLeaderboardItem[] }>(
+    '/token-launch/leaderboard'
+  );
+  return result?.response || [];
+}
+
+// ==========================================
+// Launch Feed Methods
+// ==========================================
+
+async function getLaunchFeed(options: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<BagsLaunchFeedItem[]> {
+  const { limit = 50, offset = 0 } = options;
+  const result = await fetchBags<{ response: Array<Record<string, unknown>> }>(
+    `/token-launch/feed?limit=${limit}&offset=${offset}`
+  );
+  const items = result?.response || [];
+  return items.map((item) => ({
+    mint: (item.tokenMint as string) || '',
+    name: (item.name as string) || '',
+    symbol: (item.symbol as string) || '',
+    image: (item.image as string) || '',
+    description: (item.description as string) || '',
+    creator: '',
+    status: (item.status as string) || undefined,
+    twitter: (item.twitter as string) || undefined,
+    website: (item.website as string) || undefined,
+    dbcPoolKey: (item.dbcPoolKey as string) || undefined,
+  }));
+}
+
+// ==========================================
+// Pool Data Methods
+// ==========================================
+
+async function getPoolByTokenMint(mint: string): Promise<BagsPoolData | null> {
+  return fetchBags<BagsPoolData>(`/pool/by-token-mint?tokenMint=${mint}`);
+}
+
+// ==========================================
+// Fee Share Admin Methods
+// ==========================================
+
+async function getAdminTokens(wallet: string): Promise<FeeShareAdminToken[]> {
+  const result = await fetchBags<FeeShareAdminToken[]>(
+    `/fee-share/admin/tokens?wallet=${wallet}`
+  );
+  return result || [];
+}
+
+async function transferFeeShareAdmin(
+  tokenMint: string,
+  currentAdmin: string,
+  newAdmin: string
+): Promise<string> {
+  const result = await postBags<{ transaction: string }>('/fee-share/admin/transfer', {
+    tokenMint,
+    currentAdmin,
+    newAdmin,
+  });
+  if (!result) throw new Error('Failed to create admin transfer transaction');
+  return result.transaction;
+}
+
+async function updateFeeShareConfig(
+  tokenMint: string,
+  claimers: FeeClaimerConfig[],
+  walletAddress: string
+): Promise<string[]> {
+  const result = await postBags<{ transactions: string[] }>('/fee-share/admin/update-config', {
+    tokenMint,
+    claimers: claimers.map(c => ({
+      type: c.type,
+      identifier: c.identifier,
+      provider: c.provider,
+      percentage: c.percentage,
+    })),
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to update fee share config');
+  return result.transactions;
+}
+
+// ==========================================
+// Dexscreener Integration Methods
+// ==========================================
+
+async function createDexscreenerOrder(
+  tokenMint: string,
+  walletAddress: string
+): Promise<DexscreenerOrder> {
+  const result = await postBags<DexscreenerOrder>('/solana/dexscreener/create-order', {
+    tokenMint,
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to create Dexscreener order');
+  return result;
+}
+
+async function checkDexscreenerAvailability(tokenMint: string): Promise<DexscreenerAvailability> {
+  const result = await fetchBags<DexscreenerAvailability>(
+    `/solana/dexscreener/order-availability?tokenMint=${tokenMint}`
+  );
+  if (!result) throw new Error('Failed to check Dexscreener availability');
+  return result;
+}
+
+async function submitDexscreenerPayment(
+  orderId: string,
+  signedTransaction: string
+): Promise<{ success: boolean }> {
+  const result = await postBags<{ success: boolean }>('/solana/dexscreener/submit-payment', {
+    orderId,
+    signedTransaction,
+  });
+  if (!result) throw new Error('Failed to submit Dexscreener payment');
+  return result;
+}
+
+// ==========================================
+// V3 Auto-Claim Methods
+// ==========================================
+
+async function getClaimTransactionsV3(
+  tokenMint: string,
+  walletAddress: string
+): Promise<string[]> {
+  const result = await fetchBags<{ transactions: string[] }>(
+    `/token-launch/claim-txs/v3?tokenMint=${tokenMint}&wallet=${walletAddress}`
+  );
+  return result?.transactions || [];
+}
+
+// ==========================================
+// All Pools Methods
+// ==========================================
+
+async function getAllPools(): Promise<BagsPool[]> {
+  const result = await fetchBags<BagsPool[]>('/solana/bags/pools');
+  return result || [];
+}
+
+// ==========================================
+// Transaction Submission
+// ==========================================
+
+async function sendTransaction(signedTransaction: string): Promise<{ signature: string }> {
+  const result = await postBags<{ signature: string }>('/solana/send-transaction', {
+    transaction: signedTransaction,
+  });
+  if (!result) throw new Error('Failed to send transaction');
+  return result;
 }
 
 // ==========================================
@@ -475,7 +653,6 @@ export const bagsService = {
   getCreatedTokens,
   getClaimableFees,
   getClaimHistory,
-  createClaimTransaction,
 
   // Partner Config
   createPartnerConfig,
@@ -501,6 +678,34 @@ export const bagsService = {
   getTokenClaimStats,
   getTokenClaimEvents,
   getTokenFeeInfo,
+
+  // Leaderboard
+  getTopTokensByFees,
+
+  // Launch Feed
+  getLaunchFeed,
+
+  // Pool Data
+  getPoolByTokenMint,
+
+  // Fee Share Admin
+  getAdminTokens,
+  transferFeeShareAdmin,
+  updateFeeShareConfig,
+
+  // Dexscreener
+  createDexscreenerOrder,
+  checkDexscreenerAvailability,
+  submitDexscreenerPayment,
+
+  // V3 Auto-Claim
+  getClaimTransactionsV3,
+
+  // Pools
+  getAllPools,
+
+  // Transaction
+  sendTransaction,
 };
 
 export default bagsService;

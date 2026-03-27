@@ -1,19 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
-import { bagsService } from "@/services/bags.service";
 import { formatCurrency } from "@/lib/format";
-import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet } from "lucide-react";
+import { SOL_PRICE } from "@/lib/constants";
+import { useFeeData } from "@/hooks/useFeeData";
+import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet, Trophy } from "lucide-react";
 import type { PulseItem } from "@/lib/types";
-import type { BagsTokenCreator } from "@/lib/bags-types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
+import FeeLeadersSection from "@/components/bags/FeeLeadersSection";
 
 // View modes for the page
-type ViewMode = "all" | "bags";
+type ViewMode = "all" | "bags" | "leaders";
 
 const FILTERS = ["All", "Migrated", "Near Migration", "Bonding", "High MC", "With Fees"];
 const STATE_FILTERS = ["all", "MIGRATED", "FINAL_STRETCH", "NEW", "high_mc", "with_fees"] as const;
@@ -23,54 +24,10 @@ const AVATAR_COLORS = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAF
 // Check if a token could be a BAGS token (mint ends with 'bags')
 const isBagsToken = (mint: string): boolean => mint.toLowerCase().endsWith('bags');
 
-// Extended fee data type
-interface ExtendedFeeData {
-    lifetimeFees: number;
-    creatorsCount: number;
-    creators: BagsTokenCreator[];
-    topEarnerShare: number; // percentage
-}
-
-// Enhanced Token Card with fee data display
 const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeDataLoaded?: (tokenId: string, hasFees: boolean) => void }) => {
-    const [feeData, setFeeData] = useState<ExtendedFeeData | null>(null);
-    const [isLoadingFees, setIsLoadingFees] = useState(true);
-    const [feeError, setFeeError] = useState(false);
+    const { feeData, isLoading: isLoadingFees, error: feeError } = useFeeData(token.tokenId, onFeeDataLoaded);
 
     const isPotentialBags = isBagsToken(token.tokenId);
-
-    useEffect(() => {
-        let mounted = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoadingFees(true);
-        setFeeError(false);
-
-        bagsService.getTokenFeeInfo(token.tokenId)
-            .then((info) => {
-                if (mounted && info) {
-                    const topEarner = info.creators.length > 0
-                        ? Math.max(...info.creators.map(c => c.royaltyBps)) / 100
-                        : 0;
-                    setFeeData({
-                        lifetimeFees: info.lifetimeFees,
-                        creatorsCount: info.creators.length,
-                        creators: info.creators,
-                        topEarnerShare: topEarner,
-                    });
-                    onFeeDataLoaded?.(token.tokenId, info.lifetimeFees > 0 || info.creators.length > 0);
-                } else {
-                    onFeeDataLoaded?.(token.tokenId, false);
-                }
-            })
-            .catch(() => {
-                if (mounted) setFeeError(true);
-                onFeeDataLoaded?.(token.tokenId, false);
-            })
-            .finally(() => {
-                if (mounted) setIsLoadingFees(false);
-            });
-        return () => { mounted = false; };
-    }, [token.tokenId, onFeeDataLoaded]);
 
     const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
     const fallbackColor = AVATAR_COLORS[initial.charCodeAt(0) % AVATAR_COLORS.length];
@@ -224,41 +181,9 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
 // Table row with enhanced fee data
 const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; index: number; onFeeDataLoaded?: (tokenId: string, hasFees: boolean) => void }) => {
-    const [feeData, setFeeData] = useState<ExtendedFeeData | null>(null);
-    const [isLoadingFees, setIsLoadingFees] = useState(true);
+    const { feeData, isLoading: isLoadingFees } = useFeeData(token.tokenId, onFeeDataLoaded);
 
     const isPotentialBags = isBagsToken(token.tokenId);
-
-    useEffect(() => {
-        let mounted = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoadingFees(true);
-
-        bagsService.getTokenFeeInfo(token.tokenId)
-            .then((info) => {
-                if (mounted && info) {
-                    const topEarner = info.creators.length > 0
-                        ? Math.max(...info.creators.map(c => c.royaltyBps)) / 100
-                        : 0;
-                    setFeeData({
-                        lifetimeFees: info.lifetimeFees,
-                        creatorsCount: info.creators.length,
-                        creators: info.creators,
-                        topEarnerShare: topEarner,
-                    });
-                    onFeeDataLoaded?.(token.tokenId, info.lifetimeFees > 0 || info.creators.length > 0);
-                } else {
-                    onFeeDataLoaded?.(token.tokenId, false);
-                }
-            })
-            .catch(() => {
-                onFeeDataLoaded?.(token.tokenId, false);
-            })
-            .finally(() => {
-                if (mounted) setIsLoadingFees(false);
-            });
-        return () => { mounted = false; };
-    }, [token.tokenId, onFeeDataLoaded]);
 
     const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
     const fallbackColor = AVATAR_COLORS[initial.charCodeAt(0) % AVATAR_COLORS.length];
@@ -383,7 +308,7 @@ export default function TrendingPage() {
     }, [connect, loadInitialData]);
 
     // Track which tokens have fee data
-    const handleFeeDataLoaded = useMemo(() => (tokenId: string, hasFees: boolean) => {
+    const handleFeeDataLoaded = useCallback((tokenId: string, hasFees: boolean) => {
         setTokensWithFees(prev => {
             const next = new Set(prev);
             if (hasFees) {
@@ -419,7 +344,7 @@ export default function TrendingPage() {
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
 
     return (
-        <div className="min-h-screen bg-[#050505] p-6 font-mono">
+        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex items-center justify-between flex-wrap gap-4">
@@ -437,7 +362,9 @@ export default function TrendingPage() {
                         <p className="text-sm text-[#888]">
                             {viewMode === "all"
                                 ? `Real-time tokens with fee sharing data ${allBagsTokens.length > 0 ? `(${allBagsTokens.length} tokens)` : ''}`
-                                : 'BAGS tokens with fee-sharing from bags.fm'
+                                : viewMode === "leaders"
+                                    ? 'Top tokens ranked by lifetime fees earned on BAGS'
+                                    : 'BAGS tokens with fee-sharing from bags.fm'
                             }
                         </p>
                     </div>
@@ -455,6 +382,17 @@ export default function TrendingPage() {
                             All Tokens
                         </button>
                         <button
+                            onClick={() => setViewMode("leaders")}
+                            className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
+                                viewMode === "leaders"
+                                    ? "bg-[#FFD700] text-black font-bold"
+                                    : "text-[#888] hover:text-white"
+                            }`}
+                        >
+                            <Trophy size={14} />
+                            Fee Leaders
+                        </button>
+                        <button
                             onClick={() => setViewMode("bags")}
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
                                 viewMode === "bags"
@@ -469,10 +407,15 @@ export default function TrendingPage() {
                 </div>
             </div>
 
+            {/* Fee Leaders Section */}
+            {viewMode === "leaders" && (
+                <FeeLeadersSection />
+            )}
+
             {/* BAGS Only Section */}
             {viewMode === "bags" && (
                 <div className="max-w-7xl mx-auto mb-8">
-                    <BagsTokensSection solPrice={140} />
+                    <BagsTokensSection solPrice={SOL_PRICE} />
                 </div>
             )}
 
@@ -551,16 +494,18 @@ export default function TrendingPage() {
             {/* Loading State */}
             {isLoading && (
                 <div className="max-w-7xl mx-auto flex items-center justify-center py-20">
-                    <Loader2 size={24} className="animate-spin text-[#39FF14] mr-3" />
-                    <span className="text-[#888]">Connecting to live feed...</span>
+                    <div className="flex items-center gap-3 text-[#666]">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="text-sm font-mono">LOADING_DATA...</span>
+                    </div>
                 </div>
             )}
 
             {/* Empty State */}
             {!isLoading && filteredTokens.length === 0 && (
-                <div className="max-w-7xl mx-auto py-20 text-center text-[#666]">
-                    <TrendingUp size={32} className="mx-auto mb-4 opacity-30" />
-                    <p className="font-mono">
+                <div className="max-w-7xl mx-auto flex flex-col items-center justify-center text-[#666] py-12">
+                    <TrendingUp size={32} className="mb-4 opacity-30" />
+                    <p className="text-sm font-mono">
                         {allBagsTokens.length === 0
                             ? "Waiting for tokens..."
                             : "No tokens match your filter"}

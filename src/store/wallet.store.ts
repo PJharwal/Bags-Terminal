@@ -58,14 +58,9 @@ export const useWalletStore = create<WalletStore>((set, get) => ({
   },
 
   addTransaction: (tx) => {
-    set((state) => ({
-      transactions: [tx, ...state.transactions].slice(0, 50),
-    }));
-    // Persist to localStorage
-    try {
-      const txs = [tx, ...get().transactions].slice(0, 50);
-      localStorage.setItem('bags_transactions', JSON.stringify(txs));
-    } catch {}
+    const updated = [tx, ...get().transactions].slice(0, 50);
+    set({ transactions: updated });
+    try { localStorage.setItem('bags_transactions', JSON.stringify(updated)); } catch {}
   },
 
   updateTransaction: (id, updates) => {

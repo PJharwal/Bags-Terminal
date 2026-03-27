@@ -156,6 +156,11 @@ export function CredibilityMatrix({ layout, matrix: externalMatrix }: Credibilit
     // Full Terminal layout
     return (
         <div className="card">
+            {matrix?.dataSource === 'synthetic' && (
+                <div className="text-xs text-yellow-500/70 border border-yellow-500/20 bg-yellow-500/5 px-3 py-1.5 mb-3 font-mono">
+                    Credibility data unavailable — showing estimated scores
+                </div>
+            )}
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06]">
                 <div className="flex items-center gap-2">

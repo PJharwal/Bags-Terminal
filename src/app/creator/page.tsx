@@ -25,22 +25,15 @@ export default function CreatorPage() {
 
   if (!connected) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-16">
-        <div className="card flex flex-col items-center justify-center gap-5 p-12">
-          <div className="w-16 h-16 border border-white/10 flex items-center justify-center bg-[linear-gradient(135deg,rgba(57,255,20,0.05)_0%,transparent_100%)]">
-            <Wallet size={24} className="text-[#39FF14]/40" />
-          </div>
-          <span className="text-sm font-bold text-[#EDEDED] text-display">Connect your wallet</span>
-          <span className="label text-center">
-            Connect your wallet to view your created tokens and claim fees
-          </span>
-        </div>
+      <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+        <Wallet size={32} className="mb-4 opacity-30" />
+        <p className="text-sm font-mono">Connect your wallet to view created tokens</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono max-w-6xl mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>

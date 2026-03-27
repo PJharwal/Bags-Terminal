@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { LaunchTokenForm } from '@/components/launch/LaunchTokenForm';
 import { FeeShareConfigurator } from '@/components/launch/FeeShareConfigurator';
 import { TokenPreviewCard } from '@/components/launch/TokenPreviewCard';
@@ -11,6 +12,7 @@ import { TokenLaunchCard } from '@/components/share/TokenLaunchCard';
 import { useLaunchStore } from '@/store/launch.store';
 
 function LaunchPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get('ref');
   const { partnerKey, setPartnerKey, status, result, metadata, feeClaimers, initialBuyAmount } = useLaunchStore();
@@ -24,7 +26,7 @@ function LaunchPageContent() {
   const shortenedRef = ref ? `${ref.slice(0, 4)}...${ref.slice(-4)}` : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono max-w-6xl mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-xl font-bold text-[#EDEDED] tracking-tight text-display">
@@ -54,7 +56,7 @@ function LaunchPageContent() {
               feeClaimersCount={feeClaimers.length}
             />
             <button
-              onClick={() => window.location.href = `/terminal/${result.tokenMint}`}
+              onClick={() => router.push(`/terminal/${result.tokenMint}`)}
               className="w-full mt-3 px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/10 text-[#888] hover:text-white hover:border-white/20 transition-colors"
             >
               Open in Terminal →
