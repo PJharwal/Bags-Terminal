@@ -5,6 +5,7 @@ import { MyTokensTab } from './MyTokensTab';
 import { FeeClaimsTab } from './FeeClaimsTab';
 import { ClaimHistoryTab } from './ClaimHistoryTab';
 import { PartnerConfigTab } from './PartnerConfigTab';
+import { TokenAdminTab } from './TokenAdminTab';
 import { ReferralCard } from '@/components/referral/ReferralCard';
 import { ReferralShareCard } from '@/components/share/ReferralShareCard';
 import { useReferralStore } from '@/store/referral.store';
@@ -15,6 +16,7 @@ const TABS = [
   { id: 'claims', label: 'FEE CLAIMS' },
   { id: 'history', label: 'CLAIM HISTORY' },
   { id: 'partner', label: 'PARTNER' },
+  { id: 'admin', label: 'ADMIN' },
   { id: 'referral', label: 'REFERRAL' },
 ] as const;
 
@@ -51,6 +53,7 @@ export function DashboardTabs() {
         {activeTab === 'claims' && <FeeClaimsTab />}
         {activeTab === 'history' && <ClaimHistoryTab />}
         {activeTab === 'partner' && <PartnerConfigTab />}
+        {activeTab === 'admin' && <TokenAdminTab />}
         {activeTab === 'referral' && <ReferralTabContent />}
       </div>
     </div>

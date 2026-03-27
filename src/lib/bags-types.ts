@@ -336,3 +336,122 @@ export interface LookupTableConfig {
   lookupTableAddress: string;
   transactions: string[]; // Serialized transactions for LUT creation
 }
+
+// ==========================================
+// Token Leaderboard Types (from SDK v1.3.4)
+// ==========================================
+
+export interface JupiterTokenAudit {
+  topHoldersPercentage?: number;
+  highSingleOwnership?: boolean;
+  blockaidHoneypot?: boolean;
+  mintAuthorityDisabled?: boolean;
+  freezeAuthorityDisabled?: boolean;
+  devMigrations?: number;
+  blockaidRugpull?: boolean;
+  blockaidWashTrading?: boolean;
+  blockaidHiddenKeyHolder?: boolean;
+}
+
+export interface JupiterTokenStats {
+  priceChange?: number;
+  holderChange?: number;
+  liquidityChange?: number;
+  volumeChange?: number;
+  buyVolume?: number;
+  sellVolume?: number;
+  numBuys?: number;
+  numSells?: number;
+  numTraders?: number;
+}
+
+export interface JupiterToken {
+  id: string;
+  name: string;
+  symbol: string;
+  icon: string;
+  decimals: number;
+  twitter?: string;
+  website?: string;
+  telegram?: string;
+  dev: string;
+  circSupply: number;
+  totalSupply: number;
+  holderCount: number;
+  audit: JupiterTokenAudit;
+  organicScore: number;
+  organicScoreLabel: string;
+  tags: string[];
+  fdv: number;
+  mcap: number;
+  usdPrice: number;
+  liquidity: number;
+  stats5m?: JupiterTokenStats;
+  stats1h?: JupiterTokenStats;
+  stats6h?: JupiterTokenStats;
+  stats24h?: JupiterTokenStats;
+  bondingCurve?: number;
+  updatedAt: string;
+}
+
+export interface BagsLeaderboardItem {
+  token: string;
+  lifetimeFees: string;
+  tokenInfo: JupiterToken | null;
+  creators: BagsTokenCreator[] | null;
+  tokenSupply: { amount: string; decimals: number; uiAmount: number | null } | null;
+  tokenLatestPrice: { price: number; priceUSD: number; priceSOL: number; volumeUSD: number; volumeSOL: number; tokenAddress: string } | null;
+}
+
+// ==========================================
+// Launch Feed Types
+// ==========================================
+
+export interface BagsLaunchFeedItem {
+  mint: string;
+  name: string;
+  symbol: string;
+  image: string;
+  description: string;
+  creator: string;
+  createdAt: number;
+  marketCap?: number;
+  bondingCurve?: number;
+  lifetimeFees?: number;
+  creatorCount?: number;
+}
+
+// ==========================================
+// Pool Data Types
+// ==========================================
+
+export interface BagsPoolData {
+  poolAddress: string;
+  tokenMint: string;
+  baseMint: string;
+  quoteMint: string;
+  liquidity: number;
+  volume24h: number;
+  fee24h: number;
+  currentPrice: number;
+}
+
+// ==========================================
+// Fee Share Admin Types
+// ==========================================
+
+export interface FeeShareAdminToken {
+  tokenMint: string;
+  tokenSymbol: string;
+  tokenImage: string;
+  configKey: string;
+  claimerCount: number;
+}
+
+export interface TransferAdminResult {
+  transaction: string;
+}
+
+export interface UpdateFeeShareConfigResult {
+  transaction: string;
+}

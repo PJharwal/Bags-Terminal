@@ -23,6 +23,10 @@ import type {
   PartnerClaimInfo,
   FeeShareWalletInfo,
   LookupTableConfig,
+  BagsLeaderboardItem,
+  BagsLaunchFeedItem,
+  BagsPoolData,
+  FeeShareAdminToken,
 } from '@/lib/bags-types';
 
 const BAGS_API_BASE = '/api/bags';
@@ -456,6 +460,84 @@ async function getTokenFeeInfo(mint: string): Promise<{
 }
 
 // ==========================================
+// Leaderboard Methods (SDK v1.3.4)
+// ==========================================
+
+async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
+  const result = await fetchBags<{ response: BagsLeaderboardItem[] }>(
+    '/token-launch/leaderboard'
+  );
+  return result?.response || [];
+}
+
+// ==========================================
+// Launch Feed Methods
+// ==========================================
+
+async function getLaunchFeed(options: {
+  limit?: number;
+  offset?: number;
+} = {}): Promise<BagsLaunchFeedItem[]> {
+  const { limit = 50, offset = 0 } = options;
+  const result = await fetchBags<BagsLaunchFeedItem[]>(
+    `/token-launch/feed?limit=${limit}&offset=${offset}`
+  );
+  return result || [];
+}
+
+// ==========================================
+// Pool Data Methods
+// ==========================================
+
+async function getPoolByTokenMint(mint: string): Promise<BagsPoolData | null> {
+  return fetchBags<BagsPoolData>(`/pool/by-token-mint?tokenMint=${mint}`);
+}
+
+// ==========================================
+// Fee Share Admin Methods
+// ==========================================
+
+async function getAdminTokens(wallet: string): Promise<FeeShareAdminToken[]> {
+  const result = await fetchBags<FeeShareAdminToken[]>(
+    `/fee-share/admin/tokens?wallet=${wallet}`
+  );
+  return result || [];
+}
+
+async function transferFeeShareAdmin(
+  tokenMint: string,
+  currentAdmin: string,
+  newAdmin: string
+): Promise<string> {
+  const result = await postBags<{ transaction: string }>('/fee-share/admin/transfer', {
+    tokenMint,
+    currentAdmin,
+    newAdmin,
+  });
+  if (!result) throw new Error('Failed to create admin transfer transaction');
+  return result.transaction;
+}
+
+async function updateFeeShareConfig(
+  tokenMint: string,
+  claimers: FeeClaimerConfig[],
+  walletAddress: string
+): Promise<string[]> {
+  const result = await postBags<{ transactions: string[] }>('/fee-share/admin/update-config', {
+    tokenMint,
+    claimers: claimers.map(c => ({
+      type: c.type,
+      identifier: c.identifier,
+      provider: c.provider,
+      percentage: c.percentage,
+    })),
+    walletAddress,
+  });
+  if (!result) throw new Error('Failed to update fee share config');
+  return result.transactions;
+}
+
+// ==========================================
 // Export Service
 // ==========================================
 
@@ -501,6 +583,20 @@ export const bagsService = {
   getTokenClaimStats,
   getTokenClaimEvents,
   getTokenFeeInfo,
+
+  // Leaderboard
+  getTopTokensByFees,
+
+  // Launch Feed
+  getLaunchFeed,
+
+  // Pool Data
+  getPoolByTokenMint,
+
+  // Fee Share Admin
+  getAdminTokens,
+  transferFeeShareAdmin,
+  updateFeeShareConfig,
 };
 
 export default bagsService;
