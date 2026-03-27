@@ -492,10 +492,22 @@ async function getLaunchFeed(options: {
   offset?: number;
 } = {}): Promise<BagsLaunchFeedItem[]> {
   const { limit = 50, offset = 0 } = options;
-  const result = await fetchBags<BagsLaunchFeedItem[]>(
+  const result = await fetchBags<{ response: Array<Record<string, unknown>> }>(
     `/token-launch/feed?limit=${limit}&offset=${offset}`
   );
-  return result || [];
+  const items = result?.response || [];
+  return items.map((item) => ({
+    mint: (item.tokenMint as string) || '',
+    name: (item.name as string) || '',
+    symbol: (item.symbol as string) || '',
+    image: (item.image as string) || '',
+    description: (item.description as string) || '',
+    creator: '',
+    status: (item.status as string) || undefined,
+    twitter: (item.twitter as string) || undefined,
+    website: (item.website as string) || undefined,
+    dbcPoolKey: (item.dbcPoolKey as string) || undefined,
+  }));
 }
 
 // ==========================================
