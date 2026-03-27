@@ -9,6 +9,7 @@ import type {
   PartnerConfig,
   PartnerClaimInfo,
   FeeShareWalletInfo,
+  FeeShareAdminToken,
 } from '@/lib/bags-types';
 
 interface CreatorStore {
@@ -27,6 +28,10 @@ interface CreatorStore {
   // Fee share wallet v2
   feeShareWalletInfo: FeeShareWalletInfo | null;
 
+  // Fee share admin
+  adminTokens: FeeShareAdminToken[];
+  isLoadingAdmin: boolean;
+
   // Actions
   loadCreatedTokens: (wallet: string) => Promise<void>;
   loadClaimableEarnings: (wallet: string) => Promise<void>;
@@ -41,6 +46,9 @@ interface CreatorStore {
 
   // Fee share wallet v2
   loadFeeShareWalletInfo: (wallet: string) => Promise<void>;
+
+  // Fee share admin
+  loadAdminTokens: (wallet: string) => Promise<void>;
 }
 
 export const useCreatorStore = create<CreatorStore>((set, get) => ({
@@ -54,6 +62,8 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   partnerClaimable: null,
   isLoadingPartner: false,
   feeShareWalletInfo: null,
+  adminTokens: [],
+  isLoadingAdmin: false,
 
   loadCreatedTokens: async (wallet) => {
     try {
@@ -91,6 +101,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
         get().loadClaimHistory(wallet),
         get().loadPartnerConfig(wallet),
         get().loadFeeShareWalletInfo(wallet),
+        get().loadAdminTokens(wallet),
       ]);
       const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
       if (rejected.length > 0) {
@@ -195,6 +206,19 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ feeShareWalletInfo: info });
     } catch (err) {
       console.error('Failed to load fee share wallet info:', err);
+    }
+  },
+
+  // Fee share admin
+  loadAdminTokens: async (wallet) => {
+    set({ isLoadingAdmin: true });
+    try {
+      const tokens = await bagsService.getAdminTokens(wallet);
+      set({ adminTokens: tokens });
+    } catch (err) {
+      console.error('Failed to load admin tokens:', err);
+    } finally {
+      set({ isLoadingAdmin: false });
     }
   },
 }));

@@ -16,6 +16,10 @@ const PUBLIC_API_ROUTES = [
   'partner/config',
   'partner/claimable',
   'partner/claim',
+  'token-launch/leaderboard',
+  'token-launch/feed',
+  'pool/by-token-mint',
+  'fee-share/admin',
 ];
 
 function getApiBase(path: string): string {

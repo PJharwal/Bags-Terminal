@@ -8,12 +8,13 @@ import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency } from "@/lib/format";
 import { SOL_PRICE } from "@/lib/constants";
 import { useFeeData } from "@/hooks/useFeeData";
-import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet } from "lucide-react";
+import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet, Trophy } from "lucide-react";
 import type { PulseItem } from "@/lib/types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
+import FeeLeadersSection from "@/components/bags/FeeLeadersSection";
 
 // View modes for the page
-type ViewMode = "all" | "bags";
+type ViewMode = "all" | "bags" | "leaders";
 
 const FILTERS = ["All", "Migrated", "Near Migration", "Bonding", "High MC", "With Fees"];
 const STATE_FILTERS = ["all", "MIGRATED", "FINAL_STRETCH", "NEW", "high_mc", "with_fees"] as const;
@@ -361,7 +362,9 @@ export default function TrendingPage() {
                         <p className="text-sm text-[#888]">
                             {viewMode === "all"
                                 ? `Real-time tokens with fee sharing data ${allBagsTokens.length > 0 ? `(${allBagsTokens.length} tokens)` : ''}`
-                                : 'BAGS tokens with fee-sharing from bags.fm'
+                                : viewMode === "leaders"
+                                    ? 'Top tokens ranked by lifetime fees earned on BAGS'
+                                    : 'BAGS tokens with fee-sharing from bags.fm'
                             }
                         </p>
                     </div>
@@ -379,6 +382,17 @@ export default function TrendingPage() {
                             All Tokens
                         </button>
                         <button
+                            onClick={() => setViewMode("leaders")}
+                            className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
+                                viewMode === "leaders"
+                                    ? "bg-[#FFD700] text-black font-bold"
+                                    : "text-[#888] hover:text-white"
+                            }`}
+                        >
+                            <Trophy size={14} />
+                            Fee Leaders
+                        </button>
+                        <button
                             onClick={() => setViewMode("bags")}
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
                                 viewMode === "bags"
@@ -392,6 +406,11 @@ export default function TrendingPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Fee Leaders Section */}
+            {viewMode === "leaders" && (
+                <FeeLeadersSection />
+            )}
 
             {/* BAGS Only Section */}
             {viewMode === "bags" && (
