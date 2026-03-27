@@ -52,8 +52,8 @@ function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) 
   const [copied, setCopied] = useState(false);
   const sharePercent = creator.royaltyBps / 100;
 
-  const copyAddress = () => {
-    navigator.clipboard.writeText(creator.wallet);
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(creator.wallet);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -309,24 +309,28 @@ function AddTokenModal({
     setError("");
     setValidationResult(null);
 
-    const result = await bagsTokensService.validateBagsToken(mint.trim());
+    try {
+      const result = await bagsTokensService.validateBagsToken(mint.trim());
 
-    if (result.isValid) {
-      setValidationResult({ isValid: true, lifetimeFees: result.lifetimeFees });
-      onAdd({
-        mint: mint.trim(),
-        name: name.trim() || "Unknown Token",
-        symbol: symbol.trim() || "???",
-      });
-      setMint("");
-      setName("");
-      setSymbol("");
-      onClose();
-    } else {
-      setError(result.error || "Invalid BAGS token");
+      if (result.isValid) {
+        setValidationResult({ isValid: true, lifetimeFees: result.lifetimeFees });
+        onAdd({
+          mint: mint.trim(),
+          name: name.trim() || "Unknown Token",
+          symbol: symbol.trim() || "???",
+        });
+        setMint("");
+        setName("");
+        setSymbol("");
+        onClose();
+      } else {
+        setError(result.error || "Invalid BAGS token");
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Validation failed");
+    } finally {
+      setIsValidating(false);
     }
-
-    setIsValidating(false);
   };
 
   if (!isOpen) return null;

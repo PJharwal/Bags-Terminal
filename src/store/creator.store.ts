@@ -85,15 +85,17 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
   refreshAll: async (wallet) => {
     set({ isLoading: true, error: null });
     try {
-      await Promise.all([
+      const results = await Promise.allSettled([
         get().loadCreatedTokens(wallet),
         get().loadClaimableEarnings(wallet),
         get().loadClaimHistory(wallet),
         get().loadPartnerConfig(wallet),
         get().loadFeeShareWalletInfo(wallet),
       ]);
-    } catch (err) {
-      set({ error: err instanceof Error ? err.message : 'Failed to refresh' });
+      const rejected = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
+      if (rejected.length > 0) {
+        set({ error: rejected[0].reason instanceof Error ? rejected[0].reason.message : 'Failed to refresh' });
+      }
     } finally {
       set({ isLoading: false });
     }

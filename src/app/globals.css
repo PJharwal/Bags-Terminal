@@ -147,6 +147,10 @@ body {
   transition: all 0.15s ease;
   outline: none;
 }
+.input:focus-visible {
+  outline: 2px solid var(--accent, #39FF14);
+  outline-offset: -2px;
+}
 
 .input::placeholder {
   color: #333;
@@ -671,4 +675,15 @@ body {
 
 .number-glow-gold {
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

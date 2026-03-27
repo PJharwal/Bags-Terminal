@@ -141,7 +141,7 @@ export function PulseDrawer() {
                                 <span className="text-[10px] text-[#666]">ADDRESS</span>
                                 <div className="flex items-center gap-2 text-xs font-mono text-[#EDEDED]">
                                     {item.deployer.slice(0, 6)}...{item.deployer.slice(-4)}
-                                    <Copy size={10} className="text-[#666] cursor-pointer hover:text-white" />
+                                    <Copy size={10} className="text-[#666] cursor-pointer hover:text-white" onClick={() => navigator.clipboard.writeText(item.deployer)} />
                                 </div>
                             </div>
                             <div className="flex justify-between items-center">

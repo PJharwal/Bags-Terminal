@@ -1,20 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
 import SocketInitializer from "@/components/terminal/SocketInitializer";
 import { WalletProviderWrapper } from "@/components/wallet/WalletProviderWrapper";
 import { ToastContainer } from "@/components/ui/Toast";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "BAGS Terminal",
@@ -28,7 +17,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased text-[#E6E8EB]`}>
+      <body className="antialiased text-[#E6E8EB]">
         <WalletProviderWrapper>
           <TopBar />
           <main className="min-h-screen pt-14 flex flex-col">

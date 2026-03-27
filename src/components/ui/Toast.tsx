@@ -19,10 +19,12 @@ interface ToastStore {
   removeToast: (id: string) => void;
 }
 
+let toastCounter = 0;
+
 export const useToastStore = create<ToastStore>((set) => ({
   toasts: [],
   addToast: (type, message, duration = 5000) => {
-    const id = `toast_${Date.now()}`;
+    const id = `toast_${++toastCounter}`;
     set((state) => ({
       toasts: [...state.toasts, { id, type, message, duration }].slice(-5),
     }));
