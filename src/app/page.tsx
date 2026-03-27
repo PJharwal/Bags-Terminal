@@ -409,9 +409,8 @@ export default function HomePage() {
             BAGS TERMINAL // SYSTEM V3.0.0
           </div>
           <div className="flex gap-6 text-xs font-mono text-[#888]">
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">API</a>
-            <a href="#" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">STATUS</a>
+            <a href="https://docs.bags.fm" target="_blank" rel="noopener noreferrer" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>
+            <a href="https://docs.bags.fm/api-reference" target="_blank" rel="noopener noreferrer" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">API</a>
           </div>
         </div>
       </footer>

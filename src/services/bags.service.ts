@@ -440,6 +440,7 @@ async function getTokenClaimEvents(
  * Cached for 60s to prevent API flooding
  */
 const feeInfoCache = new Map<string, { data: { lifetimeFees: number; creators: BagsTokenCreator[] } | null; ts: number }>();
+const FEE_CACHE_MAX = 200;
 
 async function getTokenFeeInfo(mint: string): Promise<{
   lifetimeFees: number;
@@ -454,10 +455,18 @@ async function getTokenFeeInfo(mint: string): Promise<{
       getTokenCreators(mint),
     ]);
     const data = { lifetimeFees, creators };
+    if (feeInfoCache.size >= FEE_CACHE_MAX) {
+      const firstKey = feeInfoCache.keys().next().value;
+      if (firstKey) feeInfoCache.delete(firstKey);
+    }
     feeInfoCache.set(mint, { data, ts: Date.now() });
     return data;
   } catch (error) {
     console.error('Failed to get token fee info:', error);
+    if (feeInfoCache.size >= FEE_CACHE_MAX) {
+      const firstKey = feeInfoCache.keys().next().value;
+      if (firstKey) feeInfoCache.delete(firstKey);
+    }
     feeInfoCache.set(mint, { data: null, ts: Date.now() });
     return null;
   }
@@ -632,7 +641,6 @@ export const bagsService = {
   getCreatedTokens,
   getClaimableFees,
   getClaimHistory,
-  createClaimTransaction,
 
   // Partner Config
   createPartnerConfig,

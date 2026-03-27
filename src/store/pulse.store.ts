@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent } from '@/types/socket';
 import { tokenService, type Token } from '@/services/token.service';
+import { SOL_PRICE } from '@/lib/constants';
 
 
 // Convert token service Token to PulseItem format
@@ -42,9 +43,6 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         protocolSource: 'pumpfun',
     };
 };
-
-// SOL price for USD calculations (per user spec: use constant 140)
-const SOL_PRICE = 140;
 
 // Convert socket NewTokenEvent to PulseItem
 const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
@@ -307,6 +305,11 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         // Min market cap filter
         if (filters.minMarketCap > 0) {
             filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
+        }
+
+        // BAGS-only filter
+        if (filters.bagsOnly) {
+            filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
         }
 
         return filtered;
