@@ -9,6 +9,7 @@ import { SlippageSettings } from "@/components/terminal/SlippageSettings";
 import { TransactionStatus } from "@/components/terminal/TransactionStatus";
 import { SOL_MINT } from "@/lib/bags-types";
 import { Wallet } from "lucide-react";
+import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Transaction, VersionedTransaction } from "@solana/web3.js";
 
 const AMOUNT_PRESETS = [0.1, 0.5, 1, 5];
@@ -42,6 +43,7 @@ export function TerminalTradePanel() {
     } = useBagsWallet();
 
     const { quote, isLoading: quoteLoading, error: quoteError, fetchQuote, clearQuote } = useSwapQuote();
+    const { setVisible } = useWalletModal();
 
     const isBuy = tradePanel.mode === 'buy';
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
@@ -147,7 +149,8 @@ export function TerminalTradePanel() {
         setLastSignature(null);
     };
 
-    const isSwapDisabled = !connected || !activeToken || tradePanel.amount <= 0 || quoteLoading || swapStatus === 'pending' || swapStatus === 'confirming';
+    const isLimitOrder = tradePanel.orderType === 'limit';
+    const isSwapDisabled = !connected || !activeToken || tradePanel.amount <= 0 || quoteLoading || swapStatus === 'pending' || swapStatus === 'confirming' || isLimitOrder;
 
     return (
         <div className="flex flex-col h-full bg-[#0A0A0A] border-l border-white/10">
@@ -330,13 +333,13 @@ export function TerminalTradePanel() {
 
             {/* Action Button */}
             <div className="p-4 border-t border-white/10">
+                {isLimitOrder && (
+                    <p className="text-[10px] text-[#888] text-center mb-2">Limit orders coming soon</p>
+                )}
                 {!connected ? (
                     <button
                         className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#888] bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] hover:text-[#39FF14] transition-all"
-                        onClick={() => {
-                            // Trigger wallet modal via WalletButton
-                            document.querySelector<HTMLButtonElement>('[data-wallet-connect]')?.click();
-                        }}
+                        onClick={() => setVisible(true)}
                     >
                         Connect Wallet
                     </button>
@@ -348,7 +351,9 @@ export function TerminalTradePanel() {
                     >
                         {swapStatus === 'pending' || swapStatus === 'confirming'
                             ? 'Processing...'
-                            : `${isBuy ? 'Buy' : 'Sell'} ${activeToken?.symbol || 'Token'}`
+                            : isLimitOrder
+                                ? 'Limit Order Unavailable'
+                                : `${isBuy ? 'Buy' : 'Sell'} ${activeToken?.symbol || 'Token'}`
                         }
                     </button>
                 )}

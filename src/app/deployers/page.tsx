@@ -7,6 +7,7 @@ import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency, getScoreColor } from "@/lib/format";
 import type { PulseItem } from "@/lib/types";
 import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff, Loader2 } from "lucide-react";
+import Link from "next/link";
 
 // Aggregate deployers from tokens
 interface AggregatedDeployer {
@@ -90,12 +91,13 @@ function aggregateDeployers(tokens: PulseItem[]): AggregatedDeployer[] {
 export default function DeployersPage() {
     const [selectedDeployer, setSelectedDeployer] = useState<AggregatedDeployer | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
-    const { items } = usePulseStore();
+    const { items, loadInitialData } = usePulseStore();
     const { connect, isConnected } = useSocketStore();
 
     useEffect(() => {
         connect();
-    }, [connect]);
+        loadInitialData();
+    }, [connect, loadInitialData]);
 
     // Get all tokens and aggregate deployers
     const allTokens = useMemo(() =>
@@ -318,20 +320,22 @@ export default function DeployersPage() {
                             </h3>
                             <div className="space-y-1">
                                 {selectedDeployer.tokens.slice(0, 10).map((token, i) => (
-                                    <div key={token.tokenId} className="flex items-center justify-between p-3 border border-white/5 hover:border-white/20 bg-black/20 transition-colors group">
-                                        <div className="flex items-center gap-3">
-                                            <span className="text-[10px] text-[#444] font-mono">0{i+1}</span>
-                                            <span className="font-bold text-[#EDEDED]">{token.symbol}</span>
+                                    <Link key={token.tokenId} href={`/terminal/${token.tokenId}`}>
+                                        <div className="flex items-center justify-between p-3 border border-white/5 hover:border-[#39FF14]/30 bg-black/20 transition-colors group cursor-pointer">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[10px] text-[#444] font-mono">0{i+1}</span>
+                                                <span className="font-bold text-[#EDEDED] group-hover:text-[#39FF14] transition-colors">{token.symbol}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'badge-green' : 'badge-muted'}`}>
+                                                    {token.state}
+                                                </span>
+                                                <span className="text-xs font-mono text-[#666]">
+                                                    {formatCurrency(token.marketCap)}
+                                                </span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'badge-green' : 'badge-muted'}`}>
-                                                {token.state}
-                                            </span>
-                                            <span className="text-xs font-mono text-[#666]">
-                                                {formatCurrency(token.marketCap)}
-                                            </span>
-                                        </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         </div>

@@ -71,6 +71,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ createdTokens: tokens });
     } catch (err) {
       console.error('Failed to load created tokens:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 
@@ -80,6 +81,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ claimableEarnings: earnings });
     } catch (err) {
       console.error('Failed to load claimable earnings:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 
@@ -89,6 +91,7 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
       set({ claimHistory: history });
     } catch (err) {
       console.error('Failed to load claim history:', err);
+      set({ error: err instanceof Error ? err.message : 'Failed to load data' });
     }
   },
 

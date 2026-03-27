@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, ExternalLink, Globe, Twitter } from "lucide-react";
+import { Copy, ExternalLink } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 
@@ -189,9 +189,11 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
 
                 {/* External Links */}
                 <div className="flex items-center gap-1">
-                    <LinkButton icon={<ExternalLink size={12} />} title="Solscan" />
-                    <LinkButton icon={<Twitter size={12} />} title="Twitter" />
-                    <LinkButton icon={<Globe size={12} />} title="Website" />
+                    <LinkButton
+                        icon={<ExternalLink size={12} />}
+                        title="Solscan"
+                        href={`https://solscan.io/token/${token.tokenId}`}
+                    />
                 </div>
             </div>
         </div>
@@ -207,13 +209,16 @@ function StatItem({ label, value }: { label: string; value: string }) {
     );
 }
 
-function LinkButton({ icon, title }: { icon: React.ReactNode; title: string }) {
+function LinkButton({ icon, title, href }: { icon: React.ReactNode; title: string; href: string }) {
     return (
-        <button
+        <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-ghost btn-press p-1.5"
             title={title}
         >
             {icon}
-        </button>
+        </a>
     );
 }

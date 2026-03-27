@@ -134,16 +134,23 @@ function PulseHeader({
 
             <div className="flex items-center gap-4">
                 <div className="flex">
-                    {(['solana', 'base', 'ethereum'] as Network[]).map((net) => (
+                    <button
+                        onClick={() => onNetworkChange('solana')}
+                        className={`px-4 py-1.5 text-[10px] font-bold uppercase transition-all ${network === 'solana'
+                            ? 'btn-primary'
+                            : 'btn-ghost'
+                            }`}
+                    >
+                        solana
+                    </button>
+                    {(['base', 'ethereum'] as Network[]).map((net) => (
                         <button
                             key={net}
-                            onClick={() => onNetworkChange(net)}
-                            className={`px-4 py-1.5 text-[10px] font-bold uppercase transition-all ${network === net
-                                ? 'btn-primary'
-                                : 'btn-ghost'
-                                }`}
+                            disabled
+                            className="px-4 py-1.5 text-[10px] font-bold uppercase btn-ghost opacity-30 cursor-not-allowed"
+                            title="Coming soon"
                         >
-                            {net}
+                            {net} <span className="text-[8px] ml-1">soon</span>
                         </button>
                     ))}
                 </div>
