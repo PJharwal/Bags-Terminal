@@ -6,7 +6,7 @@ import { motion } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency } from "@/lib/format";
-import { SOL_PRICE } from "@/lib/constants";
+import { useSolPrice } from "@/hooks/useSolPrice";
 import { useFeeData } from "@/hooks/useFeeData";
 import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet, Trophy } from "lucide-react";
 import type { PulseItem } from "@/lib/types";
@@ -300,6 +300,7 @@ export default function TrendingPage() {
     const [tokensWithFees, setTokensWithFees] = useState<Set<string>>(new Set());
     const { items, loadInitialData, isInitialLoading } = usePulseStore();
     const { connect, isConnected } = useSocketStore();
+    const { price: solPrice } = useSolPrice();
 
     useEffect(() => {
         connect();
@@ -415,7 +416,7 @@ export default function TrendingPage() {
             {/* BAGS Only Section */}
             {viewMode === "bags" && (
                 <div className="max-w-7xl mx-auto mb-8">
-                    <BagsTokensSection solPrice={SOL_PRICE} />
+                    <BagsTokensSection solPrice={solPrice} />
                 </div>
             )}
 

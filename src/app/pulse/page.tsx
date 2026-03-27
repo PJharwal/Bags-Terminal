@@ -16,7 +16,7 @@ import type { RawTokenData } from "@/lib/bags-types";
 // Types
 type Network = 'solana' | 'base' | 'ethereum';
 
-import { SOL_PRICE } from "@/lib/constants";
+import { useSolPrice } from "@/hooks/useSolPrice";
 
 // BAGS token filter
 const isBagsToken = (mint: string | undefined): boolean => {
@@ -25,7 +25,7 @@ const isBagsToken = (mint: string | undefined): boolean => {
 };
 
 // Process API token data into PulseItem format
-const processApiTokenData = (data: RawTokenData, targetState: PulseState): PulseItem => {
+const processApiTokenData = (data: RawTokenData, targetState: PulseState, solPrice: number): PulseItem => {
     const marketCapSol = parseFloat(data.market_cap_sol || data.marketCapSol || "0");
     const bondingProgress = data.bonding_curve_percent
         ? parseFloat(data.bonding_curve_percent)
@@ -53,12 +53,12 @@ const processApiTokenData = (data: RawTokenData, targetState: PulseState): Pulse
         deployerLaunches: 1,
         deployerSuccessRate: 50,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
-        marketCap: marketCapSol * SOL_PRICE,
-        liquidity: marketCapSol * SOL_PRICE * 0.3,
+        marketCap: marketCapSol * solPrice,
+        liquidity: marketCapSol * solPrice * 0.3,
         bondingProgress,
         holders: data.holder_count || 0,
         txCount: data.total_transactions || 0,
-        volume24h: parseFloat(data.volume_24h_sol || "0") * SOL_PRICE,
+        volume24h: parseFloat(data.volume_24h_sol || "0") * solPrice,
         state: targetState,
         riskFlags,
         updatedAt: Date.now(),
@@ -189,6 +189,7 @@ export default function PulsePage() {
     const { items, getFilteredItems, filters, setFilters, addItem, setConnected, clearItems } = usePulseStore();
     const { connect, isConnected, latestTokens } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
+    const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>('solana');
     const [activeTab, setActiveTab] = useState<'live' | 'bags'>('live');
     const [isLoading, setIsLoading] = useState(false);
@@ -214,7 +215,7 @@ export default function PulsePage() {
                     // Apply BAGS filter if enabled
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
-                    const item = processApiTokenData(t, 'NEW');
+                    const item = processApiTokenData(t, 'NEW', solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
                         addItem(item);
@@ -230,7 +231,7 @@ export default function PulsePage() {
                 tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
-                    const item = processApiTokenData(t, 'FINAL_STRETCH');
+                    const item = processApiTokenData(t, 'FINAL_STRETCH', solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
                         addItem(item);
@@ -246,7 +247,7 @@ export default function PulsePage() {
                 tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
 
-                    const item = processApiTokenData(t, 'MIGRATED');
+                    const item = processApiTokenData(t, 'MIGRATED', solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
                         addItem(item);
@@ -312,8 +313,8 @@ export default function PulsePage() {
                 deployerLaunches: 1,
                 deployerSuccessRate: 50,
                 ageSeconds: Math.max(0, Math.floor((Date.now() / 1000) - token.creation_timestamp)),
-                marketCap: parseFloat(token.market_cap_sol || '0') * SOL_PRICE,
-                liquidity: parseFloat(token.market_cap_sol || '0') * SOL_PRICE * 0.3,
+                marketCap: parseFloat(token.market_cap_sol || '0') * solPrice,
+                liquidity: parseFloat(token.market_cap_sol || '0') * solPrice * 0.3,
                 bondingProgress,
                 holders: token.holder_count || 0,
                 txCount: 0,
