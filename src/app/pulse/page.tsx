@@ -15,8 +15,7 @@ import type { RawTokenData } from "@/lib/bags-types";
 // Types
 type Network = 'solana' | 'base' | 'ethereum';
 
-// SOL price for USD calculations (per user spec: use constant 140)
-const SOL_PRICE = 140;
+import { SOL_PRICE } from "@/lib/constants";
 
 // BAGS token filter
 const isBagsToken = (mint: string | undefined): boolean => {
@@ -185,13 +184,12 @@ export default function PulsePage() {
     const [network, setNetwork] = useState<Network>('solana');
     const [isLoading, setIsLoading] = useState(false);
     const processedTokensRef = useRef<Set<string>>(new Set());
+    const refreshingRef = useRef(false);
 
     // Fetch initial data from API
     const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
         try {
-            console.log('Fetching initial data from:', config.baseServerUrl);
-
             const [newRes, soonRes, bondedRes] = await Promise.all([
                 fetch(`${config.baseServerUrl}/api/tokens?limit=20`),
                 fetch(`${config.baseServerUrl}/api/tokens?status=graduating&hours=6`),
@@ -202,7 +200,6 @@ export default function PulsePage() {
             if (newRes.ok) {
                 const data = await newRes.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
-                console.log('Fetched NEW tokens:', tokens.length);
 
                 tokens.forEach((t: RawTokenData) => {
                     // Apply BAGS filter if enabled
@@ -220,7 +217,6 @@ export default function PulsePage() {
             if (soonRes.ok) {
                 const data = await soonRes.json();
                 const tokens = data.tokens || (Array.isArray(data) ? data : []);
-                console.log('Fetched GRADUATING tokens:', tokens.length);
 
                 tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
@@ -237,7 +233,6 @@ export default function PulsePage() {
             if (bondedRes.ok) {
                 const data = await bondedRes.json();
                 const tokens = data.tokens || (Array.isArray(data) ? data : []);
-                console.log('Fetched MIGRATED tokens:', tokens.length);
 
                 tokens.forEach((t: RawTokenData) => {
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
@@ -282,7 +277,6 @@ export default function PulsePage() {
                 return;
             }
 
-            console.log('New token from socket:', token.symbol, token.mint);
             processedTokensRef.current.add(token.mint);
 
             // Determine state based on bonding progress
@@ -327,10 +321,16 @@ export default function PulsePage() {
     }, [latestTokens, addItem, filters.bagsOnly]);
 
     // Handle refresh
-    const handleRefresh = useCallback(() => {
-        processedTokensRef.current.clear();
-        clearItems();
-        fetchInitialData();
+    const handleRefresh = useCallback(async () => {
+        if (refreshingRef.current) return;
+        refreshingRef.current = true;
+        try {
+            processedTokensRef.current.clear();
+            clearItems();
+            await fetchInitialData();
+        } finally {
+            refreshingRef.current = false;
+        }
     }, [clearItems, fetchInitialData]);
 
     const totalTokens = items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
@@ -368,7 +368,7 @@ export default function PulsePage() {
                     <button
                         onClick={() => {
                             setFilters({ bagsOnly: !filters.bagsOnly });
-                            setTimeout(handleRefresh, 100);
+                            handleRefresh();
                         }}
                         className={`btn-ghost flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 ${filters.bagsOnly ? '!border-[#39FF14] !text-[#39FF14]' : ''
                             }`}

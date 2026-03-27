@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
-import { bagsService } from "@/services/bags.service";
 import { formatCurrency } from "@/lib/format";
+import { SOL_PRICE } from "@/lib/constants";
+import { useFeeData } from "@/hooks/useFeeData";
 import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wallet } from "lucide-react";
 import type { PulseItem } from "@/lib/types";
-import type { BagsTokenCreator } from "@/lib/bags-types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
 
 // View modes for the page
@@ -23,54 +23,10 @@ const AVATAR_COLORS = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAF
 // Check if a token could be a BAGS token (mint ends with 'bags')
 const isBagsToken = (mint: string): boolean => mint.toLowerCase().endsWith('bags');
 
-// Extended fee data type
-interface ExtendedFeeData {
-    lifetimeFees: number;
-    creatorsCount: number;
-    creators: BagsTokenCreator[];
-    topEarnerShare: number; // percentage
-}
-
-// Enhanced Token Card with fee data display
 const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeDataLoaded?: (tokenId: string, hasFees: boolean) => void }) => {
-    const [feeData, setFeeData] = useState<ExtendedFeeData | null>(null);
-    const [isLoadingFees, setIsLoadingFees] = useState(true);
-    const [feeError, setFeeError] = useState(false);
+    const { feeData, isLoading: isLoadingFees, error: feeError } = useFeeData(token.tokenId, onFeeDataLoaded);
 
     const isPotentialBags = isBagsToken(token.tokenId);
-
-    useEffect(() => {
-        let mounted = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoadingFees(true);
-        setFeeError(false);
-
-        bagsService.getTokenFeeInfo(token.tokenId)
-            .then((info) => {
-                if (mounted && info) {
-                    const topEarner = info.creators.length > 0
-                        ? Math.max(...info.creators.map(c => c.royaltyBps)) / 100
-                        : 0;
-                    setFeeData({
-                        lifetimeFees: info.lifetimeFees,
-                        creatorsCount: info.creators.length,
-                        creators: info.creators,
-                        topEarnerShare: topEarner,
-                    });
-                    onFeeDataLoaded?.(token.tokenId, info.lifetimeFees > 0 || info.creators.length > 0);
-                } else {
-                    onFeeDataLoaded?.(token.tokenId, false);
-                }
-            })
-            .catch(() => {
-                if (mounted) setFeeError(true);
-                onFeeDataLoaded?.(token.tokenId, false);
-            })
-            .finally(() => {
-                if (mounted) setIsLoadingFees(false);
-            });
-        return () => { mounted = false; };
-    }, [token.tokenId, onFeeDataLoaded]);
 
     const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
     const fallbackColor = AVATAR_COLORS[initial.charCodeAt(0) % AVATAR_COLORS.length];
@@ -224,41 +180,9 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
 // Table row with enhanced fee data
 const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; index: number; onFeeDataLoaded?: (tokenId: string, hasFees: boolean) => void }) => {
-    const [feeData, setFeeData] = useState<ExtendedFeeData | null>(null);
-    const [isLoadingFees, setIsLoadingFees] = useState(true);
+    const { feeData, isLoading: isLoadingFees } = useFeeData(token.tokenId, onFeeDataLoaded);
 
     const isPotentialBags = isBagsToken(token.tokenId);
-
-    useEffect(() => {
-        let mounted = true;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        setIsLoadingFees(true);
-
-        bagsService.getTokenFeeInfo(token.tokenId)
-            .then((info) => {
-                if (mounted && info) {
-                    const topEarner = info.creators.length > 0
-                        ? Math.max(...info.creators.map(c => c.royaltyBps)) / 100
-                        : 0;
-                    setFeeData({
-                        lifetimeFees: info.lifetimeFees,
-                        creatorsCount: info.creators.length,
-                        creators: info.creators,
-                        topEarnerShare: topEarner,
-                    });
-                    onFeeDataLoaded?.(token.tokenId, info.lifetimeFees > 0 || info.creators.length > 0);
-                } else {
-                    onFeeDataLoaded?.(token.tokenId, false);
-                }
-            })
-            .catch(() => {
-                onFeeDataLoaded?.(token.tokenId, false);
-            })
-            .finally(() => {
-                if (mounted) setIsLoadingFees(false);
-            });
-        return () => { mounted = false; };
-    }, [token.tokenId, onFeeDataLoaded]);
 
     const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
     const fallbackColor = AVATAR_COLORS[initial.charCodeAt(0) % AVATAR_COLORS.length];
@@ -383,7 +307,7 @@ export default function TrendingPage() {
     }, [connect, loadInitialData]);
 
     // Track which tokens have fee data
-    const handleFeeDataLoaded = useMemo(() => (tokenId: string, hasFees: boolean) => {
+    const handleFeeDataLoaded = useCallback((tokenId: string, hasFees: boolean) => {
         setTokensWithFees(prev => {
             const next = new Set(prev);
             if (hasFees) {
@@ -472,7 +396,7 @@ export default function TrendingPage() {
             {/* BAGS Only Section */}
             {viewMode === "bags" && (
                 <div className="max-w-7xl mx-auto mb-8">
-                    <BagsTokensSection solPrice={140} />
+                    <BagsTokensSection solPrice={SOL_PRICE} />
                 </div>
             )}
 

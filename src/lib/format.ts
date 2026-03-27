@@ -1,6 +1,7 @@
 // Formatting utilities for the terminal
 
 export function formatNumber(num: number): string {
+    if (!isFinite(num) || isNaN(num)) return '—';
     if (num >= 1000000000) {
         return (num / 1000000000).toFixed(1) + 'B';
     }

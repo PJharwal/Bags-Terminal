@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BAGS_API_BASE = 'https://api.bags.fm';
 const BAGS_PUBLIC_API_BASE = 'https://public-api-v2.bags.fm/api/v1';
-const BAGS_API_KEY = process.env.BAGS_API_KEY_SERVER || process.env.NEXT_PUBLIC_BAGS_API_KEY || '';
+const BAGS_API_KEY = process.env.BAGS_API_KEY_SERVER || '';
+if (!BAGS_API_KEY) { console.error('BAGS_API_KEY_SERVER is not configured'); }
 
 // Routes that should use the public API v2
 const PUBLIC_API_ROUTES = [
@@ -63,7 +64,12 @@ function checkRateLimit(ip: string): boolean {
 }
 
 function getClientIp(request: NextRequest): string {
-  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const cfIp = request.headers.get('cf-connecting-ip');
+  if (cfIp) return cfIp;
+  const xReal = request.headers.get('x-real-ip');
+  if (xReal) return xReal;
+  const forwarded = request.headers.get('x-forwarded-for');
+  return forwarded?.split(',')[0]?.trim() || 'unknown';
 }
 
 /**

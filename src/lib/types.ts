@@ -259,6 +259,8 @@ export interface CredibilityMatrix {
     overallScore: number;
     overallGrade: CredibilityGrade;
 
+    dataSource?: 'real' | 'synthetic';
+
     updatedAt: number;
 }
 

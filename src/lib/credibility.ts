@@ -299,7 +299,6 @@ export function generateCredibilityMatrix(tokenId: string, realData?: RealTokenD
             linksToCex: false,
         };
 
-        // Check if dev sold
         devSoldEarly = realData.devStatus === 'sold' || realData.devStatus === 'sold_all';
     } else {
         // Fallback to hash-based deterministic values for consistency
@@ -373,6 +372,7 @@ export function generateCredibilityMatrix(tokenId: string, realData?: RealTokenD
         },
         overallScore,
         overallGrade: scoreToGrade(overallScore),
+        dataSource: realData ? 'real' as const : 'synthetic' as const,
         updatedAt: Date.now()
     };
 }

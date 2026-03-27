@@ -6,7 +6,7 @@ export const config = {
     process.env.NEXT_PUBLIC_BASE_SERVER_URL || "https://backend.solshift.fun",
 
   // GMGN API server URL (for token info, security, traders, holders)
-  baseGmgnUrl: process.env.NEXT_PUBLIC_BASE_GMGN_URL || "http://localhost:8000",
+  baseGmgnUrl: process.env.NEXT_PUBLIC_BASE_GMGN_URL || "",
 
   // Solana RPC URL (for wallet transactions)
   solanaRpcUrl:
@@ -14,7 +14,7 @@ export const config = {
     "https://api.mainnet-beta.solana.com",
 
   buysellServerUrl:
-    process.env.NEXT_PUBLIC_BUYSELL_SERVER_URL || "http://localhost:3000", // Fixed self-reference
+    process.env.NEXT_PUBLIC_BUYSELL_SERVER_URL || "",
 
   // Turnkey Configuration (public keys only - private keys are server-side)
   turnkey: {
@@ -23,3 +23,10 @@ export const config = {
       process.env.NEXT_PUBLIC_TURNKEY_API_BASE_URL || "https://api.turnkey.com",
   },
 } as const;
+
+if (typeof window !== 'undefined' && !config.baseGmgnUrl) {
+  console.error('[BAGS Terminal] NEXT_PUBLIC_BASE_GMGN_URL is not configured');
+}
+if (typeof window !== 'undefined' && !config.buysellServerUrl) {
+  console.error('[BAGS Terminal] NEXT_PUBLIC_BUYSELL_SERVER_URL is not configured');
+}

@@ -25,13 +25,20 @@ export function FeeClaimsTab() {
 
   const handleClaimAll = async () => {
     if (!publicKey || !sendTransaction) return;
+    let succeeded = 0;
+    let failed = 0;
     for (const earning of claimableEarnings.filter(e => e.claimableAmount > 0)) {
       try {
         await claimFees(earning.tokenMint, publicKey, sendTransaction as SendTransactionFn, connection);
+        succeeded++;
       } catch (err) {
         console.error(`Claim failed for ${earning.tokenMint}:`, err);
-        break;
+        failed++;
+        continue;
       }
+    }
+    if (failed > 0) {
+      console.warn(`Fee claims complete: ${succeeded} succeeded, ${failed} failed`);
     }
   };
 

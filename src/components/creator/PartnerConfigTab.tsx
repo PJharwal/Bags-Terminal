@@ -53,9 +53,9 @@ export function PartnerConfigTab() {
     }
   };
 
-  const copyPartnerKey = () => {
+  const copyPartnerKey = async () => {
     if (partnerConfig?.partnerKey) {
-      navigator.clipboard.writeText(partnerConfig.partnerKey);
+      await navigator.clipboard.writeText(partnerConfig.partnerKey);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
