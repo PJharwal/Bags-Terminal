@@ -39,7 +39,7 @@ function SkeletonRow() {
 
 function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
     const router = useRouter();
-    const createdAtMs = item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt;
+    const createdAtMs = item.createdAt ? (item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt) : Date.now();
 
     return (
         <button
@@ -71,7 +71,7 @@ function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
                 <div className="flex items-center gap-2 text-[9px] text-[#444] font-mono mt-0.5">
                     <span>{truncateAddress(item.creator)}</span>
                     <span className="text-[#333]">&middot;</span>
-                    <span>{formatTimeAgo(createdAtMs)}</span>
+                    <span>{item.status ? item.status.replace('_', ' ') : formatTimeAgo(createdAtMs)}</span>
                 </div>
             </div>
 

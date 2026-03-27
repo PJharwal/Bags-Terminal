@@ -414,7 +414,11 @@ export interface BagsLaunchFeedItem {
   image: string;
   description: string;
   creator: string;
-  createdAt: number;
+  status?: string;
+  twitter?: string;
+  website?: string;
+  dbcPoolKey?: string;
+  createdAt?: number;
   marketCap?: number;
   bondingCurve?: number;
   lifetimeFees?: number;
