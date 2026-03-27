@@ -20,6 +20,11 @@ const PUBLIC_API_ROUTES = [
   'token-launch/feed',
   'pool/by-token-mint',
   'fee-share/admin',
+  'solana/dexscreener',
+  'solana/bags/pools',
+  'solana/send-transaction',
+  'token-launch/claim-txs',
+  'token-launch/claimable-positions',
 ];
 
 function getApiBase(path: string): string {
