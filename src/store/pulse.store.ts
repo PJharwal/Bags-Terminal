@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent } from '@/types/socket';
 import { tokenService, type Token } from '@/services/token.service';
-import { SOL_PRICE } from '@/lib/constants';
+import { SOL_PRICE_FALLBACK } from '@/lib/constants';
 
 
 // Convert token service Token to PulseItem format
@@ -64,7 +64,7 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 
     // Calculate market cap in USD
     const marketCap = token.market_cap_sol
-        ? parseFloat(token.market_cap_sol) * SOL_PRICE
+        ? parseFloat(token.market_cap_sol) * SOL_PRICE_FALLBACK
         : 0;
 
     // Parse holder rate for concentration
@@ -202,7 +202,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
 
         // Calculate new market cap
         const marketCap = trade.market_cap_sol
-            ? parseFloat(trade.market_cap_sol) * SOL_PRICE
+            ? parseFloat(trade.market_cap_sol) * SOL_PRICE_FALLBACK
             : existing.marketCap;
 
         // Calculate bonding progress

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTerminalStore } from "@/store/terminal.store";
-import { SOL_PRICE } from "@/lib/constants";
+import { useSolPrice } from "@/hooks/useSolPrice";
 import { useSocketStore } from "@/store/socket.store";
 import { TerminalHeader } from "../components/TerminalHeader";
 import { TerminalChart } from "../components/TerminalChart";
@@ -24,6 +24,7 @@ export default function TerminalPage() {
 
     const { activeToken, isLoading, error, loadToken, addTrade } = useTerminalStore();
     const { latestTrades, connect, isConnected } = useSocketStore();
+    const { price: solPrice } = useSolPrice();
 
     // Connect to socket and load token data on mount
     useEffect(() => {
@@ -45,7 +46,7 @@ export default function TerminalPage() {
             if (latestTrade.mint === tokenId) {
                 const solAmount = parseFloat(latestTrade.sol_amount || '0');
                 const tokenAmount = parseFloat(latestTrade.token_amount || '1');
-                const priceUsd = solAmount * SOL_PRICE / (tokenAmount || 1);
+                const priceUsd = solAmount * solPrice / (tokenAmount || 1);
 
                 const trade: TradeRow = {
                     id: latestTrade.signature || String(Date.now()),
@@ -53,7 +54,7 @@ export default function TerminalPage() {
                     wallet: latestTrade.user_wallet?.slice(0, 4) + '...' + latestTrade.user_wallet?.slice(-4) || 'unknown',
                     amount: tokenAmount,
                     priceUsd: priceUsd,
-                    total: solAmount * SOL_PRICE,
+                    total: solAmount * solPrice,
                     timestamp: latestTrade.block_time || Date.now(),
                 };
                 addTrade(trade);

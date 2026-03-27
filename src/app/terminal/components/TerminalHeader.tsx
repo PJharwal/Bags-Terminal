@@ -1,6 +1,7 @@
 "use client";
 
-import { Copy, ExternalLink } from "lucide-react";
+import { useState } from "react";
+import { Copy, ExternalLink, Link2, Check } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 
@@ -42,8 +43,18 @@ function formatSOL(amount: number): string {
 }
 
 export function TerminalHeader({ token }: TerminalHeaderProps) {
+    const [linkCopied, setLinkCopied] = useState(false);
+
     const handleCopyAddress = () => {
         navigator.clipboard.writeText(token.tokenId);
+    };
+
+    const handleShareLink = () => {
+        const url = `${window.location.origin}/terminal/${token.tokenId}`;
+        navigator.clipboard.writeText(url).then(() => {
+            setLinkCopied(true);
+            setTimeout(() => setLinkCopied(false), 2000);
+        });
     };
 
     const priceChangeColor = token.priceChange24h >= 0 ? "text-[#39FF14]" : "text-[#FF003C]";
@@ -194,6 +205,17 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                         title="Solscan"
                         href={`https://solscan.io/token/${token.tokenId}`}
                     />
+                    <button
+                        onClick={handleShareLink}
+                        className="btn-ghost btn-press p-1.5 flex items-center gap-1"
+                        title="Copy share link"
+                    >
+                        {linkCopied ? (
+                            <Check size={12} className="text-[#39FF14]" />
+                        ) : (
+                            <Link2 size={12} />
+                        )}
+                    </button>
                 </div>
             </div>
         </div>
