@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { TokenAudit } from "@/components/modules/analyze/TokenAudit";
 import { HoldersTable } from "@/components/modules/analyze/HoldersTable";
 import { TradersTable } from "@/components/modules/analyze/TradersTable";
@@ -11,7 +11,10 @@ import { Search, Loader2, AlertCircle } from "lucide-react";
 
 export default function AnalyzePage() {
   const isConnected = useSocketStore((state) => state.isConnected);
+  const connect = useSocketStore((state) => state.connect);
   const latestTokens = useSocketStore((state) => state.latestTokens);
+
+  useEffect(() => { connect(); }, [connect]);
 
   const [tokenAddress, setTokenAddress] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -121,7 +124,7 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl mx-auto font-mono">
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-[#EDEDED] tracking-tight">
           ANALYZE<span className="text-[#39FF14]">_</span>MODULE
@@ -209,10 +212,9 @@ export default function AnalyzePage() {
 
       {/* Empty State */}
       {!stats && !isLoading && !error && (
-        <div className="text-center py-16 text-[#666]">
-          <Search size={48} className="mx-auto mb-6 opacity-20" />
-          <p className="text-lg mb-2 text-[#888]">Enter a token address to analyze</p>
-          <p className="text-sm text-[#555]">Get detailed holder distribution, trader analysis, and risk assessment</p>
+        <div className="flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+          <Search size={32} className="mb-4 opacity-30" />
+          <p className="text-sm font-mono">Enter a token address to analyze</p>
         </div>
       )}
     </div>

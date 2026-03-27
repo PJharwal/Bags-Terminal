@@ -26,7 +26,7 @@ function LaunchPageContent() {
   const shortenedRef = ref ? `${ref.slice(0, 4)}...${ref.slice(-4)}` : null;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono max-w-6xl mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="mb-8">
         <h1 className="text-xl font-bold text-[#EDEDED] tracking-tight text-display">

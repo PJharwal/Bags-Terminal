@@ -344,7 +344,7 @@ export default function TrendingPage() {
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
 
     return (
-        <div className="min-h-screen bg-[#050505] p-6 font-mono">
+        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex items-center justify-between flex-wrap gap-4">
@@ -494,16 +494,18 @@ export default function TrendingPage() {
             {/* Loading State */}
             {isLoading && (
                 <div className="max-w-7xl mx-auto flex items-center justify-center py-20">
-                    <Loader2 size={24} className="animate-spin text-[#39FF14] mr-3" />
-                    <span className="text-[#888]">Connecting to live feed...</span>
+                    <div className="flex items-center gap-3 text-[#666]">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span className="text-sm font-mono">LOADING_DATA...</span>
+                    </div>
                 </div>
             )}
 
             {/* Empty State */}
             {!isLoading && filteredTokens.length === 0 && (
-                <div className="max-w-7xl mx-auto py-20 text-center text-[#666]">
-                    <TrendingUp size={32} className="mx-auto mb-4 opacity-30" />
-                    <p className="font-mono">
+                <div className="max-w-7xl mx-auto flex flex-col items-center justify-center text-[#666] py-12">
+                    <TrendingUp size={32} className="mb-4 opacity-30" />
+                    <p className="text-sm font-mono">
                         {allBagsTokens.length === 0
                             ? "Waiting for tokens..."
                             : "No tokens match your filter"}

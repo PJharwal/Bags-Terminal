@@ -9,12 +9,13 @@ import { BagsLogo } from "@/components/ui/BagsLogo";
 
 const navItems = [
     { href: "/", label: "HOME" },
+    { href: "/pulse", label: "PULSE" },
     { href: "/terminal", label: "TERMINAL" },
     { href: "/trending", label: "TRENDING" },
+    { href: "/deployers", label: "DEPLOYERS" },
     { href: "/analyze", label: "ANALYZE" },
     { href: "/launch", label: "LAUNCH" },
     { href: "/creator", label: "CREATOR" },
-    { href: "/pulse", label: "PULSE" },
 ];
 
 export default function TopBar() {
