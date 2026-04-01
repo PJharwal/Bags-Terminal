@@ -78,6 +78,29 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
             {/* Content */}
             {isExpanded && (
                 <div className="border-t border-white/10">
+                    {/* Dividend Status */}
+                    {lifetimeFees !== undefined && (
+                        <div className={`flex items-center justify-between px-3 py-2 border-b ${
+                            lifetimeFees >= 10
+                                ? 'border-[#39FF14]/20 bg-[#39FF14]/5'
+                                : 'border-white/5 bg-white/[0.02]'
+                        }`}>
+                            <div className="flex items-center gap-2">
+                                <div className={`w-1.5 h-1.5 rounded-full ${
+                                    lifetimeFees >= 10 ? 'bg-[#39FF14] animate-pulse' : 'bg-[#666]'
+                                }`} />
+                                <span className="text-[9px] font-mono text-[#888] uppercase">
+                                    {lifetimeFees >= 10 ? 'Auto-Dividends Active' : 'Dividends Inactive'}
+                                </span>
+                            </div>
+                            <span className="text-[9px] font-mono text-[#666]">
+                                {lifetimeFees >= 10
+                                    ? 'Top 100 holders earn daily'
+                                    : `${(10 - lifetimeFees).toFixed(2)} SOL until activation`}
+                            </span>
+                        </div>
+                    )}
+
                     {/* Column Headers */}
                     <div className="table-header grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2 text-[9px] text-[#666] uppercase tracking-widest">
                         <span>Earner</span>

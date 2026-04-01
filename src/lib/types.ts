@@ -163,6 +163,18 @@ export interface TerminalToken {
         pfp?: string;
     };
     hasBagsFees: boolean;              // Quick check if token has Bags fee data
+
+    launchConfig?: {
+        twitterUrl?: string;
+        websiteUrl?: string;
+        telegramUrl?: string;
+        creatorWallet?: string;
+        totalClaimers: number;
+        totalRoyaltyBps: number;
+        tokenStatus?: string;
+        dbcPoolKey?: string;
+        createdAt?: number;
+    };
 }
 
 // Trade row for bottom tabs
