@@ -26,6 +26,7 @@
   --font-display: 'Syncopate', sans-serif;
   --font-mono: 'Space Mono', monospace;
   --font-sans: 'Inter', sans-serif;
+  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
 
   /* Animations */
   --animate-glitch: glitch 1s linear infinite;
