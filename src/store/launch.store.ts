@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { bagsService } from '@/services/bags.service';
 import type {
   BagsTokenMetadata,
+  BagsConfigType,
   FeeClaimerConfig,
   LaunchStatus,
   LaunchResult,
@@ -9,7 +10,7 @@ import type {
   SolanaConnection,
   TipConfig,
 } from '@/lib/bags-types';
-import { MAX_FEE_CLAIMERS } from '@/lib/bags-types';
+import { MAX_FEE_CLAIMERS, BAGS_CONFIG_TYPES } from '@/lib/bags-types';
 
 interface LaunchStore {
   // Form state
@@ -25,6 +26,12 @@ interface LaunchStore {
   tipEnabled: boolean;
   tipWallet: string;
   tipAmountSol: number;
+
+  // Social links
+  twitterUrl: string;
+  websiteUrl: string;
+  telegramUrl: string;
+  bagsConfigType: BagsConfigType;
 
   // Partner key
   partnerKey: string;
@@ -49,6 +56,10 @@ interface LaunchStore {
   setTipEnabled: (enabled: boolean) => void;
   setTipWallet: (wallet: string) => void;
   setTipAmountSol: (amount: number) => void;
+  setTwitterUrl: (url: string) => void;
+  setWebsiteUrl: (url: string) => void;
+  setTelegramUrl: (url: string) => void;
+  setBagsConfigType: (type: BagsConfigType) => void;
   setPartnerKey: (key: string) => void;
   addFeeClaimer: (claimer: FeeClaimerConfig) => void;
   removeFeeClaimer: (id: string) => void;
@@ -74,6 +85,10 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   initialBuyAmount: 0.1,
   imageSourceMode: 'upload',
   imageUrl: '',
+  twitterUrl: '',
+  websiteUrl: '',
+  telegramUrl: '',
+  bagsConfigType: BAGS_CONFIG_TYPES.DEFAULT,
   tipEnabled: false,
   tipWallet: '',
   tipAmountSol: 0,
@@ -116,6 +131,10 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
 
   setTipAmountSol: (amount) => set({ tipAmountSol: amount }),
 
+  setTwitterUrl: (url) => set({ twitterUrl: url }),
+  setWebsiteUrl: (url) => set({ websiteUrl: url }),
+  setTelegramUrl: (url) => set({ telegramUrl: url }),
+  setBagsConfigType: (type) => set({ bagsConfigType: type }),
   setPartnerKey: (key) => set({ partnerKey: key }),
 
   addFeeClaimer: (claimer) => set((state) => {
@@ -159,7 +178,7 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     set({ status: 'creating_config', error: null });
 
     try {
-      const configKey = await bagsService.createFeeShareConfig(feeClaimers);
+      const configKey = await bagsService.createFeeShareConfig(feeClaimers, undefined, get().bagsConfigType);
       set({ configKey, status: 'idle' });
       return configKey;
     } catch (err) {
@@ -220,10 +239,11 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
 
           configKey = await bagsService.createFeeShareConfig(
             state.feeClaimers,
-            [lutConfig.lookupTableAddress]
+            [lutConfig.lookupTableAddress],
+            state.bagsConfigType
           );
         } else {
-          configKey = await bagsService.createFeeShareConfig(state.feeClaimers);
+          configKey = await bagsService.createFeeShareConfig(state.feeClaimers, undefined, state.bagsConfigType);
         }
         set({ configKey });
       }
@@ -235,6 +255,9 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
         ...state.metadata,
         image: imageUrl,
         ...(state.imageSourceMode === 'url' && state.imageUrl ? { imageUrl: state.imageUrl } : {}),
+        ...(state.twitterUrl && { twitterUrl: state.twitterUrl }),
+        ...(state.websiteUrl && { websiteUrl: state.websiteUrl }),
+        ...(state.telegramUrl && { telegramUrl: state.telegramUrl }),
       };
 
       const tip: TipConfig | undefined = state.tipEnabled && state.tipWallet && state.tipAmountSol > 0
@@ -290,6 +313,10 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     initialBuyAmount: 0.1,
     imageSourceMode: 'upload',
     imageUrl: '',
+    twitterUrl: '',
+    websiteUrl: '',
+    telegramUrl: '',
+    bagsConfigType: BAGS_CONFIG_TYPES.DEFAULT,
     tipEnabled: false,
     tipWallet: '',
     tipAmountSol: 0,

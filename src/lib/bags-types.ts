@@ -11,7 +11,19 @@ export interface BagsTokenMetadata {
   image: string; // IPFS URL after upload
   imageUrl?: string; // Direct image URL (skips IPFS upload when provided)
   metadataUrl?: string; // Direct metadata URL (skips IPFS upload entirely)
+  twitterUrl?: string;
+  websiteUrl?: string;
+  telegramUrl?: string;
 }
+
+export const BAGS_CONFIG_TYPES = {
+  DEFAULT: 'fa29606e-5e48-4c37-827f-4b03d58ee23d',
+  LOW_PRE_HIGH_POST: 'd16d3585-6488-4a6c-9a6f-e6c39ca0fda3',
+  HIGH_PRE_LOW_POST: 'a7c8e1f2-3d4b-5a6c-9e0f-1b2c3d4e5f6a',
+  HIGH_BOTH: '48e26d2f-0a9d-4625-a3cc-c3987d874b9e',
+} as const;
+
+export type BagsConfigType = (typeof BAGS_CONFIG_TYPES)[keyof typeof BAGS_CONFIG_TYPES];
 
 export interface BagsTokenLaunchConfig {
   metadata: BagsTokenMetadata;

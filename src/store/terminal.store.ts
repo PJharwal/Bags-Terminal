@@ -164,9 +164,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
             console.log('Loading token data for:', tokenId);
 
             // Fetch GMGN data and Bags fee data in parallel
-            const [gmgnData, bagsFeeData] = await Promise.all([
+            const [gmgnData, bagsFeeData, tokenMeta] = await Promise.all([
                 fetchTerminalTokenData(tokenId),
                 bagsService.getTokenFeeInfo(tokenId).catch(() => null),
+                bagsService.getTokenMetadata(tokenId).catch(() => null),
             ]);
 
             const { tokenInfo, security, holders, traders, source } = gmgnData;
@@ -236,6 +237,17 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
                     pfp: topEarner.pfp,
                 } : undefined,
                 hasBagsFees: feeEarners.length > 0 || lifetimeFees > 0,
+
+                launchConfig: {
+                    twitterUrl: tokenMeta?.twitterUrl || undefined,
+                    websiteUrl: tokenMeta?.websiteUrl || undefined,
+                    telegramUrl: tokenMeta?.telegramUrl || undefined,
+                    creatorWallet: info?.creator || undefined,
+                    totalClaimers: feeEarners.length,
+                    totalRoyaltyBps: feeEarners.reduce((sum, e) => sum + e.royaltyBps, 0),
+                    tokenStatus: undefined,
+                    createdAt: info?.creation_timestamp ? info.creation_timestamp * 1000 : undefined,
+                },
             };
 
             // Transform holders and traders
