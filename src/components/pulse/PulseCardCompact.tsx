@@ -37,7 +37,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
         (f) => f.severity === "critical",
     );
     const bondingColor = getBondingColor(item.bondingProgress);
-    const imgSrc = item.logoUrl || (item as Record<string, unknown>).image as string | undefined;
+    const imgSrc = item.logoUrl || (item as unknown as { image?: string }).image;
 
     const handleOpenTerminal = (e: React.MouseEvent) => {
         e.stopPropagation();
