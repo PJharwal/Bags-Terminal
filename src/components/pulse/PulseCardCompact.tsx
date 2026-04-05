@@ -5,7 +5,7 @@ import { useSelectionStore } from "@/store/selection.store";
 import { formatAge } from "@/lib/lifecycle";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Activity, Users, TrendingUp, Zap } from "lucide-react";
+import { Users, TrendingUp, Zap, ExternalLink } from "lucide-react";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -13,122 +13,129 @@ interface PulseCardCompactProps {
 }
 
 const formatCompact = (num: number) => {
-    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
-    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + "M";
+    if (num >= 1000) return (num / 1000).toFixed(1) + "K";
+    if (num < 1 && num > 0) return num.toFixed(2);
     return num.toString();
+};
+
+const getBondingColor = (pct: number): string => {
+    if (pct >= 90) return "#39FF14";
+    if (pct >= 70) return "#FFD700";
+    if (pct >= 40) return "#00F0FF";
+    return "#666";
 };
 
 export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     const { selectToken, hoverToken } = useSelectionStore();
     const router = useRouter();
 
-    const hasRisk = item.riskFlags.some(f => f.severity === 'critical' || f.severity === 'warn');
+    const hasRisk = item.riskFlags.some(
+        (f) => f.severity === "critical" || f.severity === "warn",
+    );
+    const isCritical = item.riskFlags.some(
+        (f) => f.severity === "critical",
+    );
+    const bondingColor = getBondingColor(item.bondingProgress);
+    const imgSrc = item.logoUrl || (item as Record<string, unknown>).image as string | undefined;
 
     const handleOpenTerminal = (e: React.MouseEvent) => {
         e.stopPropagation();
         router.push(`/terminal/${item.tokenId}`);
     };
 
-    const handleBuyNow = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        // Opens terminal with buy intent - could also open a buy modal
-        router.push(`/terminal/${item.tokenId}?action=buy`);
-    };
-
     return (
         <motion.div
-            onClick={() => selectToken(item.tokenId, 'pulse')}
+            onClick={() => selectToken(item.tokenId, "pulse")}
             onMouseEnter={() => hoverToken(item.tokenId)}
             onMouseLeave={() => hoverToken(null)}
-            initial={{ opacity: 0, x: -10 }}
+            initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.2 }}
             className={`
-                relative cursor-pointer transition-all duration-100 border-b border-white/5 group h-full
-                ${isSelected ? 'bg-[#39FF14]/5' : 'hover:bg-white/[0.02]'}
+                relative cursor-pointer transition-all duration-100 group h-full
+                ${isSelected ? "bg-[#39FF14]/5" : "hover:bg-white/[0.02]"}
+                ${isCritical ? "border-l-2 border-l-[#FF003C]" : hasRisk && !isSelected ? "border-l-2 border-l-[#FFD700]/60" : isSelected ? "border-l-2 border-l-[#39FF14]" : "border-l-2 border-l-transparent"}
             `}
         >
-            {/* Selection Indicator */}
-            {isSelected && (
-                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#39FF14] z-20 shadow-[0_0_10px_#39FF14]" />
-            )}
-
-            {/* Risk Indicator */}
-            {hasRisk && !isSelected && (
-                <div className="absolute left-0 top-0 bottom-0 w-[2px] bg-[#FF003C] z-20" />
-            )}
-
-            <div className="flex gap-3 p-3 h-full items-center">
-                {/* Image / Avatar */}
+            <div className="flex gap-3 px-3 py-2.5 h-full items-center">
+                {/* Token image / avatar */}
                 <div className="relative flex-shrink-0">
-                    <div className="w-10 h-10 bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden group-hover:border-[#39FF14]/50 transition-colors">
-                        {item.image ? (
-                            <img src={item.image} alt={item.symbol} className="w-full h-full object-cover" />
+                    <div className="w-9 h-9 bg-[#111] border border-white/8 flex items-center justify-center overflow-hidden group-hover:border-white/20 transition-colors">
+                        {imgSrc ? (
+                            <img
+                                src={imgSrc}
+                                alt={item.symbol}
+                                className="w-full h-full object-cover"
+                            />
                         ) : (
-                            <span className="text-xs font-bold font-mono text-[#666] group-hover:text-[#39FF14]">
-                                {item.symbol.slice(0, 2)}
+                            <span className="text-[10px] font-bold font-mono text-[#555] group-hover:text-[#888]">
+                                {item.symbol.replace("$", "").slice(0, 3)}
                             </span>
                         )}
                     </div>
                 </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1">
+                {/* Info block */}
+                <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+                    {/* Row 1: symbol + age | mcap */}
                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-[#EDEDED] font-mono group-hover:text-[#39FF14] transition-colors truncate max-w-[80px]">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="text-xs font-bold text-[#EDEDED] font-mono truncate max-w-[90px] group-hover:text-white transition-colors">
                                 {item.symbol}
                             </span>
-                            <span className="text-[10px] text-[#666] font-mono">{formatAge(item.ageSeconds)}</span>
+                            <span className="text-[9px] text-[#555] font-mono flex-shrink-0">
+                                {formatAge(item.ageSeconds)}
+                            </span>
                         </div>
-                        <div className="text-xs font-bold font-mono text-[#EDEDED]">
+                        <span className="text-xs font-bold font-mono text-[#EDEDED] flex-shrink-0">
                             ${formatCompact(item.marketCap)}
-                        </div>
+                        </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[10px] font-mono text-[#666]">
-                        <div className="flex items-center gap-3">
+                    {/* Row 2: holders + txns | bonding bar */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 text-[9px] font-mono text-[#555]">
                             <span className="flex items-center gap-1">
-                                <Users size={10} /> {formatCompact(item.holders)}
+                                <Users size={9} />{" "}
+                                {formatCompact(item.holders)}
                             </span>
                             <span className="flex items-center gap-1">
-                                <Activity size={10} /> {item.txCount}
+                                <TrendingUp size={9} /> {item.txCount}
                             </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                            <span className={`px-1 py-px rounded text-[9px] ${item.bondingProgress > 80 ? 'badge-green' : 'badge-muted'}`}>
-                                {item.bondingProgress}% BOND
+                        {/* Bonding progress mini bar */}
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                            <div className="w-12 h-1 bg-[#1A1A1A] overflow-hidden">
+                                <div
+                                    className="h-full transition-all duration-500"
+                                    style={{
+                                        width: `${item.bondingProgress}%`,
+                                        backgroundColor: bondingColor,
+                                    }}
+                                />
+                            </div>
+                            <span
+                                className="text-[9px] font-mono font-bold tabular-nums"
+                                style={{ color: bondingColor }}
+                            >
+                                {item.bondingProgress}%
                             </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Action Buttons - Show on hover */}
-                <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Trade/Terminal Button */}
+                {/* Hover action */}
+                <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
                         onClick={handleOpenTerminal}
-                        className="btn-ghost p-1.5"
+                        className="p-1.5 text-[#666] hover:text-[#39FF14] hover:bg-[#39FF14]/5 transition-all"
                         title="Open Terminal"
                     >
-                        <TrendingUp size={12} />
-                    </button>
-
-                    {/* Buy Now Button */}
-                    <button
-                        onClick={handleBuyNow}
-                        className="btn-primary px-2 py-1 text-[9px]"
-                        title="Buy Now"
-                    >
-                        <span className="flex items-center gap-1">
-                            <Zap size={10} />
-                            BUY
-                        </span>
+                        <ExternalLink size={12} />
                     </button>
                 </div>
             </div>
-
-            {/* Hover Glitch Overlay (Optional) */}
-            <div className="absolute inset-0 bg-[#39FF14] opacity-0 group-hover:opacity-[0.02] pointer-events-none mix-blend-overlay" />
         </motion.div>
     );
 }
