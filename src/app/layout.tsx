@@ -3,6 +3,7 @@ import "./globals.css";
 import TopBar from "@/components/TopBar";
 import SocketInitializer from "@/components/terminal/SocketInitializer";
 import { WalletProviderWrapper } from "@/components/wallet/WalletProviderWrapper";
+import { TurnkeyProvider } from "@/components/turnkey/TurnkeyProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
@@ -19,14 +20,16 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className="antialiased text-[#EDEDED]">
         <WalletProviderWrapper>
-          <TopBar />
-          <main className="min-h-screen pt-14 flex flex-col">
-            <SocketInitializer />
-            <div className="flex-1">
-              {children}
-            </div>
-          </main>
-          <ToastContainer />
+          <TurnkeyProvider>
+            <TopBar />
+            <main className="min-h-screen pt-14 flex flex-col">
+              <SocketInitializer />
+              <div className="flex-1">
+                {children}
+              </div>
+            </main>
+            <ToastContainer />
+          </TurnkeyProvider>
         </WalletProviderWrapper>
       </body>
     </html>

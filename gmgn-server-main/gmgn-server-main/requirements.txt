@@ -1,6 +1,0 @@
-cloudscraper
-curl_cffi
-fastapi
-uvicorn
-requests
-psycopg2-binary
