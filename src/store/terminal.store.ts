@@ -76,6 +76,7 @@ interface TerminalStore {
     // Swap state
     slippageBps: number;
     priorityFee: number;
+    jitoTip: number;
     swapStatus: SwapStatus;
     lastSignature: string | null;
     swapError: string | null;
@@ -100,6 +101,7 @@ interface TerminalStore {
     // Swap actions
     setSlippage: (bps: number) => void;
     setPriorityFee: (fee: number) => void;
+    setJitoTip: (tip: number) => void;
     setSwapStatus: (status: SwapStatus) => void;
     setLastSignature: (sig: string | null) => void;
     setSwapError: (error: string | null) => void;
@@ -146,6 +148,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     // Swap state
     slippageBps: 100,
     priorityFee: 0,
+    jitoTip: 0,
     swapStatus: 'idle',
     lastSignature: null,
     swapError: null,
@@ -336,6 +339,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     // Swap actions
     setSlippage: (bps) => set({ slippageBps: bps }),
     setPriorityFee: (fee) => set({ priorityFee: fee }),
+    setJitoTip: (tip) => set({ jitoTip: tip }),
     setSwapStatus: (status) => set({ swapStatus: status }),
     setLastSignature: (sig) => set({ lastSignature: sig }),
     setSwapError: (error) => set({ swapError: error }),
