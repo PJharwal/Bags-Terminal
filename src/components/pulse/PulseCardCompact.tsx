@@ -46,7 +46,8 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
 
     return (
         <motion.div
-            onClick={() => selectToken(item.tokenId, "pulse")}
+            onClick={() => selectToken(item.tokenId, 'pulse')}
+            onDoubleClick={() => router.push(`/terminal/${item.tokenId}`)}
             onMouseEnter={() => hoverToken(item.tokenId)}
             onMouseLeave={() => hoverToken(null)}
             initial={{ opacity: 0, x: -8 }}

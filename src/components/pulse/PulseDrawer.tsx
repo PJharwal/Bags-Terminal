@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -17,8 +18,8 @@ import {
     Copy,
     Activity,
     Check,
+    Zap,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 function StatBlock({
@@ -274,25 +275,25 @@ export function PulseDrawer() {
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div className="p-4 border-t border-white/5 bg-[#0A0A0A] space-y-2">
+                {/* Footer Actions */}
+                <div className="p-6 border-t border-white/10 bg-[#0A0A0A] space-y-3">
                     <button
-                        onClick={handleOpenTerminal}
-                        className="w-full py-2.5 bg-[#39FF14] text-black font-bold uppercase tracking-wider text-xs hover:brightness-110 transition-all flex items-center justify-center gap-2"
+                        onClick={() => {
+                            router.push(`/terminal/${item.tokenId}?action=buy`);
+                            closeDrawer();
+                        }}
+                        className="w-full py-3 bg-[#39FF14] text-black font-bold uppercase tracking-wider hover:bg-[#32E010] transition-colors flex items-center justify-center gap-2"
                     >
-                        <ExternalLink size={14} /> OPEN TERMINAL
+                        <Zap size={16} /> OPEN_TERMINAL
                     </button>
-                    <button
-                        onClick={() =>
-                            window.open(
-                                `https://solscan.io/token/${item.tokenId}`,
-                                "_blank",
-                            )
-                        }
-                        className="w-full py-2.5 bg-transparent border border-white/10 text-[#888] font-bold uppercase tracking-wider text-xs hover:border-white/20 hover:text-[#EDEDED] transition-all"
+                    <a
+                        href={`https://solscan.io/token/${item.tokenId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3 bg-transparent border border-white/10 text-[#888] font-bold uppercase tracking-wider hover:border-white/30 hover:text-[#EDEDED] transition-colors flex items-center justify-center gap-2"
                     >
-                        VIEW ON SOLSCAN
-                    </button>
+                        <ExternalLink size={16} /> VIEW_ON_SOLSCAN
+                    </a>
                 </div>
             </motion.div>
         </AnimatePresence>
