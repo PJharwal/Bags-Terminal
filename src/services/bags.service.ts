@@ -55,8 +55,8 @@ async function fetchBags<T>(
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-      console.error(`Bags API error [${response.status}]:`, error);
-      throw new Error(error.error || `API error: ${response.status}`);
+      console.warn(`Bags API error [${response.status}]:`, error);
+      return null;
     }
 
     const data = await response.json();

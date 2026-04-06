@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -22,6 +23,7 @@ function StatBlock({ label, value, color = "text-[#EDEDED]" }: { label: string; 
 export function PulseDrawer() {
     const { selectedTokenId, drawerOpen, drawerSource, closeDrawer } = useSelectionStore();
     const { getItemById } = usePulseStore();
+    const router = useRouter();
 
     const item = selectedTokenId ? getItemById(selectedTokenId) : null;
 
@@ -157,12 +159,23 @@ export function PulseDrawer() {
 
                 {/* Footer Actions */}
                 <div className="p-6 border-t border-white/10 bg-[#0A0A0A] space-y-3">
-                    <button className="w-full py-3 bg-[#39FF14] text-black font-bold uppercase tracking-wider hover:bg-[#32E010] transition-colors flex items-center justify-center gap-2">
-                        <ExternalLink size={16} /> BUY_ON_DEX
+                    <button
+                        onClick={() => {
+                            router.push(`/terminal/${item.tokenId}?action=buy`);
+                            closeDrawer();
+                        }}
+                        className="w-full py-3 bg-[#39FF14] text-black font-bold uppercase tracking-wider hover:bg-[#32E010] transition-colors flex items-center justify-center gap-2"
+                    >
+                        <Zap size={16} /> OPEN_TERMINAL
                     </button>
-                    <button className="w-full py-3 bg-transparent border border-white/10 text-[#888] font-bold uppercase tracking-wider hover:border-white/30 hover:text-[#EDEDED] transition-colors">
-                        ADD_TO_WATCHLIST
-                    </button>
+                    <a
+                        href={`https://solscan.io/token/${item.tokenId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-3 bg-transparent border border-white/10 text-[#888] font-bold uppercase tracking-wider hover:border-white/30 hover:text-[#EDEDED] transition-colors flex items-center justify-center gap-2"
+                    >
+                        <ExternalLink size={16} /> VIEW_ON_SOLSCAN
+                    </a>
                 </div>
             </motion.div>
         </AnimatePresence>

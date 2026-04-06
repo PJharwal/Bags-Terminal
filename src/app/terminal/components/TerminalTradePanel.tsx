@@ -1,360 +1,433 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useTerminalStore } from "@/store/terminal.store";
-import { useBagsWallet } from "@/hooks/useWallet";
-import { useSwapQuote } from "@/hooks/useSwapQuote";
-import { bagsService } from "@/services/bags.service";
+import { useTurnkey } from "@/components/turnkey/TurnkeyProvider";
+import { useTradeSocket } from "@/hooks/useTradeSocket";
 import { SlippageSettings } from "@/components/terminal/SlippageSettings";
-import { TransactionStatus } from "@/components/terminal/TransactionStatus";
-import { SOL_MINT } from "@/lib/bags-types";
-import { Wallet } from "lucide-react";
+import { Wallet, Zap, Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
-import { Transaction, VersionedTransaction } from "@solana/web3.js";
+import { Connection, PublicKey } from "@solana/web3.js";
+import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { config } from "@/config/env";
 
-const AMOUNT_PRESETS = [0.1, 0.5, 1, 5];
+const BUY_PRESETS = [0.1, 0.5, 1, 5];
+const SELL_PRESETS = [25, 50, 75, 100];
+
+type TradeAction = "buy" | "sell";
+type TxStatus = "idle" | "preparing" | "ready" | "sending" | "success" | "error";
+
+interface GMGNTokenInfoResponse {
+    code: number;
+    message: string;
+    data: {
+        decimals: number;
+        standard?: string;
+        dev?: { creator_address?: string };
+        tpool: { exchange: string; pool_address: string; quote_address: string };
+        pool?: { base_vault_address?: string; quote_vault_address?: string; quote_symbol?: string };
+    }[];
+}
 
 export function TerminalTradePanel() {
+    const { activeToken, slippageBps } = useTerminalStore();
     const {
-        tradePanel,
-        activeToken,
-        slippageBps,
-        priorityFee,
-        swapStatus,
-        lastSignature,
-        swapError,
-        setTradePanelMode,
-        setTradePanelOrderType,
-        setTradePanelAmount,
-        setSwapStatus,
-        setLastSignature,
-        setSwapError,
-    } = useTerminalStore();
-
-    const {
-        connected,
-        publicKey,
-        balance,
-        sendTransaction,
-        connection,
-        addTransaction,
-        updateTransaction,
-        refreshBalance,
-    } = useBagsWallet();
-
-    const { quote, isLoading: quoteLoading, error: quoteError, fetchQuote, clearQuote } = useSwapQuote();
+        isAuthenticated, turnkeyAddress,
+        balance: turnkeyBalance, refreshBalance: refreshTurnkeyBalance,
+    } = useTurnkey();
+    const { connected } = useWallet();
     const { setVisible } = useWalletModal();
 
-    const isBuy = tradePanel.mode === 'buy';
+    const {
+        isConnected: socketConnected,
+        isPreparing, isReady: socketReady, isExecuting: socketExecuting,
+        estimatedTokens, estimatedDisplay, pricePerToken,
+        estimatedSol, estimatedSolDisplay, sellPricePerToken,
+        lastSignature, lastError,
+        connect: socketConnect, disconnect: socketDisconnect,
+        prepareBuy, executeBuy, prepareSell, executeSell,
+        instantBuy, instantSell, clearError, resetPrepare,
+    } = useTradeSocket();
+
+    // Trade state
+    const [action, setAction] = useState<TradeAction>("buy");
+    const [solAmount, setSolAmount] = useState("");
+    const [sellAmount, setSellAmount] = useState("");
+    const [sellPreset, setSellPreset] = useState<number | null>(null);
+    const [txStatus, setTxStatus] = useState<TxStatus>("idle");
+    const [txResult, setTxResult] = useState<{ signature?: string; error?: string } | null>(null);
+
+    // Token metadata (from GMGN)
+    const [tokenDecimals, setTokenDecimals] = useState(6);
+    const [tokenBalance, setTokenBalance] = useState(0);
+    const [exchange, setExchange] = useState<string | null>(null);
+    const [poolAddress, setPoolAddress] = useState<string | null>(null);
+    const [quoteAddress, setQuoteAddress] = useState<string | null>(null);
+    const [creatorAddress, setCreatorAddress] = useState<string | null>(null);
+    const [baseVaultAddress, setBaseVaultAddress] = useState<string | null>(null);
+    const [quoteVaultAddress, setQuoteVaultAddress] = useState<string | null>(null);
+    const [tokenStandard, setTokenStandard] = useState("spl");
+    const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+
+    const isBuy = action === "buy";
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
-    const accentBg = isBuy ? "bg-[#39FF14]" : "bg-[#FF003C]";
 
-    // Fetch quote when amount or mode changes
-    useEffect(() => {
-        if (!activeToken || tradePanel.amount <= 0) {
-            clearQuote();
-            return;
+    const connection = useMemo(() => new Connection(config.solanaRpcUrl), []);
+
+    // Map GMGN exchange to pool_type hint
+    const getPoolHint = useCallback(() => {
+        if (!exchange) return {};
+        switch (exchange) {
+            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
+            case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
+            case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
+            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined };
+            case "meteora_dbc": return { poolAddress: poolAddress || undefined, poolType: "meteora_dbc" };
+            case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
+            default: return {};
         }
+    }, [exchange, poolAddress, quoteAddress, creatorAddress, baseVaultAddress, quoteVaultAddress, tokenStandard]);
 
-        const inputToken = isBuy ? SOL_MINT : activeToken.tokenId;
-        const outputToken = isBuy ? activeToken.tokenId : SOL_MINT;
+    // Connect socket when authenticated
+    useEffect(() => {
+        if (isAuthenticated && turnkeyAddress) {
+            socketConnect();
+        }
+        return () => { socketDisconnect(); };
+    }, [isAuthenticated, turnkeyAddress, socketConnect, socketDisconnect]);
 
-        fetchQuote({
-            inputToken,
-            outputToken,
-            amount: tradePanel.amount,
-            slippageBps,
-            priorityFee: priorityFee || undefined,
-        });
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [tradePanel.amount, tradePanel.mode, activeToken?.tokenId, slippageBps]);
+    // Fetch GMGN token info for pool hints
+    useEffect(() => {
+        if (!activeToken?.tokenId) return;
+        setExchange(null); setPoolAddress(null); setQuoteAddress(null);
+        setCreatorAddress(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
+        setTokenStandard("spl"); setTxStatus("idle"); setTxResult(null); resetPrepare();
 
-    const handleSwap = useCallback(async () => {
-        if (!connected || !publicKey || !activeToken || !sendTransaction) return;
-
-        const inputToken = isBuy ? SOL_MINT : activeToken.tokenId;
-        const outputToken = isBuy ? activeToken.tokenId : SOL_MINT;
-
-        const txId = `swap_${Date.now()}`;
-
-        try {
-            setSwapStatus('pending');
-            setSwapError(null);
-
-            // Get serialized transaction from API
-            const serializedTx = await bagsService.createSwapTransaction({
-                inputToken,
-                outputToken,
-                amount: tradePanel.amount,
-                slippageBps,
-                priorityFee: priorityFee || undefined,
-                walletAddress: publicKey,
-            });
-
-            // Deserialize and send
-            const txBuffer = Buffer.from(serializedTx, 'base64');
-            let tx: Transaction | VersionedTransaction;
+        const fetchGMGNInfo = async () => {
             try {
-                tx = VersionedTransaction.deserialize(txBuffer);
+                const res = await fetch(`${config.baseGmgnUrl}/token/${activeToken.tokenId}/info`);
+                const data: GMGNTokenInfoResponse = await res.json();
+                if (data.code === 0 && data.data?.length > 0) {
+                    const d = data.data[0];
+                    if (d.decimals) setTokenDecimals(d.decimals);
+                    if (d.tpool) { setExchange(d.tpool.exchange); setPoolAddress(d.tpool.pool_address); setQuoteAddress(d.tpool.quote_address || null); }
+                    if (d.pool) { setBaseVaultAddress(d.pool.base_vault_address || null); setQuoteVaultAddress(d.pool.quote_vault_address || null); }
+                    if (d.dev?.creator_address) setCreatorAddress(d.dev.creator_address);
+                    if (d.standard === "2022") setTokenStandard("2022");
+                }
+            } catch { /* GMGN unavailable, backend will auto-detect */ }
+        };
+        fetchGMGNInfo();
+    }, [activeToken?.tokenId, resetPrepare]);
+
+    // Fetch token balance
+    useEffect(() => {
+        if (!activeToken?.tokenId || !turnkeyAddress || !isAuthenticated) { setTokenBalance(0); return; }
+        const fetchBalance = async () => {
+            const mintPubkey = new PublicKey(activeToken.tokenId);
+            const userPubkey = new PublicKey(turnkeyAddress);
+            const tryProgram = async (progId: typeof TOKEN_PROGRAM_ID) => {
+                const ata = await getAssociatedTokenAddress(mintPubkey, userPubkey, false, progId);
+                const account = await getAccount(connection, ata, "confirmed", progId);
+                return Number(account.amount);
+            };
+            try {
+                const raw = await tryProgram(TOKEN_PROGRAM_ID);
+                setTokenBalance(raw / Math.pow(10, tokenDecimals));
             } catch {
-                tx = Transaction.from(txBuffer);
+                try {
+                    const raw = await tryProgram(TOKEN_2022_PROGRAM_ID);
+                    setTokenBalance(raw / Math.pow(10, tokenDecimals));
+                } catch { setTokenBalance(0); }
+            }
+        };
+        fetchBalance();
+    }, [activeToken?.tokenId, turnkeyAddress, isAuthenticated, tokenDecimals, balanceRefreshTrigger, connection]);
+
+    // Auto-prepare BUY when amount changes (debounced)
+    useEffect(() => {
+        if (!isAuthenticated || !socketConnected || action !== "buy") return;
+        const val = parseFloat(solAmount);
+        if (!val || val <= 0) { resetPrepare(); return; }
+        const timer = setTimeout(() => {
+            const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
+            const poolHint = getPoolHint();
+            prepareBuy({ mint: activeToken!.tokenId, solAmount: val, slippageBps: slippageBpsVal, ...poolHint });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, slippageBps, exchange, prepareBuy, resetPrepare, getPoolHint]);
+
+    // Auto-prepare SELL when amount changes (debounced)
+    useEffect(() => {
+        if (!isAuthenticated || !socketConnected || action !== "sell") return;
+        const val = parseFloat(sellAmount);
+        if (!val || val <= 0) { resetPrepare(); return; }
+        const timer = setTimeout(() => {
+            const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
+            const poolHint = getPoolHint();
+            prepareSell({ mint: activeToken!.tokenId, tokenAmount: val, tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, slippageBps, exchange, prepareSell, resetPrepare, getPoolHint]);
+
+    // Handle execute results — verify on-chain before showing success
+    useEffect(() => {
+        if (!lastSignature) return;
+
+        const confirmTx = async () => {
+            setTxResult({ signature: lastSignature });
+            setTxStatus("sending");
+
+            // Poll getSignatureStatuses — returns instantly, no blocking wait
+            const maxAttempts = 12;
+            for (let i = 0; i < maxAttempts; i++) {
+                try {
+                    const { value } = await connection.getSignatureStatuses([lastSignature]);
+                    const status = value?.[0];
+
+                    if (status) {
+                        if (status.err) {
+                            setTxResult({ signature: lastSignature, error: "Transaction failed on-chain. Check if your trading wallet has enough SOL." });
+                            setTxStatus("error");
+                            return;
+                        }
+                        if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
+                            setTxStatus("success");
+                            if (action === "buy" && estimatedTokens) {
+                                setTokenBalance((prev) => prev + estimatedTokens / Math.pow(10, tokenDecimals));
+                            } else if (action === "sell" && sellAmount) {
+                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(sellAmount)));
+                            }
+                            setSolAmount(""); setSellAmount(""); setSellPreset(null);
+                            setTimeout(() => { setBalanceRefreshTrigger((p) => p + 1); refreshTurnkeyBalance(); }, 3000);
+                            return;
+                        }
+                    }
+                } catch { /* RPC error, retry */ }
+
+                await new Promise((r) => setTimeout(r, 500));
             }
 
-            setSwapStatus('confirming');
+            // After 6s of polling with no result
+            setTxResult({ signature: lastSignature, error: "Transaction not confirmed. It may have been dropped." });
+            setTxStatus("error");
+        };
 
-            const signature = await sendTransaction(tx, connection);
+        confirmTx();
+    }, [lastSignature]);
 
-            // Track transaction
-            addTransaction({
-                id: txId,
-                type: 'swap',
-                signature,
-                status: 'pending',
-                timestamp: Date.now(),
-                details: {
-                    tokenSymbol: activeToken.symbol,
-                    tokenMint: activeToken.tokenId,
-                    amountIn: tradePanel.amount,
-                    amountOut: quote?.outputAmount,
-                    side: isBuy ? 'buy' : 'sell',
-                },
-            });
-
-            // Confirm transaction
-            await connection.confirmTransaction(signature, 'confirmed');
-
-            setSwapStatus('success');
-            setLastSignature(signature);
-            updateTransaction(txId, { status: 'confirmed' });
-
-            // Refresh balance
-            setTimeout(() => refreshBalance(), 2000);
-        } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : 'Transaction failed';
-            setSwapStatus('error');
-            setSwapError(errorMessage);
-            updateTransaction(txId, { status: 'failed' });
+    // Handle errors
+    useEffect(() => {
+        if (lastError) {
+            setTxResult({ error: lastError });
+            setTxStatus("error");
+            clearError();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [connected, publicKey, activeToken, isBuy, tradePanel.amount, slippageBps, priorityFee, quote, sendTransaction, connection]);
+    }, [lastError, clearError]);
 
-    const handleRetry = () => {
-        setSwapStatus('idle');
-        setSwapError(null);
-        setLastSignature(null);
+    // Sell preset handler
+    const handleSellPreset = (pct: number) => {
+        const computed = parseFloat((tokenBalance * pct / 100).toFixed(10)).toString();
+        setSellAmount(computed);
+        setSellPreset(pct);
     };
 
-    const handleDismiss = () => {
-        setSwapStatus('idle');
-        setLastSignature(null);
+    // Execute trade
+    const handleTrade = () => {
+        if (!isAuthenticated) { setVisible(true); return; }
+        if (action === "buy" && (!solAmount || parseFloat(solAmount) <= 0)) return;
+        if (action === "sell" && (!sellAmount || parseFloat(sellAmount) <= 0)) return;
+
+        setTxStatus("sending");
+        setTxResult(null);
+
+        const poolHint = getPoolHint();
+        const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
+
+        if (socketReady) {
+            // TX is pre-signed, just broadcast
+            if (action === "buy") executeBuy();
+            else executeSell();
+        } else {
+            // Instant flow (prepare + execute in one step)
+            if (action === "buy") {
+                instantBuy({ mint: activeToken!.tokenId, solAmount: parseFloat(solAmount), slippageBps: slippageBpsVal, ...poolHint });
+            } else {
+                instantSell({ mint: activeToken!.tokenId, tokenAmount: parseFloat(sellAmount), tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+            }
+        }
     };
 
-    const isLimitOrder = tradePanel.orderType === 'limit';
-    const isSwapDisabled = !connected || !activeToken || tradePanel.amount <= 0 || quoteLoading || swapStatus === 'pending' || swapStatus === 'confirming' || isLimitOrder;
+    const handleDismiss = () => { setTxStatus("idle"); setTxResult(null); resetPrepare(); };
+
+    const isProcessing = isPreparing || socketExecuting || txStatus === "sending";
+
+    const getButtonText = () => {
+        if (socketExecuting || txStatus === "sending") return "Executing...";
+        if (isPreparing) return "Preparing...";
+        if (socketReady && action === "buy" && estimatedDisplay) return `Buy ~${estimatedDisplay.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${activeToken?.symbol || ""}`;
+        if (socketReady && action === "sell" && estimatedSolDisplay) return `Sell for ~${estimatedSolDisplay.toFixed(4)} SOL`;
+        return `${isBuy ? "Buy" : "Sell"} ${activeToken?.symbol || "Token"}`;
+    };
 
     return (
         <div className="flex flex-col h-full bg-[#0A0A0A] border-l border-white/10">
             {/* Mode Tabs */}
             <div className="flex border-b border-white/10">
                 <button
-                    onClick={() => setTradePanelMode('buy')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isBuy
-                            ? 'bg-[#39FF14]/20 text-[#39FF14] border-b-2 border-[#39FF14]'
-                            : 'text-[#666] hover:text-[#EDEDED]'
-                        }`}
-                >
-                    Buy
-                </button>
+                    onClick={() => { setAction("buy"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isBuy ? "bg-[#39FF14]/20 text-[#39FF14] border-b-2 border-[#39FF14]" : "text-[#666] hover:text-[#EDEDED]"}`}
+                >Buy</button>
                 <button
-                    onClick={() => setTradePanelMode('sell')}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${!isBuy
-                            ? 'bg-[#FF003C]/20 text-[#FF003C] border-b-2 border-[#FF003C]'
-                            : 'text-[#666] hover:text-[#EDEDED]'
-                        }`}
-                >
-                    Sell
-                </button>
+                    onClick={() => { setAction("sell"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${!isBuy ? "bg-[#FF003C]/20 text-[#FF003C] border-b-2 border-[#FF003C]" : "text-[#666] hover:text-[#EDEDED]"}`}
+                >Sell</button>
             </div>
 
-            <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto">
-                {/* Order Type */}
-                <div className="flex flex-col gap-2">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">Order Type</span>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => setTradePanelOrderType('market')}
-                            className={`flex-1 py-2 text-[10px] font-bold uppercase border transition-colors ${tradePanel.orderType === 'market'
-                                    ? 'border-[#EDEDED] text-[#EDEDED] bg-[#1A1A1A]'
-                                    : 'border-[#333] text-[#666] hover:border-[#666]'
-                                }`}
-                        >
-                            Market
-                        </button>
-                        <button
-                            onClick={() => setTradePanelOrderType('limit')}
-                            className={`flex-1 py-2 text-[10px] font-bold uppercase border transition-colors ${tradePanel.orderType === 'limit'
-                                    ? 'border-[#EDEDED] text-[#EDEDED] bg-[#1A1A1A]'
-                                    : 'border-[#333] text-[#666] hover:border-[#666]'
-                                }`}
-                        >
-                            Limit
-                        </button>
-                    </div>
-                </div>
-
-                {/* Amount Presets */}
-                <div className="flex flex-col gap-2">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount (SOL)</span>
-                    <div className="grid grid-cols-4 gap-2">
-                        {AMOUNT_PRESETS.map((amount) => (
-                            <button
-                                key={amount}
-                                onClick={() => setTradePanelAmount(amount)}
-                                className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
-                                style={{
-                                    borderColor: tradePanel.amount === amount ? accentColor : undefined,
-                                    color: tradePanel.amount === amount ? accentColor : undefined,
-                                }}
-                            >
-                                {amount}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Custom Amount Input */}
-                <div className="flex flex-col gap-2">
-                    <span className="text-[9px] text-[#666] uppercase tracking-widest">Custom Amount</span>
-                    <div className="relative">
-                        <input
-                            type="number"
-                            value={tradePanel.amount}
-                            onChange={(e) => setTradePanelAmount(parseFloat(e.target.value) || 0)}
-                            className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-                            placeholder="0.00"
-                            step="0.1"
-                            min="0"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">
-                            SOL
-                        </span>
-                    </div>
-                </div>
-
-                {/* Limit Price (if limit order) */}
-                {tradePanel.orderType === 'limit' && (
-                    <div className="flex flex-col gap-2">
-                        <span className="text-[9px] text-[#666] uppercase tracking-widest">Limit Price</span>
-                        <div className="relative">
-                            <input
-                                type="number"
-                                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-                                placeholder="0.00000"
-                                step="0.00001"
-                                min="0"
-                            />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">
-                                USD
-                            </span>
-                        </div>
+            <div className="flex-1 p-4 flex flex-col gap-3 overflow-y-auto">
+                {/* Connection Status */}
+                {!socketConnected && isAuthenticated && (
+                    <div className="p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 text-[10px] text-[#FF003C] font-mono text-center">
+                        Trade server disconnected
                     </div>
                 )}
 
-                {/* Swap Quote */}
-                {activeToken && (
-                    <div className="flex flex-col gap-2 p-3 bg-[#1A1A1A] border border-white/10">
+                {/* Amount Input */}
+                {isBuy ? (
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount (SOL)</span>
+                        <div className="grid grid-cols-4 gap-2">
+                            {BUY_PRESETS.map((amt) => (
+                                <button key={amt} onClick={() => setSolAmount(String(amt))}
+                                    className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                    style={{ borderColor: solAmount === String(amt) ? accentColor : undefined, color: solAmount === String(amt) ? accentColor : undefined }}
+                                >{amt}</button>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <input type="number" value={solAmount} onChange={(e) => setSolAmount(e.target.value)}
+                                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+                                placeholder="0.00" step="0.1" min="0" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">SOL</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-2">
+                        <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount ({activeToken?.symbol || "Tokens"})</span>
+                        <div className="grid grid-cols-4 gap-2">
+                            {SELL_PRESETS.map((pct) => (
+                                <button key={pct} onClick={() => handleSellPreset(pct)}
+                                    className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                    style={{ borderColor: sellPreset === pct ? accentColor : undefined, color: sellPreset === pct ? accentColor : undefined }}
+                                >{pct}%</button>
+                            ))}
+                        </div>
+                        <div className="relative">
+                            <input type="number" value={sellAmount} onChange={(e) => { setSellAmount(e.target.value); setSellPreset(null); }}
+                                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#FF003C] focus:outline-none"
+                                placeholder="0.00" step="0.1" min="0" />
+                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">{activeToken?.symbol || "Tokens"}</span>
+                        </div>
+                        <span className="text-[9px] text-[#666] font-mono">Holdings: {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {activeToken?.symbol || ""}</span>
+                    </div>
+                )}
+
+                {/* Quote Display */}
+                {activeToken && (isBuy ? solAmount : sellAmount) && (
+                    <div className="flex flex-col gap-1.5 p-3 bg-[#1A1A1A] border border-white/10">
                         <div className="flex justify-between text-[10px]">
-                            <span className="text-[#666]">You {isBuy ? 'pay' : 'sell'}</span>
-                            <span className="text-[#EDEDED] font-mono">{tradePanel.amount} {isBuy ? 'SOL' : activeToken.symbol}</span>
+                            <span className="text-[#666]">You {isBuy ? "pay" : "sell"}</span>
+                            <span className="text-[#EDEDED] font-mono">{isBuy ? `${solAmount} SOL` : `${sellAmount} ${activeToken.symbol}`}</span>
                         </div>
                         <div className="flex justify-between text-[10px]">
                             <span className="text-[#666]">You receive</span>
                             <span className="text-[#EDEDED] font-mono">
-                                {quoteLoading ? (
-                                    <span className="text-[#666] animate-pulse">Loading...</span>
-                                ) : quote ? (
-                                    `~${quote.outputAmount.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${isBuy ? activeToken.symbol : 'SOL'}`
-                                ) : (
-                                    `~${((tradePanel.amount * 150) / (activeToken.priceUsd * 1000 || 1)).toFixed(0)} ${activeToken.symbol}`
-                                )}
+                                {isPreparing ? (
+                                    <span className="text-[#666] animate-pulse">Calculating...</span>
+                                ) : socketReady && isBuy && estimatedDisplay ? (
+                                    `~${estimatedDisplay.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${activeToken.symbol}`
+                                ) : socketReady && !isBuy && estimatedSolDisplay ? (
+                                    `~${estimatedSolDisplay.toFixed(4)} SOL`
+                                ) : "--"}
                             </span>
                         </div>
-                        <div className="flex justify-between text-[10px]">
-                            <span className="text-[#666]">Price impact</span>
-                            <span className={`font-mono ${(quote?.priceImpact || 0) > 5 ? 'text-[#FF003C]' : 'text-[#39FF14]'}`}>
-                                {quote ? `${quote.priceImpact.toFixed(2)}%` : '<0.1%'}
-                            </span>
-                        </div>
-                        {quote && (
-                            <>
-                                <div className="flex justify-between text-[10px]">
-                                    <span className="text-[#666]">Min received</span>
-                                    <span className="text-[#888] font-mono">
-                                        {quote.minimumReceived.toLocaleString(undefined, { maximumFractionDigits: 4 })}
-                                    </span>
-                                </div>
-                                <div className="flex justify-between text-[10px]">
-                                    <span className="text-[#666]">Network fee</span>
-                                    <span className="text-[#888] font-mono">
-                                        ~{quote.networkFee.toFixed(5)} SOL
-                                    </span>
-                                </div>
-                            </>
-                        )}
-                        {quoteError && (
-                            <span className="text-[9px] text-[#FF003C] font-mono">{quoteError}</span>
+                        {(pricePerToken || sellPricePerToken) && (
+                            <div className="flex justify-between text-[10px]">
+                                <span className="text-[#666]">Price per token</span>
+                                <span className="text-[#888] font-mono">{((pricePerToken || sellPricePerToken)!).toFixed(9)} SOL</span>
+                            </div>
                         )}
                     </div>
                 )}
 
                 {/* Wallet Balance */}
-                <div className="flex items-center justify-between p-3 bg-[#1A1A1A] border border-white/10">
-                    <div className="flex items-center gap-2">
-                        <Wallet size={14} className="text-[#666]" />
-                        <span className="text-[10px] text-[#666] uppercase">Balance</span>
+                <div className="flex flex-col gap-1 p-3 bg-[#1A1A1A] border border-white/10">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Zap size={14} className="text-[#39FF14]" />
+                            <span className="text-[10px] text-[#666] uppercase">Trading Wallet</span>
+                        </div>
+                        <span className="text-xs font-mono text-[#EDEDED]">
+                            {turnkeyBalance !== null ? `${turnkeyBalance.toFixed(4)} SOL` : "-- SOL"}
+                        </span>
                     </div>
-                    <span className="text-xs font-mono text-[#EDEDED]">
-                        {connected && balance !== null ? `${balance.toFixed(4)} SOL` : '-- SOL'}
-                    </span>
+                    {turnkeyAddress && (
+                        <span className="text-[9px] text-[#444] font-mono pl-6">{turnkeyAddress.slice(0, 4)}...{turnkeyAddress.slice(-4)}</span>
+                    )}
                 </div>
 
-                {/* Slippage Settings */}
+                {/* Slippage */}
                 <SlippageSettings />
 
-                {/* Transaction Status */}
-                <TransactionStatus
-                    status={swapStatus}
-                    signature={lastSignature}
-                    error={swapError}
-                    onRetry={handleRetry}
-                    onDismiss={handleDismiss}
-                />
+                {/* TX Result */}
+                {txResult && (
+                    <div className={`p-3 border text-[10px] font-mono ${txResult.error ? "bg-[#FF003C]/10 border-[#FF003C]/30 text-[#FF003C]" : "bg-[#39FF14]/10 border-[#39FF14]/30 text-[#39FF14]"}`}>
+                        {txResult.error ? (
+                            <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                    <AlertCircle size={12} /> {txResult.error}
+                                </div>
+                                {txResult.signature && (
+                                    <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer"
+                                        className="flex items-center gap-1 underline opacity-70">
+                                        View failed TX <ExternalLink size={10} />
+                                    </a>
+                                )}
+                            </div>
+                        ) : txResult.signature ? (
+                            <div className="flex flex-col gap-1">
+                                <span>Transaction confirmed!</span>
+                                <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer"
+                                    className="flex items-center gap-1 underline">
+                                    View on Solscan <ExternalLink size={10} />
+                                </a>
+                            </div>
+                        ) : null}
+                        <button onClick={handleDismiss} className="mt-2 text-[9px] opacity-60 hover:opacity-100">Dismiss</button>
+                    </div>
+                )}
             </div>
 
             {/* Action Button */}
             <div className="p-4 border-t border-white/10">
-                {isLimitOrder && (
-                    <p className="text-[10px] text-[#888] text-center mb-2">Limit orders coming soon</p>
-                )}
                 {!connected ? (
-                    <button
-                        className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#888] bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] hover:text-[#39FF14] transition-all"
-                        onClick={() => setVisible(true)}
-                    >
-                        Connect Wallet
+                    <button onClick={() => setVisible(true)}
+                        className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#888] bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] hover:text-[#39FF14] transition-all">
+                        <span className="flex items-center justify-center gap-2"><Wallet size={14} /> Connect Wallet</span>
+                    </button>
+                ) : !isAuthenticated ? (
+                    <button disabled className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#666] bg-[#1A1A1A] border border-white/10">
+                        <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Creating Wallet...</span>
                     </button>
                 ) : (
-                    <button
-                        onClick={handleSwap}
-                        disabled={isSwapDisabled}
-                        className={`w-full py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${accentBg}`}
-                    >
-                        {swapStatus === 'pending' || swapStatus === 'confirming'
-                            ? 'Processing...'
-                            : isLimitOrder
-                                ? 'Limit Order Unavailable'
-                                : `${isBuy ? 'Buy' : 'Sell'} ${activeToken?.symbol || 'Token'}`
-                        }
+                    <button onClick={handleTrade} disabled={isProcessing || !activeToken || (isBuy ? !solAmount : !sellAmount)}
+                        className={`w-full py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${socketReady ? "bg-[#FFD700]" : isBuy ? "bg-[#39FF14]" : "bg-[#FF003C]"}`}>
+                        {isProcessing ? (
+                            <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> {getButtonText()}</span>
+                        ) : (
+                            getButtonText()
+                        )}
                     </button>
                 )}
             </div>
