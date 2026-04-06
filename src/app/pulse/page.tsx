@@ -8,48 +8,70 @@ import { PulseColumn } from "@/components/pulse/PulseColumn";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
-import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Wifi, WifiOff, Activity, Zap, ShieldAlert, Cpu, Layers, RefreshCw, Rocket, Radio } from "lucide-react";
+import { motion } from "framer-motion";
+import {
+    Wifi,
+    WifiOff,
+    Activity,
+    Zap,
+    ShieldAlert,
+    Cpu,
+    Layers,
+    RefreshCw,
+    Rocket,
+    Radio,
+    TrendingUp,
+    ArrowUpRight,
+} from "lucide-react";
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 import type { RawTokenData } from "@/lib/bags-types";
-
-// Types
-type Network = 'solana' | 'base' | 'ethereum';
-
 import { useSolPrice } from "@/hooks/useSolPrice";
 
-// BAGS token filter
+type Network = "solana" | "base" | "ethereum";
+
 const isBagsToken = (mint: string | undefined): boolean => {
     if (!mint) return false;
-    return mint.toLowerCase().endsWith('bags');
+    return mint.toLowerCase().endsWith("bags");
 };
 
-// Process API token data into PulseItem format
-const processApiTokenData = (data: RawTokenData, targetState: PulseState, solPrice: number): PulseItem => {
-    const marketCapSol = parseFloat(data.market_cap_sol || data.marketCapSol || "0");
+const processApiTokenData = (
+    data: RawTokenData,
+    targetState: PulseState,
+    solPrice: number,
+): PulseItem => {
+    const marketCapSol = parseFloat(
+        data.market_cap_sol || data.marketCapSol || "0",
+    );
     const bondingProgress = data.bonding_curve_percent
         ? parseFloat(data.bonding_curve_percent)
-        : targetState === 'MIGRATED' ? 100 : Math.min(99, Math.floor(marketCapSol / 85 * 100));
+        : targetState === "MIGRATED"
+          ? 100
+          : Math.min(99, Math.floor((marketCapSol / 85) * 100));
 
     const top10Rate = parseFloat(data.top_10_holder_rate || "0");
     const riskFlags: RiskFlag[] = [];
 
     if (top10Rate > 50) {
         riskFlags.push({
-            type: 'INSIDER_CLUSTER',
-            severity: top10Rate > 70 ? 'critical' : 'warn',
+            type: "INSIDER_CLUSTER",
+            severity: top10Rate > 70 ? "critical" : "warn",
         });
     }
 
-    const creationTs = data.creation_timestamp || data.created_at || Math.floor(Date.now() / 1000);
-    const ageSeconds = Math.floor((Date.now() / 1000) - creationTs);
+    const creationTs =
+        data.creation_timestamp ||
+        data.created_at ||
+        Math.floor(Date.now() / 1000);
+    const ageSeconds = Math.floor(Date.now() / 1000 - creationTs);
 
     return {
         tokenId: data.mint || data.address || "",
         symbol: `$${data.symbol || "UNK"}`,
         name: data.name || "Unknown",
-        deployer: data.creator?.slice(0, 4) + '...' + data.creator?.slice(-4) || "unknown",
-        deployerName: 'deployer',
+        deployer:
+            data.creator?.slice(0, 4) + "..." + data.creator?.slice(-4) ||
+            "unknown",
+        deployerName: "deployer",
         deployerLaunches: 1,
         deployerSuccessRate: 50,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
@@ -67,240 +89,142 @@ const processApiTokenData = (data: RawTokenData, targetState: PulseState, solPri
     };
 };
 
-// Components
-const FilterButton = ({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) => (
-    <button
-        onClick={onClick}
-        className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-all ${active
-            ? 'btn-primary'
-            : 'btn-ghost'
-            }`}
-    >
-        {children}
-    </button>
-);
-
-const StatDisplay = ({ label, value, color = "text-[#EDEDED]" }: { label: string; value: string; color?: string }) => (
-    <div className="flex flex-col">
-        <span className="label">{label}</span>
-        <span className={`text-sm font-display font-bold ${color}`}>{value}</span>
-    </div>
-);
-
-// Header Component
-function PulseHeader({
-    network,
-    onNetworkChange,
-    isConnected,
-    onRefresh,
-    isLoading
-}: {
-    network: Network;
-    onNetworkChange: (n: Network) => void;
-    isConnected: boolean;
-    onRefresh: () => void;
-    isLoading: boolean;
-}) {
-    return (
-        <div className="flex items-center justify-between px-6 py-4 glass-heavy gradient-border">
-            <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-[#39FF14]">
-                    <Activity size={18} />
-                    <h1 className="text-xl font-display font-bold tracking-tighter">LIVE_PULSE</h1>
-                </div>
-                <div className="h-4 w-[1px] bg-[#333]" />
-                <div className="flex items-center gap-2 text-[10px] font-mono">
-                    {isConnected ? (
-                        <>
-                            <Wifi size={12} className="text-[#39FF14]" />
-                            <span className="text-[#39FF14]">CONNECTED</span>
-                        </>
-                    ) : (
-                        <>
-                            <WifiOff size={12} className="text-[#FF003C]" />
-                            <span className="text-[#FF003C]">CONNECTING...</span>
-                        </>
-                    )}
-                </div>
-                <button
-                    onClick={onRefresh}
-                    disabled={isLoading}
-                    className="btn-ghost p-1.5 disabled:opacity-50"
-                    title="Refresh data"
-                >
-                    <RefreshCw size={12} className={`text-[#888] ${isLoading ? 'animate-spin' : ''}`} />
-                </button>
-            </div>
-
-            <div className="flex items-center gap-4">
-                <div className="flex">
-                    <button
-                        onClick={() => onNetworkChange('solana')}
-                        className={`px-4 py-1.5 text-[10px] font-bold uppercase transition-all ${network === 'solana'
-                            ? 'btn-primary'
-                            : 'btn-ghost'
-                            }`}
-                    >
-                        solana
-                    </button>
-                    {(['base', 'ethereum'] as Network[]).map((net) => (
-                        <button
-                            key={net}
-                            disabled
-                            className="px-4 py-1.5 text-[10px] font-bold uppercase btn-ghost opacity-30 cursor-not-allowed"
-                            title="Coming soon"
-                        >
-                            {net} <span className="text-[8px] ml-1">soon</span>
-                        </button>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// Parallax Background
-const ParallaxBackground = () => {
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            mouseX.set(e.clientX);
-            mouseY.set(e.clientY);
-        };
-        window.addEventListener("mousemove", handleMouseMove);
-        return () => window.removeEventListener("mousemove", handleMouseMove);
-    }, [mouseX, mouseY]);
-
-    const x = useTransform(mouseX, [0, typeof window !== 'undefined' ? window.innerWidth : 1000], [-20, 20]);
-    const y = useTransform(mouseY, [0, typeof window !== 'undefined' ? window.innerHeight : 1000], [-20, 20]);
-
-    return (
-        <motion.div style={{ x, y }} className="absolute inset-0 pointer-events-none opacity-20">
-            <div className="absolute top-1/4 left-1/4 w-96 h-96 border border-[#39FF14] rounded-full opacity-10" />
-            <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] border border-[#FF003C] rounded-full opacity-10" />
-            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-        </motion.div>
-    );
-};
+/* ------------------------------------------------------------------ */
+/* COLUMN CONFIG                                                       */
+/* ------------------------------------------------------------------ */
+const COLUMNS: {
+    state: PulseState;
+    label: string;
+    icon: React.ElementType;
+    color: string;
+    emptyMsg: string;
+    emptyBagsMsg: string;
+    description: string;
+}[] = [
+    {
+        state: "NEW",
+        label: "INCOMING",
+        icon: Zap,
+        color: "#39FF14",
+        emptyMsg: "Waiting for new tokens...",
+        emptyBagsMsg: "Waiting for BAGS tokens...",
+        description: "Bonding curve active",
+    },
+    {
+        state: "FINAL_STRETCH",
+        label: "GRADUATING",
+        icon: TrendingUp,
+        color: "#FFD700",
+        emptyMsg: "No tokens graduating",
+        emptyBagsMsg: "No graduating BAGS tokens",
+        description: "Near DEX migration",
+    },
+    {
+        state: "MIGRATED",
+        label: "LIVE ON DEX",
+        icon: ArrowUpRight,
+        color: "#00F0FF",
+        emptyMsg: "No migrated tokens",
+        emptyBagsMsg: "No migrated BAGS tokens",
+        description: "LP deployed",
+    },
+];
 
 export default function PulsePage() {
-    const { items, getFilteredItems, filters, setFilters, addItem, setConnected, clearItems } = usePulseStore();
+    const {
+        items,
+        getFilteredItems,
+        filters,
+        setFilters,
+        addItem,
+        setConnected,
+        clearItems,
+    } = usePulseStore();
     const { connect, isConnected, latestTokens } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
-    const [network, setNetwork] = useState<Network>('solana');
-    const [activeTab, setActiveTab] = useState<'live' | 'bags'>('live');
+    const [network, setNetwork] = useState<Network>("solana");
+    const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const processedTokensRef = useRef<Set<string>>(new Set());
     const refreshingRef = useRef(false);
 
-    // Fetch initial data from API
     const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
+        setError(null);
         try {
             const [newRes, soonRes, bondedRes] = await Promise.all([
                 fetch(`${config.baseServerUrl}/api/tokens?limit=20`),
-                fetch(`${config.baseServerUrl}/api/tokens?status=graduating&hours=6`),
-                fetch(`${config.baseServerUrl}/api/tokens?status=migrated&limit=20`),
+                fetch(
+                    `${config.baseServerUrl}/api/tokens?status=graduating&hours=6`,
+                ),
+                fetch(
+                    `${config.baseServerUrl}/api/tokens?status=migrated&limit=20`,
+                ),
             ]);
 
-            // Process NEW tokens
-            if (newRes.ok) {
-                const data = await newRes.json();
+            const processResponse = async (
+                res: Response,
+                state: PulseState,
+            ) => {
+                if (!res.ok) return;
+                const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
-
                 tokens.forEach((t: RawTokenData) => {
-                    // Apply BAGS filter if enabled
                     if (filters.bagsOnly && !isBagsToken(t.mint)) return;
-
-                    const item = processApiTokenData(t, 'NEW', solPrice);
+                    const item = processApiTokenData(t, state, solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
                         addItem(item);
                     }
                 });
-            }
+            };
 
-            // Process GRADUATING/SOON tokens (Processing column)
-            if (soonRes.ok) {
-                const data = await soonRes.json();
-                const tokens = data.tokens || (Array.isArray(data) ? data : []);
-
-                tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
-
-                    const item = processApiTokenData(t, 'FINAL_STRETCH', solPrice);
-                    if (!processedTokensRef.current.has(item.tokenId)) {
-                        processedTokensRef.current.add(item.tokenId);
-                        addItem(item);
-                    }
-                });
-            }
-
-            // Process MIGRATED tokens (Finalized column)
-            if (bondedRes.ok) {
-                const data = await bondedRes.json();
-                const tokens = data.tokens || (Array.isArray(data) ? data : []);
-
-                tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
-
-                    const item = processApiTokenData(t, 'MIGRATED', solPrice);
-                    if (!processedTokensRef.current.has(item.tokenId)) {
-                        processedTokensRef.current.add(item.tokenId);
-                        addItem(item);
-                    }
-                });
-            }
-        } catch (error) {
-            console.error("Failed to fetch initial token data:", error);
+            await Promise.all([
+                processResponse(newRes, "NEW"),
+                processResponse(soonRes, "FINAL_STRETCH"),
+                processResponse(bondedRes, "MIGRATED"),
+            ]);
+        } catch (err) {
+            console.error("Failed to fetch initial token data:", err);
+            setError("Failed to load tokens. Retrying...");
         } finally {
             setIsLoading(false);
         }
-    }, [addItem, filters.bagsOnly]);
+    }, [addItem, filters.bagsOnly, solPrice]);
 
-    // Connect to socket and fetch initial data on mount
     useEffect(() => {
         connect();
         fetchInitialData();
     }, [connect, fetchInitialData]);
 
-    // Update pulse store connection status
     useEffect(() => {
         setConnected(isConnected);
     }, [isConnected, setConnected]);
 
-    // Process new tokens from socket
     useEffect(() => {
         if (latestTokens.length > 0) {
             const token = latestTokens[0];
-
-            // Apply BAGS filter
-            if (filters.bagsOnly && !isBagsToken(token.mint)) {
-                return;
-            }
-
-            // Skip if already processed
-            if (processedTokensRef.current.has(token.mint)) {
-                return;
-            }
+            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
+            if (processedTokensRef.current.has(token.mint)) return;
 
             processedTokensRef.current.add(token.mint);
 
-            // Determine state based on bonding progress
-            let state: PulseState = 'NEW';
+            let state: PulseState = "NEW";
             let bondingProgress = 0;
 
-            if (token.status === 'migrated') {
-                state = 'MIGRATED';
+            if (token.status === "migrated") {
+                state = "MIGRATED";
                 bondingProgress = 100;
             } else if (token.market_cap_sol) {
                 const mcSol = parseFloat(token.market_cap_sol);
-                bondingProgress = Math.min(99, Math.floor(mcSol / 85 * 100));
+                bondingProgress = Math.min(
+                    99,
+                    Math.floor((mcSol / 85) * 100),
+                );
                 if (bondingProgress >= 85) {
-                    state = 'FINAL_STRETCH';
+                    state = "FINAL_STRETCH";
                 }
             }
 
@@ -308,13 +232,21 @@ export default function PulsePage() {
                 tokenId: token.mint,
                 symbol: `$${token.symbol}`,
                 name: token.name,
-                deployer: token.creator?.slice(0, 4) + '...' + token.creator?.slice(-4),
-                deployerName: 'deployer',
+                deployer:
+                    token.creator?.slice(0, 4) +
+                    "..." +
+                    token.creator?.slice(-4),
+                deployerName: "deployer",
                 deployerLaunches: 1,
                 deployerSuccessRate: 50,
-                ageSeconds: Math.max(0, Math.floor((Date.now() / 1000) - token.creation_timestamp)),
-                marketCap: parseFloat(token.market_cap_sol || '0') * solPrice,
-                liquidity: parseFloat(token.market_cap_sol || '0') * solPrice * 0.3,
+                ageSeconds: Math.max(
+                    0,
+                    Math.floor(Date.now() / 1000 - token.creation_timestamp),
+                ),
+                marketCap:
+                    parseFloat(token.market_cap_sol || "0") * solPrice,
+                liquidity:
+                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
                 bondingProgress,
                 holders: token.holder_count || 0,
                 txCount: 0,
@@ -328,9 +260,8 @@ export default function PulsePage() {
 
             addItem(item);
         }
-    }, [latestTokens, addItem, filters.bagsOnly]);
+    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
 
-    // Handle refresh
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;
         refreshingRef.current = true;
@@ -343,37 +274,119 @@ export default function PulsePage() {
         }
     }, [clearItems, fetchInitialData]);
 
-    const totalTokens = items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
+    const totalTokens =
+        items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
 
     return (
         <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
-            <ParallaxBackground />
-
-            <PulseHeader
-                network={network}
-                onNetworkChange={setNetwork}
-                isConnected={isConnected}
-                onRefresh={handleRefresh}
-                isLoading={isLoading}
-            />
-
-            {/* Tab Switcher + Filter / Stats Bar */}
-            <div className="flex items-center justify-between px-6 py-3 border-b border-white/10 glass z-10">
+            {/* ── HEADER BAR ──────────────────────────────────────── */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808] z-10">
                 <div className="flex items-center gap-4">
-                    <div className="flex">
+                    {/* Logo / Title */}
+                    <div className="flex items-center gap-2">
+                        <Activity size={16} className="text-[#39FF14]" />
+                        <h1 className="text-sm font-display font-bold tracking-tight uppercase">
+                            PULSE
+                        </h1>
+                    </div>
+
+                    {/* Connection badge */}
+                    <div
+                        className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest border ${
+                            isConnected
+                                ? "border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5"
+                                : "border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5"
+                        }`}
+                    >
+                        {isConnected ? (
+                            <Wifi size={10} />
+                        ) : (
+                            <WifiOff size={10} />
+                        )}
+                        {isConnected ? "LIVE" : "OFFLINE"}
+                    </div>
+
+                    {/* Refresh */}
+                    <button
+                        onClick={handleRefresh}
+                        disabled={isLoading}
+                        className="p-1.5 text-[#666] hover:text-[#EDEDED] hover:bg-white/5 transition-all disabled:opacity-30"
+                        title="Refresh data"
+                    >
+                        <RefreshCw
+                            size={13}
+                            className={isLoading ? "animate-spin" : ""}
+                        />
+                    </button>
+                </div>
+
+                {/* Right side: network + stats */}
+                <div className="flex items-center gap-5">
+                    {/* Token count */}
+                    {activeTab === "live" && (
+                        <div className="flex items-center gap-4 text-[10px] font-mono">
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[#666]">TOKENS</span>
+                                <span
+                                    className={
+                                        totalTokens > 0
+                                            ? "text-[#39FF14] font-bold"
+                                            : "text-[#666]"
+                                    }
+                                >
+                                    {totalTokens}
+                                </span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Network switcher */}
+                    <div className="flex border border-white/5">
                         <button
-                            onClick={() => setActiveTab('live')}
-                            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
-                                activeTab === 'live' ? 'btn-primary' : 'btn-ghost'
+                            onClick={() => setNetwork("solana")}
+                            className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                network === "solana"
+                                    ? "bg-[#39FF14] text-black"
+                                    : "text-[#666] hover:text-[#EDEDED]"
+                            }`}
+                        >
+                            SOL
+                        </button>
+                        {(["base", "ethereum"] as Network[]).map((net) => (
+                            <button
+                                key={net}
+                                disabled
+                                className="px-3 py-1 text-[9px] font-bold uppercase text-[#333] cursor-not-allowed border-l border-white/5"
+                            >
+                                {net === "base" ? "BASE" : "ETH"}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── TAB BAR + FILTERS ──────────────────────────────── */}
+            <div className="flex items-center justify-between px-5 py-2 border-b border-white/5 bg-[#060606] z-10">
+                <div className="flex items-center gap-3">
+                    {/* Tabs */}
+                    <div className="flex border border-white/5">
+                        <button
+                            onClick={() => setActiveTab("live")}
+                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                                activeTab === "live"
+                                    ? "bg-[#39FF14] text-black"
+                                    : "text-[#888] hover:text-[#EDEDED]"
                             }`}
                         >
                             <Radio size={10} />
                             LIVE FEED
                         </button>
                         <button
-                            onClick={() => setActiveTab('bags')}
-                            className={`px-3 py-1 text-[10px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
-                                activeTab === 'bags' ? 'btn-primary' : 'btn-ghost'
+                            onClick={() => setActiveTab("bags")}
+                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border-l border-white/5 ${
+                                activeTab === "bags"
+                                    ? "bg-[#FFD700] text-black"
+                                    : "text-[#888] hover:text-[#EDEDED]"
                             }`}
                         >
                             <Rocket size={10} />
@@ -381,130 +394,162 @@ export default function PulsePage() {
                         </button>
                     </div>
 
-                    {activeTab === 'live' && (
+                    {/* Filters (only for live tab) */}
+                    {activeTab === "live" && (
                         <>
-                            <div className="h-4 w-[1px] bg-[#333]" />
-                            <div className="flex gap-2">
-                                <FilterButton active={filters.tierFilter === 'all'} onClick={() => setFilters({ tierFilter: 'all' })}>ALL</FilterButton>
-                                <FilterButton active={filters.tierFilter === 'high'} onClick={() => setFilters({ tierFilter: 'high' })}>WHALE</FilterButton>
-                                <FilterButton active={filters.tierFilter === 'medium'} onClick={() => setFilters({ tierFilter: 'medium' })}>MID</FilterButton>
+                            <div className="h-4 w-px bg-white/5" />
+                            <div className="flex gap-1">
+                                {(
+                                    [
+                                        { key: "all", label: "ALL" },
+                                        { key: "high", label: "WHALE" },
+                                        { key: "medium", label: "MID" },
+                                    ] as const
+                                ).map((f) => (
+                                    <button
+                                        key={f.key}
+                                        onClick={() =>
+                                            setFilters({ tierFilter: f.key })
+                                        }
+                                        className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                            filters.tierFilter === f.key
+                                                ? "bg-white/10 text-[#EDEDED]"
+                                                : "text-[#666] hover:text-[#EDEDED]"
+                                        }`}
+                                    >
+                                        {f.label}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="h-4 w-[1px] bg-[#333]" />
+
+                            <div className="h-4 w-px bg-white/5" />
+
                             <button
-                                onClick={() => setFilters({ hideRisky: !filters.hideRisky })}
-                                className={`btn-ghost flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 ${filters.hideRisky ? '!border-[#FF003C] !text-[#FF003C]' : ''
-                                    }`}
+                                onClick={() =>
+                                    setFilters({
+                                        hideRisky: !filters.hideRisky,
+                                    })
+                                }
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                    filters.hideRisky
+                                        ? "bg-[#FF003C]/10 text-[#FF003C] border border-[#FF003C]/20"
+                                        : "text-[#666] hover:text-[#EDEDED]"
+                                }`}
                             >
-                                <ShieldAlert size={12} />
-                                {filters.hideRisky ? 'RISK_FILTER: ON' : 'RISK_FILTER: OFF'}
+                                <ShieldAlert size={10} />
+                                RISK
+                                {filters.hideRisky ? " ON" : ""}
                             </button>
-                            <div className="h-4 w-[1px] bg-[#333]" />
+
                             <button
                                 onClick={() => {
-                                    setFilters({ bagsOnly: !filters.bagsOnly });
+                                    setFilters({
+                                        bagsOnly: !filters.bagsOnly,
+                                    });
                                     handleRefresh();
                                 }}
-                                className={`btn-ghost flex items-center gap-2 text-[10px] font-bold uppercase px-3 py-1 ${filters.bagsOnly ? '!border-[#39FF14] !text-[#39FF14]' : ''
-                                    }`}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                    filters.bagsOnly
+                                        ? "bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/20"
+                                        : "text-[#666] hover:text-[#EDEDED]"
+                                }`}
                             >
-                                {filters.bagsOnly ? 'BAGS_ONLY: ON' : 'BAGS_ONLY: OFF'}
+                                BAGS{filters.bagsOnly ? " ON" : ""}
                             </button>
-                        </>
-                    )}
-                </div>
-
-                <div className="flex items-center gap-8">
-                    {activeTab === 'live' && (
-                        <>
-                            <StatDisplay
-                                label="TOKENS"
-                                value={String(totalTokens)}
-                                color={totalTokens > 0 ? "text-[#39FF14]" : "text-[#666]"}
-                            />
-                            <StatDisplay
-                                label="STATUS"
-                                value={isLoading ? "LOADING..." : isConnected ? "LIVE" : "..."}
-                                color={isConnected ? "text-[#39FF14]" : "text-[#FF003C]"}
-                            />
                         </>
                     )}
                 </div>
             </div>
 
-            {/* Main Content Area */}
-            <div className={`relative flex-1 flex overflow-hidden transition-all duration-300 ${drawerOpen ? 'mr-[400px]' : ''}`}>
-                {activeTab === 'bags' ? (
+            {/* ── ERROR BANNER ────────────────────────────────────── */}
+            {error && (
+                <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    className="px-5 py-2 bg-[#FF003C]/10 border-b border-[#FF003C]/20 text-[#FF003C] text-[10px] font-mono flex items-center justify-between"
+                >
+                    <span>{error}</span>
+                    <button
+                        onClick={() => setError(null)}
+                        className="text-[#FF003C]/60 hover:text-[#FF003C] text-xs"
+                    >
+                        Dismiss
+                    </button>
+                </motion.div>
+            )}
+
+            {/* ── MAIN CONTENT ────────────────────────────────────── */}
+            <div
+                className={`relative flex-1 flex overflow-hidden transition-all duration-300 ${drawerOpen ? "mr-[400px]" : ""}`}
+            >
+                {activeTab === "bags" ? (
                     <LaunchFeedSection />
                 ) : (
-                    <div className="flex-1 grid grid-cols-3 divide-x divide-white/10">
-                        {/* NEW Column */}
-                        <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                            <div className="px-4 py-3 table-header flex justify-between items-center">
-                                <span className="text-xs font-bold text-[#39FF14] flex items-center gap-2">
-                                    <Zap size={14} /> INCOMING
-                                </span>
-                                <span className="label">{items.NEW.length} items</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                                {isLoading ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        Loading tokens...
+                    <div className="flex-1 grid grid-cols-3 divide-x divide-white/5">
+                        {COLUMNS.map((col) => (
+                            <div
+                                key={col.state}
+                                className="relative flex flex-col min-h-0"
+                            >
+                                {/* Column header */}
+                                <div className="px-4 py-2.5 border-b border-white/5 bg-[#080808] flex justify-between items-center">
+                                    <div className="flex items-center gap-2">
+                                        <col.icon
+                                            size={13}
+                                            style={{ color: col.color }}
+                                        />
+                                        <span
+                                            className="text-[10px] font-bold uppercase tracking-widest"
+                                            style={{ color: col.color }}
+                                        >
+                                            {col.label}
+                                        </span>
+                                        <span className="text-[9px] text-[#444] hidden lg:inline">
+                                            {col.description}
+                                        </span>
                                     </div>
-                                ) : items.NEW.length === 0 ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        {filters.bagsOnly ? 'Waiting for BAGS tokens...' : 'No new tokens'}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] font-mono text-[#555]">
+                                            {items[col.state].length}
+                                        </span>
+                                        {/* Live pulse dot for NEW column */}
+                                        {col.state === "NEW" &&
+                                            isConnected && (
+                                                <div className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
+                                            )}
                                     </div>
-                                ) : (
-                                    <PulseColumn state="NEW" items={getFilteredItems('NEW')} />
-                                )}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* FINAL STRETCH Column */}
-                        <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                            <div className="px-4 py-3 table-header flex justify-between items-center">
-                                <span className="text-xs font-bold text-[#00F0FF] flex items-center gap-2">
-                                    <Cpu size={14} /> PROCESSING
-                                </span>
-                                <span className="label">{items.FINAL_STRETCH.length} items</span>
+                                {/* Column content */}
+                                <div className="flex-1 overflow-hidden">
+                                    {isLoading ? (
+                                        <div className="flex flex-col items-center justify-center h-full gap-3">
+                                            <div className="w-5 h-5 border-2 border-white/10 border-t-[#39FF14] rounded-full animate-spin" />
+                                            <span className="text-[10px] text-[#555] uppercase tracking-widest">
+                                                Loading...
+                                            </span>
+                                        </div>
+                                    ) : items[col.state].length === 0 ? (
+                                        <div className="flex flex-col items-center justify-center h-full gap-2 px-6">
+                                            <col.icon
+                                                size={20}
+                                                className="text-[#222]"
+                                            />
+                                            <span className="text-[10px] text-[#444] text-center">
+                                                {filters.bagsOnly
+                                                    ? col.emptyBagsMsg
+                                                    : col.emptyMsg}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <PulseColumn
+                                            state={col.state}
+                                            items={getFilteredItems(col.state)}
+                                        />
+                                    )}
+                                </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                                {isLoading ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        Loading tokens...
-                                    </div>
-                                ) : items.FINAL_STRETCH.length === 0 ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        {filters.bagsOnly ? 'No graduating BAGS tokens' : 'No tokens graduating'}
-                                    </div>
-                                ) : (
-                                    <PulseColumn state="FINAL_STRETCH" items={getFilteredItems('FINAL_STRETCH')} />
-                                )}
-                            </div>
-                        </div>
-
-                        {/* MIGRATED Column */}
-                        <div className="relative flex flex-col min-h-0 bg-[#050505]/50">
-                            <div className="px-4 py-3 table-header flex justify-between items-center">
-                                <span className="text-xs font-bold text-[#FF003C] flex items-center gap-2">
-                                    <Layers size={14} /> FINALIZED
-                                </span>
-                                <span className="label">{items.MIGRATED.length} items</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                                {isLoading ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        Loading tokens...
-                                    </div>
-                                ) : items.MIGRATED.length === 0 ? (
-                                    <div className="text-center text-[#666] text-xs py-8">
-                                        {filters.bagsOnly ? 'No migrated BAGS tokens' : 'No migrated tokens'}
-                                    </div>
-                                ) : (
-                                    <PulseColumn state="MIGRATED" items={getFilteredItems('MIGRATED')} />
-                                )}
-                            </div>
-                        </div>
+                        ))}
                     </div>
                 )}
             </div>
