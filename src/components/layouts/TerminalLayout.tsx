@@ -10,7 +10,7 @@ interface TerminalLayoutProps {
 
 export function TerminalLayout({ leftPanel, mainContent, rightPanel }: TerminalLayoutProps) {
     return (
-        <div className="h-[calc(100vh-56px)] flex bg-transparent">
+        <div className="h-[calc(100vh-92px)] flex bg-transparent">
             {/* Left Panel - Filters */}
             <aside className="w-56 flex-shrink-0 border-r border-white/5 bg-[#0B0E14]/50 backdrop-blur-sm overflow-y-auto">
                 <div className="p-4">

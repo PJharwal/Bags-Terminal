@@ -52,7 +52,7 @@ export function DrawerShell({ children, title, width = "md" }: DrawerShellProps)
                         animate={{ x: 0 }}
                         exit={{ x: "100%" }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className={`fixed top-14 right-0 h-[calc(100vh-56px)] ${widthClasses[width]} glass-heavy border-l border-white/[0.06] z-50 flex flex-col font-mono shadow-[0_0_60px_rgba(0,0,0,0.8)]`}
+                        className={`fixed top-[88px] right-0 h-[calc(100vh-92px)] ${widthClasses[width]} glass-heavy border-l border-white/[0.06] z-50 flex flex-col font-mono shadow-[0_0_60px_rgba(0,0,0,0.8)]`}
                     >
                         {/* Header */}
                         {title && (

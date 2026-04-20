@@ -6,6 +6,7 @@ import { useSocketStore } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { PulseColumn } from "@/components/pulse/PulseColumn";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
+import { LiveTradesPanel } from "@/components/pulse/LiveTradesPanel";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
 import { motion } from "framer-motion";
@@ -147,6 +148,7 @@ export default function PulsePage() {
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showTrades, setShowTrades] = useState(true);
     const processedTokensRef = useRef<Set<string>>(new Set());
     const refreshingRef = useRef(false);
 
@@ -278,7 +280,7 @@ export default function PulsePage() {
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
+        <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
             {/* ── HEADER BAR ──────────────────────────────────────── */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808] z-10">
                 <div className="flex items-center gap-4">
@@ -456,6 +458,19 @@ export default function PulsePage() {
                             >
                                 BAGS{filters.bagsOnly ? " ON" : ""}
                             </button>
+
+                            <div className="h-4 w-px bg-white/5" />
+
+                            <button
+                                onClick={() => setShowTrades((v) => !v)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                    showTrades
+                                        ? "bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20"
+                                        : "text-[#666] hover:text-[#EDEDED]"
+                                }`}
+                            >
+                                TRADES{showTrades ? " ON" : ""}
+                            </button>
                         </>
                     )}
                 </div>
@@ -485,7 +500,14 @@ export default function PulsePage() {
                 {activeTab === "bags" ? (
                     <LaunchFeedSection />
                 ) : (
-                    <div className="flex-1 grid grid-cols-3 divide-x divide-white/5">
+                    <div
+                        className="flex-1 grid divide-x divide-white/5"
+                        style={{
+                            gridTemplateColumns: showTrades && !drawerOpen
+                                ? "1fr 1fr 1fr 300px"
+                                : "1fr 1fr 1fr",
+                        }}
+                    >
                         {COLUMNS.map((col) => (
                             <div
                                 key={col.state}
@@ -550,6 +572,11 @@ export default function PulsePage() {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Live Trades Side Panel */}
+                        {showTrades && !drawerOpen && (
+                            <LiveTradesPanel />
+                        )}
                     </div>
                 )}
             </div>

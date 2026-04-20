@@ -345,7 +345,7 @@ export default function TrendingPage() {
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
 
     return (
-        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
+        <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex items-center justify-between flex-wrap gap-4">

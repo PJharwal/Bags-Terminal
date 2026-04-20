@@ -124,7 +124,7 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono p-6 space-y-6 max-w-7xl mx-auto">
+    <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] font-mono p-6 space-y-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-display font-bold text-[#EDEDED] tracking-tight">
           ANALYZE<span className="text-[#39FF14]">_</span>MODULE
