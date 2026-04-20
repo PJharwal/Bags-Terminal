@@ -3,7 +3,6 @@
 import type { PulseItem } from "@/lib/types";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatAge } from "@/lib/lifecycle";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Users, TrendingUp, ExternalLink } from "lucide-react";
 import { Sparkline, generateSpark } from "@/components/ui/Sparkline";
@@ -57,13 +56,10 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     };
 
     return (
-        <motion.div
+        <div
             onClick={() => selectToken(item.tokenId, "pulse")}
             onMouseEnter={() => hoverToken(item.tokenId)}
             onMouseLeave={() => hoverToken(null)}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2 }}
             className={`
                 relative cursor-pointer transition-all duration-100 group h-full
                 ${isSelected ? "bg-[#39FF14]/5" : "hover:bg-white/[0.02]"}
@@ -159,6 +155,6 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     </button>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }

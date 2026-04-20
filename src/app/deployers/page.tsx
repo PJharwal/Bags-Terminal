@@ -6,8 +6,10 @@ import { usePulseStore } from "@/store/pulse.store";
 import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency, getScoreColor } from "@/lib/format";
 import type { PulseItem } from "@/lib/types";
-import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { Search, Shield, AlertTriangle, Crosshair, Database, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 // Aggregate deployers from tokens
 interface AggregatedDeployer {
@@ -122,30 +124,30 @@ export default function DeployersPage() {
             {/* Main List */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
-                <div className="border-b border-white/10 px-6 py-6 bg-[#0A0A0A]">
-                    <div className="flex justify-between items-start mb-6">
-                        <div>
-                            <h1 className="text-3xl font-display font-bold text-[#EDEDED] mb-2 tracking-tighter">
-                                DEPLOYER_DB
-                            </h1>
-                            <p className="text-xs text-[#888] uppercase tracking-widest">
-                                Aggregated from live token data
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2`}>
-                                {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
-                                <span className="text-xs font-bold">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
+                <div className="border-b border-white/5 px-4 sm:px-6 py-5 bg-[#080808]">
+                    <SectionHeader
+                        kicker="◈ DEPLOYER INTEL"
+                        title="DEPLOYER DB"
+                        subtitle="Aggregated from live token data · reputation + risk scoring"
+                        right={
+                            <div className="flex items-center gap-2 flex-wrap justify-end">
+                                <div className={`flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border ${
+                                    isConnected ? 'border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5' : 'border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5'
+                                }`}>
+                                    <LivePulseDot color={isConnected ? 'green' : 'red'} />
+                                    {isConnected ? 'LIVE' : 'OFFLINE'}
+                                </div>
+                                <div className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-white/10 text-[#888]">
+                                    <Database size={10} />
+                                    {deployers.length} DEPLOYERS
+                                </div>
                             </div>
-                            <div className="badge-muted flex items-center gap-2">
-                                <Database size={14} />
-                                <span className="text-xs font-bold">{deployers.length} DEPLOYERS</span>
-                            </div>
-                        </div>
-                    </div>
+                        }
+                        size="md"
+                    />
 
                     {/* Search Bar */}
-                    <div className="relative">
+                    <div className="relative mt-4">
                         <input
                             type="text"
                             placeholder="SEARCH_WALLET_OR_ALIAS..."

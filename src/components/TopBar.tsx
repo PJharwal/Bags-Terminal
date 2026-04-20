@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BagsLogo } from "@/components/ui/BagsLogo";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
+import { useSocketStore } from "@/store/socket.store";
 
 const navItems = [
     { href: "/", label: "HOME" },
@@ -21,6 +23,8 @@ const navItems = [
 export default function TopBar() {
     const pathname = usePathname();
     const [scrolled, setScrolled] = useState(false);
+    const { isConnected } = useSocketStore();
+    const [now, setNow] = useState<Date | null>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -28,6 +32,13 @@ export default function TopBar() {
         };
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
+    }, []);
+
+    // Live clock (UTC) — subtle trust signal. Only runs after mount (avoids hydration mismatch).
+    useEffect(() => {
+        setNow(new Date());
+        const id = setInterval(() => setNow(new Date()), 1000);
+        return () => clearInterval(id);
     }, []);
 
     return (
@@ -69,15 +80,22 @@ export default function TopBar() {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-6">
-                {/* Network Status */}
-                <div className="hidden sm:flex items-center gap-2 text-[10px] font-bold tracking-widest text-[#39FF14]">
-                    <div className="flex gap-0.5">
-                       {[1, 2, 3].map(i => (
-                         <div key={i} className={`w-[2px] bg-[#39FF14]/70 ${i === 1 ? 'h-1' : i === 2 ? 'h-1.5' : 'h-2 animate-pulse'}`} />
-                       ))}
-                    </div>
-                    MAINNET<span className="text-[#444]">_</span>ONLINE
+            <div className="flex items-center gap-3">
+                {/* UTC clock — hidden on narrow */}
+                <span className="hidden xl:inline text-[10px] font-mono tabular-nums text-[#555] tracking-wider">
+                    {now
+                        ? now.toISOString().replace("T", " ").slice(0, 19) + " UTC"
+                        : "— — — —"}
+                </span>
+
+                {/* LIVE MAINNET badge (replaces old signal bars) */}
+                <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-[9px] font-bold uppercase tracking-widest border border-white/5">
+                    <LivePulseDot color={isConnected ? "green" : "red"} />
+                    <span className={isConnected ? "text-[#39FF14]" : "text-[#FF003C]"}>
+                        {isConnected ? "LIVE" : "OFFLINE"}
+                    </span>
+                    <span className="text-[#333] ml-0.5">·</span>
+                    <span className="text-[#666]">MAINNET</span>
                 </div>
 
                 {/* System Controls */}
