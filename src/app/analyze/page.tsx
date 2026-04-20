@@ -8,6 +8,8 @@ import { TokenStatsData, HolderData, TraderData } from "@/types/token";
 import { useSocketStore } from "@/store/socket.store";
 import { gmgnService, GMGNHolder, GMGNTrader } from "@/services/gmgn.service";
 import { Search, Loader2, AlertCircle } from "lucide-react";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 export default function AnalyzePage() {
   const isConnected = useSocketStore((state) => state.isConnected);
@@ -124,16 +126,28 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] font-mono p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-[#EDEDED] tracking-tight">
-          ANALYZE<span className="text-[#39FF14]">_</span>MODULE
-        </h1>
-        <div className={`${isConnected ? 'badge-green' : 'badge-red'} font-mono text-sm`}>
-          STATUS: {isConnected ? "CONNECTED" : "DISCONNECTED"}
-          {isConnected && <span className="ml-2 text-xs">({latestTokens.length} TOKENS)</span>}
-        </div>
-      </div>
+    <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] font-mono p-4 sm:p-6 space-y-6 max-w-7xl mx-auto">
+      <SectionHeader
+        kicker="⟁ INTELLIGENCE"
+        title="ANALYZE MODULE"
+        subtitle="Deep token audit · sniper / bundler / cluster detection · holder + trader analysis"
+        right={
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border ${
+              isConnected ? 'border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5' : 'border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5'
+            }`}>
+              <LivePulseDot color={isConnected ? 'green' : 'red'} />
+              {isConnected ? 'LIVE' : 'OFFLINE'}
+            </div>
+            {isConnected && (
+              <div className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-white/10 text-[#888]">
+                {latestTokens.length} TOKENS
+              </div>
+            )}
+          </div>
+        }
+        size="lg"
+      />
 
       {/* Token Address Input */}
       <form onSubmit={handleSubmit} className="space-y-4">

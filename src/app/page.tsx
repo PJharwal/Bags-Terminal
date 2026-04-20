@@ -14,6 +14,11 @@ import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
 import { Sparkline, generateSpark } from '@/components/ui/Sparkline';
 import { useMemo } from 'react';
+import { HeroBadgeRow } from '@/components/ui/HeroBadge';
+import { HotCard } from '@/components/ui/HotCard';
+import { StatCell } from '@/components/ui/StatCell';
+import { SectionHeader } from '@/components/ui/SectionHeader';
+import { LivePulseDot } from '@/components/ui/LivePulseDot';
 
 // Ticker Token Display
 const TickerToken = ({ token }: { token: PulseItem }) => (
@@ -147,107 +152,268 @@ export default function HomePage() {
     <div className="min-h-screen bg-[#050505] text-[#EDEDED] font-mono selection:bg-[#39FF14] selection:text-black">
       <div className="fixed inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
 
-      {/* Scrolling Ticker */}
-      <div className="border-b border-white/10 bg-[#0A0A0A] overflow-hidden whitespace-nowrap py-3">
-        <div className="animate-marquee inline-block">
-          {tickerTokens.length > 0 ? (
-            tickerTokens.map((token, i) => <TickerToken key={`${token.tokenId}-${i}`} token={token} />)
-          ) : (
-            <span className="mx-8 font-mono text-sm text-[#666]">
-              {isConnected ? 'Waiting for tokens...' : 'Connecting to live feed...'}
-            </span>
-          )}
-        </div>
-      </div>
-
       <div className="relative">
         {!connected ? (
           <>
-            {/* Hero — Not Connected */}
-            <section className="pt-24 pb-16 px-6">
-              <div className="max-w-6xl mx-auto text-center">
-                <div className={`inline-flex items-center gap-2 px-3 py-1 text-[10px] uppercase tracking-widest mb-8 ${isConnected ? 'badge-green' : 'badge-muted'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14] shadow-[0_0_6px_rgba(57,255,20,0.6)]' : 'bg-[#FF003C] shadow-[0_0_6px_rgba(255,0,60,0.6)]'} animate-pulse`} />
-                  {isConnected ? 'System Online' : 'Connecting...'}
+            {/* Hero — Not Connected (Evolved Brutalist) */}
+            <section className="px-4 sm:px-6 pt-8 pb-10">
+              <div className="max-w-7xl mx-auto">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6 }}
+                  className="relative card card-hot p-6 sm:p-8 lg:p-10 overflow-hidden"
+                >
+                  {/* Corner brackets */}
+                  <span className="absolute top-0 left-0 w-3 h-3 border-t border-l border-[#39FF14] pointer-events-none" />
+                  <span className="absolute top-0 right-0 w-3 h-3 border-t border-r border-[#39FF14] pointer-events-none" />
+                  <span className="absolute bottom-0 left-0 w-3 h-3 border-b border-l border-[#39FF14] pointer-events-none" />
+                  <span className="absolute bottom-0 right-0 w-3 h-3 border-b border-r border-[#39FF14] pointer-events-none" />
+
+                  {/* Grid background overlay */}
+                  <div className="absolute inset-0 bg-grid-pattern opacity-40 pointer-events-none" />
+
+                  <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 lg:gap-10 items-center">
+                    {/* Left column */}
+                    <div>
+                      <HeroBadgeRow className="mb-5" />
+
+                      <motion.h1
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="font-[family-name:var(--font-display)] font-bold tracking-tight text-[#EDEDED] leading-[1.02] mb-5"
+                        style={{ fontSize: 'clamp(2rem, 5vw, 3.75rem)' }}
+                      >
+                        TRADE{' '}
+                        <span className="text-[#39FF14]">SOLANA</span>
+                        <br />
+                        AT THE{' '}
+                        <span
+                          className="inline-block pb-1"
+                          style={{
+                            boxShadow: 'inset 0 -6px 0 #39FF14',
+                          }}
+                        >
+                          SOURCE.
+                        </span>
+                      </motion.h1>
+
+                      <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="text-sm sm:text-base text-[#888] font-mono max-w-xl mb-6 leading-relaxed"
+                      >
+                        Real-time launch feed, creator fee-sharing, and on-chain
+                        intelligence. Built for traders who move first.
+                      </motion.p>
+
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.3 }}
+                        className="flex flex-wrap gap-2"
+                      >
+                        <button
+                          onClick={() => setVisible(true)}
+                          className="btn-primary px-5 py-2.5 text-xs flex items-center gap-2"
+                        >
+                          <Wallet size={14} />
+                          CONNECT WALLET
+                        </button>
+                        <Link
+                          href="/pulse"
+                          className="btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
+                        >
+                          <Activity size={14} />
+                          OPEN PULSE →
+                        </Link>
+                        <Link
+                          href="/launch"
+                          className="btn-ghost px-5 py-2.5 text-xs flex items-center gap-2"
+                        >
+                          <Rocket size={14} />
+                          LAUNCH TOKEN
+                        </Link>
+                      </motion.div>
+                    </div>
+
+                    {/* Right column: Hot Right Now */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <LivePulseDot color="gold" />
+                        <span className="text-[10px] font-mono font-bold uppercase tracking-[0.15em] text-[#FFD700]">
+                          HOT RIGHT NOW
+                        </span>
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        {allBagsTokens.length > 0 ? (
+                          allBagsTokens.slice(0, 3).map((token, i) => (
+                            <HotCard
+                              key={token.tokenId}
+                              token={token}
+                              index={i}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-[10px] font-mono text-[#555] px-2 py-6 text-center border border-dashed border-white/5">
+                            {isConnected
+                              ? 'Scanning for live tokens…'
+                              : 'Connecting to feed…'}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            </section>
+
+            {/* Stats strip */}
+            <section className="px-4 sm:px-6 pb-10">
+              <div className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
+                  <StatCell
+                    label="24H VOLUME"
+                    value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
+                    delta={12.4}
+                    accent="green"
+                    size="lg"
+                  />
+                  <StatCell
+                    label="ACTIVE LAUNCHES"
+                    value={allBagsTokens.length.toString()}
+                    delta={4.1}
+                    accent="default"
+                    size="lg"
+                  />
+                  <StatCell
+                    label="FEES EARNED (24H)"
+                    value="2,840 SOL"
+                    delta={8.2}
+                    accent="gold"
+                    size="lg"
+                  />
+                  <StatCell
+                    label="UNIQUE TRADERS"
+                    value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
+                    delta={-2.1}
+                    accent="blue"
+                    size="lg"
+                  />
                 </div>
-
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-7xl md:text-9xl font-display font-bold leading-[0.85] tracking-tighter mb-6 text-white"
-                >
-                  BAGS<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-transparent">
-                    TERMINAL
-                  </span>
-                </motion.h1>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-xl md:text-2xl text-[#888] mb-12 max-w-2xl mx-auto"
-                >
-                  Launch tokens with built-in fee sharing on Solana
-                </motion.p>
-
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ delay: 0.2 }}
-                  onClick={() => setVisible(true)}
-                  className="group relative px-12 py-5 bg-[#EDEDED] text-black font-bold uppercase tracking-wider overflow-hidden transition-all duration-150 hover:shadow-[0_0_20px_rgba(57,255,20,0.2)]"
-                >
-                  <div className="absolute inset-0 bg-[#39FF14] translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                  <span className="relative z-10 group-hover:text-black flex items-center gap-3">
-                    <Wallet size={20} />
-                    Connect Wallet
-                  </span>
-                </motion.button>
               </div>
             </section>
 
             {/* Live BAGS Tokens — Not Connected */}
-            <section className="py-16 px-6 border-t border-white/10">
+            <section className="py-10 px-4 sm:px-6 border-t border-white/5">
               <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-display font-bold">Live BAGS Tokens</h2>
-                  <div className="flex items-center gap-2 text-xs text-[#39FF14] font-mono uppercase tracking-widest">
-                    <TrendingUp size={16} />
-                    {isConnected ? 'Live' : 'Connecting...'}
-                  </div>
-                </div>
-
+                <SectionHeader
+                  kicker="LIVE FEED"
+                  title="BAGS TOKENS"
+                  subtitle="Streaming from backend.solshift.fun · auto-reconnect"
+                  right={
+                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
+                      <LivePulseDot color={isConnected ? 'green' : 'red'} />
+                      <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
+                        {isConnected ? 'LIVE' : 'CONNECTING'}
+                      </span>
+                    </div>
+                  }
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {allBagsTokens.length > 0 ? (
                     allBagsTokens.slice(0, 12).map((token) => (
                       <BagsTokenCard key={token.tokenId} token={token} />
                     ))
                   ) : (
-                    <div className="col-span-full text-center py-12 text-[#666]">
+                    <div className="col-span-full text-center py-12 text-[#666] font-mono text-xs">
                       {isConnected ? 'Waiting for tokens...' : 'Connect to discover tokens'}
                     </div>
                   )}
                 </div>
               </div>
             </section>
+
+            {/* Feature strip */}
+            <section className="py-10 px-4 sm:px-6 border-t border-white/5">
+              <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {[
+                  { icon: '✦', title: 'CREATOR ECONOMY', desc: 'Fee-share up to 100 wallets. Auto-claim via v3.', color: '#39FF14' },
+                  { icon: '◎', title: 'PULSE MONITOR', desc: 'Every mint, trade, migration. Live WebSocket.', color: '#00F0FF' },
+                  { icon: '◈', title: 'DEPLOYER INTEL', desc: 'Success rates, cluster detection, rug scoring.', color: '#FFD700' },
+                ].map((f, i) => (
+                  <motion.div
+                    key={f.title}
+                    initial={{ opacity: 0, y: 12 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.08 }}
+                    className="card p-5 relative group"
+                  >
+                    <div className="text-4xl font-[family-name:var(--font-display)] mb-3 opacity-80" style={{ color: f.color }}>
+                      {f.icon}
+                    </div>
+                    <div className="text-sm font-mono font-bold text-[#EDEDED] mb-1 tracking-wide">
+                      {f.title}
+                    </div>
+                    <div className="text-[11px] font-mono text-[#666] leading-relaxed">
+                      {f.desc}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </section>
           </>
         ) : (
           <>
-            {/* Welcome — Connected */}
-            <section className="pt-16 pb-8 px-6">
+            {/* Welcome — Connected (Evolved) */}
+            <section className="pt-8 pb-6 px-4 sm:px-6">
               <div className="max-w-7xl mx-auto">
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-8"
+                  className="mb-6"
                 >
-                  <h1 className="text-4xl md:text-6xl font-display font-bold mb-2">
-                    Welcome back
+                  <HeroBadgeRow className="mb-3" />
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-[family-name:var(--font-display)] font-bold tracking-tight mb-1">
+                    WELCOME BACK
                   </h1>
-                  <p className="text-xl text-[#888] font-mono">{shortenedAddress}</p>
+                  <p className="text-xs font-mono text-[#666] tracking-wider">
+                    <span className="text-[#39FF14]">{shortenedAddress}</span>
+                    <span className="text-[#333] mx-2">//</span>
+                    <span>SESSION ACTIVE</span>
+                  </p>
                 </motion.div>
+
+                {/* Stats strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 mb-6">
+                  <StatCell
+                    label="24H VOLUME"
+                    value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
+                    delta={12.4}
+                    accent="green"
+                  />
+                  <StatCell
+                    label="LIVE TOKENS"
+                    value={allBagsTokens.length.toString()}
+                    delta={4.1}
+                    accent="default"
+                  />
+                  <StatCell
+                    label="FEES (24H)"
+                    value="2,840 SOL"
+                    delta={8.2}
+                    accent="gold"
+                  />
+                  <StatCell
+                    label="HOLDERS"
+                    value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
+                    delta={-2.1}
+                    accent="blue"
+                  />
+                </div>
 
                 <div className="mb-8">
                   <ReferralBanner />
@@ -358,20 +524,21 @@ export default function HomePage() {
 
             {/* Migrated Tokens (LP Live) */}
             {migratedTokens.length > 0 && (
-              <section className="py-8 px-6 border-t border-white/10">
+              <section className="py-8 px-4 sm:px-6 border-t border-white/5">
                 <div className="max-w-7xl mx-auto">
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-2xl font-display font-bold flex items-center gap-2">
-                      <span className="text-[#39FF14]">LP Live</span>
-                      <span className="text-[10px] font-mono text-[#888] uppercase">Migrated</span>
-                    </h2>
-                    <Link
-                      href="/pulse"
-                      className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-all duration-200 hover:tracking-[0.2em]"
-                    >
-                      View All →
-                    </Link>
-                  </div>
+                  <SectionHeader
+                    kicker="◆ LP LIVE"
+                    title="MIGRATED TOKENS"
+                    subtitle="Graduated from bonding curve — now trading on Raydium / PumpSwap"
+                    right={
+                      <Link
+                        href="/pulse"
+                        className="text-[10px] font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-all"
+                      >
+                        VIEW ALL →
+                      </Link>
+                    }
+                  />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {migratedTokens.map((token) => (
@@ -383,17 +550,21 @@ export default function HomePage() {
             )}
 
             {/* Trending BAGS Tokens */}
-            <section className="py-8 px-6 border-t border-white/10">
+            <section className="py-8 px-4 sm:px-6 border-t border-white/5">
               <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-display font-bold">Trending BAGS</h2>
-                  <Link
-                    href="/pulse"
-                    className="text-xs font-mono text-[#888] hover:text-[#39FF14] uppercase tracking-widest transition-all duration-200 hover:tracking-[0.2em]"
-                  >
-                    View All →
-                  </Link>
-                </div>
+                <SectionHeader
+                  kicker="↗ TRENDING"
+                  title="BAGS LAUNCHES"
+                  subtitle="Highest bonding curve progress — closest to DEX migration"
+                  right={
+                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
+                      <LivePulseDot color={isConnected ? 'green' : 'red'} />
+                      <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
+                        {isConnected ? 'STREAMING' : 'OFFLINE'}
+                      </span>
+                    </div>
+                  }
+                />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {trendingTokens.length > 0 ? (
@@ -401,7 +572,7 @@ export default function HomePage() {
                       <BagsTokenCard key={token.tokenId} token={token} />
                     ))
                   ) : (
-                    <div className="col-span-full text-center py-8 text-[#666]">
+                    <div className="col-span-full text-center py-8 text-[#666] font-mono text-xs">
                       {isConnected ? 'Waiting for tokens...' : 'Connecting to live feed...'}
                     </div>
                   )}

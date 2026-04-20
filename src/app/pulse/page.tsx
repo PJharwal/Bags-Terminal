@@ -27,6 +27,7 @@ import {
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 import type { RawTokenData } from "@/lib/bags-types";
 import { useSolPrice } from "@/hooks/useSolPrice";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 type Network = "solana" | "base" | "ethereum";
 
@@ -513,31 +514,47 @@ export default function PulsePage() {
                                 key={col.state}
                                 className="relative flex flex-col min-h-0"
                             >
-                                {/* Column header */}
+                                {/* Column header — accent top-bar + icon/label row */}
+                                <div
+                                    className="h-[3px]"
+                                    style={{
+                                        background: `linear-gradient(90deg, transparent, ${col.color}55, transparent)`,
+                                    }}
+                                />
                                 <div className="px-4 py-2.5 border-b border-white/5 bg-[#080808] flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <col.icon
-                                            size={13}
-                                            style={{ color: col.color }}
-                                        />
-                                        <span
-                                            className="text-[10px] font-bold uppercase tracking-widest"
-                                            style={{ color: col.color }}
+                                    <div className="flex items-center gap-2.5">
+                                        <div
+                                            className="w-6 h-6 border flex items-center justify-center flex-shrink-0"
+                                            style={{
+                                                borderColor: `${col.color}33`,
+                                                background: `${col.color}08`,
+                                            }}
                                         >
-                                            {col.label}
-                                        </span>
-                                        <span className="text-[9px] text-[#444] hidden lg:inline">
-                                            {col.description}
-                                        </span>
+                                            <col.icon
+                                                size={12}
+                                                style={{ color: col.color }}
+                                            />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div
+                                                className="text-[10px] font-bold uppercase tracking-widest leading-none"
+                                                style={{ color: col.color }}
+                                            >
+                                                {col.label}
+                                            </div>
+                                            <div className="text-[8px] text-[#444] mt-0.5 hidden sm:block leading-none">
+                                                {col.description}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono text-[#555]">
+                                        <span className="text-[10px] font-mono font-bold tabular-nums text-[#888]">
                                             {items[col.state].length}
                                         </span>
                                         {/* Live pulse dot for NEW column */}
                                         {col.state === "NEW" &&
                                             isConnected && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
+                                                <LivePulseDot color="green" />
                                             )}
                                     </div>
                                 </div>
