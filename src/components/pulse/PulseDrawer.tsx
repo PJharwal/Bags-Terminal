@@ -82,7 +82,7 @@ export function PulseDrawer() {
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                className="fixed top-14 right-0 h-[calc(100vh-56px)] w-[400px] bg-[#080808] border-l border-white/5 z-50 flex flex-col font-mono shadow-2xl"
+                className="fixed top-[88px] right-0 h-[calc(100vh-92px)] w-[400px] bg-[#080808] border-l border-white/5 z-50 flex flex-col font-mono shadow-2xl"
             >
                 {/* Header */}
                 <div className="p-5 border-b border-white/5 bg-[#0A0A0A]">

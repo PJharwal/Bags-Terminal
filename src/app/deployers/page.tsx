@@ -118,7 +118,7 @@ export default function DeployersPage() {
     }, [deployers, searchQuery]);
 
     return (
-        <div className="h-[calc(100vh-56px)] flex bg-[#050505] font-mono overflow-hidden">
+        <div className="h-[calc(100vh-92px)] flex bg-[#050505] font-mono overflow-hidden">
             {/* Main List */}
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}

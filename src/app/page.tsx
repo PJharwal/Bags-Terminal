@@ -12,6 +12,8 @@ import { ReferralBanner } from '@/components/referral/ReferralBanner';
 import { useSocketStore } from '@/store/socket.store';
 import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
+import { Sparkline, generateSpark } from '@/components/ui/Sparkline';
+import { useMemo } from 'react';
 
 // Ticker Token Display
 const TickerToken = ({ token }: { token: PulseItem }) => (
@@ -30,6 +32,14 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
   const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
   const colors = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
   const fallbackColor = colors[initial.charCodeAt(0) % colors.length];
+
+  const sparkData = useMemo(() => {
+    const seed = token.tokenId.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+    const bias = token.bondingProgress >= 85 ? 1 : token.bondingProgress >= 50 ? 0.3 : -0.2;
+    return generateSpark(seed, bias, 28);
+  }, [token.tokenId, token.bondingProgress]);
+  const sparkColor =
+    token.bondingProgress >= 85 ? '#39FF14' : token.bondingProgress >= 50 ? '#FFD700' : '#00F0FF';
 
   return (
     <Link href={`/terminal/${token.tokenId}`}>
@@ -84,8 +94,8 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
 
         </div>
 
-        {/* State badge */}
-        <div className="mt-3 pt-3 border-t border-white/5">
+        {/* Sparkline */}
+        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
           <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded ${
             token.state === 'MIGRATED' ? 'bg-[#39FF14]/20 text-[#39FF14]' :
             token.state === 'FINAL_STRETCH' ? 'bg-[#FAFF00]/20 text-[#FAFF00]' :
@@ -95,6 +105,7 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
              token.state === 'FINAL_STRETCH' ? 'Near Migration' :
              'Bonding'}
           </span>
+          <Sparkline data={sparkData} width={64} height={22} color={sparkColor} filled />
         </div>
       </motion.div>
     </Link>
