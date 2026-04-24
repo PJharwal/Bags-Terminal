@@ -14,6 +14,15 @@
   --color-text-primary: #EDEDED;
   --color-text-secondary: #888888;
   --color-text-muted: #444444;
+  --color-text-muted-high: #666666;
+  --color-text-muted-mid: #555555;
+  --color-bg-elevated: #1A1A1A;
+
+  /* Stacking scale */
+  --z-sticky: 20;
+  --z-popover: 40;
+  --z-modal: 50;
+  --z-toast: 60;
 
   /* Radical Accents */
   --color-acid-green: #39FF14;
@@ -676,6 +685,79 @@ body {
 
 .number-glow-gold {
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+/* -------------------------------------------------------------------------- */
+/* NUMERIC UTILITY                                                             */
+/* -------------------------------------------------------------------------- */
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------------- */
+/* DIALOG / POPOVER (Radix) — brutalist terminal theme                         */
+/* -------------------------------------------------------------------------- */
+
+@keyframes overlay-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes overlay-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes content-in {
+  0% { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes content-out {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+}
+
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dialog-overlay[data-state="open"] {
+  animation: overlay-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-overlay[data-state="closed"] {
+  animation: overlay-out 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-content {
+  background: #0A0A0A;
+  border: 1px solid rgba(57, 255, 20, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(57, 255, 20, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dialog-content[data-state="open"] {
+  animation: content-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-content[data-state="closed"] {
+  animation: content-out 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.popover-content {
+  background: #0A0A0A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.popover-content[data-state="open"] {
+  animation: dropdown-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
