@@ -9,7 +9,6 @@ import {
   Percent,
   Loader2,
   Plus,
-  X,
   ExternalLink,
   Award,
   RefreshCw,
@@ -20,6 +19,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { BagsLogo } from "@/components/ui/BagsLogo";
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/Dialog";
+import { Input } from "@/components/ui/Input";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
+import { AddressInput } from "@/components/ui/AddressInput";
 import {
   bagsTokensService,
   type BagsTokenInfo,
@@ -68,7 +72,7 @@ function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) 
             className="w-10 h-10 rounded-full object-cover"
           />
         ) : (
-          <div className="w-10 h-10 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-[#FFD700] font-bold">
+          <div className="w-10 h-10 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-gold font-bold">
             {creator.username?.charAt(0)?.toUpperCase() || "?"}
           </div>
         )}
@@ -100,23 +104,23 @@ function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) 
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-[#666] font-mono">
+          <span className="text-meta text-muted-high font-mono">
             {creator.wallet.slice(0, 4)}...{creator.wallet.slice(-4)}
           </span>
           <button
             onClick={copyAddress}
-            className="text-[#666] hover:text-white transition-colors"
+            className="text-muted-high hover:text-white transition-colors"
           >
-            {copied ? <Check size={10} className="text-[#39FF14]" /> : <Copy size={10} />}
+            {copied ? <Check size={10} className="text-acid-green" /> : <Copy size={10} />}
           </button>
         </div>
       </div>
 
       <div className="text-right">
-        <div className="text-lg font-mono font-bold text-[#FFD700]">
+        <div className="text-lg font-mono font-bold text-gold">
           {sharePercent.toFixed(1)}%
         </div>
-        <div className="text-[10px] text-[#666]">fee share</div>
+        <div className="text-meta text-muted-high">fee share</div>
       </div>
     </div>
   );
@@ -146,7 +150,7 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
                 className="w-14 h-14 rounded-full object-cover border-2 border-[#FFD700]/30"
               />
             ) : (
-              <div className="w-14 h-14 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-[#FFD700] font-bold text-xl border-2 border-[#FFD700]/30">
+              <div className="w-14 h-14 rounded-full bg-[#FFD700]/20 flex items-center justify-center text-gold font-bold text-xl border-2 border-[#FFD700]/30">
                 {token.symbol?.charAt(0) || "?"}
               </div>
             )}
@@ -159,18 +163,18 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <span className="font-mono font-bold text-white text-lg">${token.symbol}</span>
-              <span className="text-[8px] bg-[#FFD700]/20 text-[#FFD700] px-1.5 py-0.5 rounded font-mono uppercase">
+              <span className="text-meta bg-[#FFD700]/20 text-gold px-1.5 py-0.5 rounded font-mono uppercase">
                 BAGS
               </span>
             </div>
-            <div className="text-sm text-[#888] truncate">{token.name}</div>
-            <div className="text-[10px] text-[#666] font-mono mt-1">
+            <div className="text-sm text-fg-soft truncate">{token.name}</div>
+            <div className="text-meta text-muted-high font-mono mt-1">
               {token.mint.slice(0, 8)}...{token.mint.slice(-8)}
             </div>
           </div>
 
           {/* Expand toggle */}
-          <button className="text-[#888] hover:text-white transition-colors p-1">
+          <button className="text-fg-soft hover:text-white transition-colors p-1">
             {expanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
           </button>
         </div>
@@ -178,36 +182,36 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
         {/* Fee stats row */}
         <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-white/5">
           <div>
-            <div className="text-[10px] text-[#888] uppercase tracking-wider mb-1 flex items-center gap-1">
-              <Coins size={10} className="text-[#FFD700]" /> Lifetime Fees
+            <div className="text-meta text-fg-soft uppercase tracking-wider mb-1 flex items-center gap-1">
+              <Coins size={10} className="text-gold" /> Lifetime Fees
             </div>
-            <div className="text-xl font-mono font-bold text-[#FFD700]">
+            <div className="text-xl font-mono font-bold text-gold">
               {formatSol(token.lifetimeFees)} SOL
             </div>
-            <div className="text-[10px] text-[#666]">{formatUsd(token.lifetimeFeesUsd)}</div>
+            <div className="text-meta text-muted-high">{formatUsd(token.lifetimeFeesUsd)}</div>
           </div>
 
           <div>
-            <div className="text-[10px] text-[#888] uppercase tracking-wider mb-1 flex items-center gap-1">
+            <div className="text-meta text-fg-soft uppercase tracking-wider mb-1 flex items-center gap-1">
               <Users size={10} /> Fee Earners
             </div>
             <div className="text-xl font-mono font-bold text-white">{token.creators.length}</div>
-            <div className="text-[10px] text-[#666]">creators</div>
+            <div className="text-meta text-muted-high">creators</div>
           </div>
 
           <div>
-            <div className="text-[10px] text-[#888] uppercase tracking-wider mb-1 flex items-center gap-1">
+            <div className="text-meta text-fg-soft uppercase tracking-wider mb-1 flex items-center gap-1">
               <Percent size={10} /> Total Royalty
             </div>
-            <div className="text-xl font-mono font-bold text-[#39FF14]">
+            <div className="text-xl font-mono font-bold text-acid-green">
               {(token.totalRoyaltyBps / 100).toFixed(1)}%
             </div>
-            <div className="text-[10px] text-[#666]">of volume</div>
+            <div className="text-meta text-muted-high">of volume</div>
           </div>
         </div>
 
         {token.error && (
-          <div className="mt-3 p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 rounded text-[#FF003C] text-xs flex items-center gap-2">
+          <div className="mt-3 p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 rounded text-error text-xs flex items-center gap-2">
             <AlertCircle size={12} />
             {token.error}
           </div>
@@ -225,12 +229,12 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
           >
             <div className="p-4 bg-[#080808]">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-mono text-[#888] uppercase tracking-wider">
+                <h4 className="text-sm font-mono text-fg-soft uppercase tracking-wider">
                   Fee Earners ({token.creators.length})
                 </h4>
                 <Link
                   href={`/terminal/${token.mint}`}
-                  className="text-xs text-[#39FF14] hover:underline flex items-center gap-1"
+                  className="text-xs text-acid-green hover:underline flex items-center gap-1"
                 >
                   View Terminal <ExternalLink size={10} />
                 </Link>
@@ -243,7 +247,7 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-4 text-[#666] text-sm">
+                <div className="text-center py-4 text-muted-high text-sm">
                   No fee earners configured
                 </div>
               )}
@@ -251,7 +255,7 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
               {/* Claim stats if available */}
               {token.claimStats && token.claimStats.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-white/5">
-                  <h5 className="text-xs font-mono text-[#888] uppercase tracking-wider mb-2">
+                  <h5 className="text-xs font-mono text-fg-soft uppercase tracking-wider mb-2">
                     Claim Statistics
                   </h5>
                   <div className="space-y-1">
@@ -260,10 +264,10 @@ function BagsTokenCard({ token }: { token: BagsTokenWithFeeData }) {
                         key={stat.wallet}
                         className="flex items-center justify-between text-xs"
                       >
-                        <span className="text-[#888] font-mono">
+                        <span className="text-fg-soft font-mono">
                           {stat.username || `${stat.wallet.slice(0, 4)}...${stat.wallet.slice(-4)}`}
                         </span>
-                        <span className="text-[#FFD700] font-mono font-bold">
+                        <span className="text-gold font-mono font-bold">
                           {formatSol(parseFloat(stat.totalClaimed))} SOL claimed
                         </span>
                       </div>
@@ -293,20 +297,35 @@ function AddTokenModal({
   const [name, setName] = useState("");
   const [symbol, setSymbol] = useState("");
   const [isValidating, setIsValidating] = useState(false);
-  const [error, setError] = useState("");
+  const [mintError, setMintError] = useState<string | null>(null);
+  const [globalError, setGlobalError] = useState<string | null>(null);
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
     lifetimeFees?: number;
   } | null>(null);
 
+  // Reset on close
+  useEffect(() => {
+    if (!isOpen) {
+      setMint("");
+      setName("");
+      setSymbol("");
+      setMintError(null);
+      setGlobalError(null);
+      setValidationResult(null);
+      setIsValidating(false);
+    }
+  }, [isOpen]);
+
   const validateAndAdd = async () => {
+    setMintError(null);
+    setGlobalError(null);
     if (!mint.trim()) {
-      setError("Please enter a token mint address");
+      setMintError("Token mint address is required");
       return;
     }
 
     setIsValidating(true);
-    setError("");
     setValidationResult(null);
 
     try {
@@ -319,121 +338,87 @@ function AddTokenModal({
           name: name.trim() || "Unknown Token",
           symbol: symbol.trim() || "???",
         });
-        setMint("");
-        setName("");
-        setSymbol("");
         onClose();
       } else {
-        setError(result.error || "Invalid BAGS token");
+        setGlobalError(result.error || "Invalid BAGS token");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Validation failed");
+      setGlobalError(err instanceof Error ? err.message : "Validation failed");
     } finally {
       setIsValidating(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="card w-full max-w-md p-6"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-mono font-bold">Add BAGS Token</h3>
-          <button
-            onClick={onClose}
-            className="text-[#888] hover:text-white transition-colors"
-          >
-            <X size={20} />
-          </button>
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="!max-w-md p-6">
+        <div className="mb-6">
+          <DialogTitle>Add BAGS Token</DialogTitle>
         </div>
+        <DialogDescription className="sr-only">
+          Add and validate a BAGS fee-sharing token by mint address.
+        </DialogDescription>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs text-[#888] uppercase tracking-wider mb-2">
-              Token Mint Address *
-            </label>
-            <input
-              type="text"
+          <Field label="Token Mint Address" required error={mintError ?? undefined}>
+            <AddressInput
               value={mint}
               onChange={(e) => setMint(e.target.value)}
               placeholder="Enter Solana token mint address"
-              className="w-full bg-[#111] border border-white/10 rounded px-3 py-2 text-white font-mono text-sm focus:border-[#FFD700] focus:outline-none"
             />
-          </div>
+          </Field>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs text-[#888] uppercase tracking-wider mb-2">
-                Token Name
-              </label>
-              <input
+            <Field label="Token Name">
+              <Input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g., My Token"
-                className="w-full bg-[#111] border border-white/10 rounded px-3 py-2 text-white font-mono text-sm focus:border-[#FFD700] focus:outline-none"
               />
-            </div>
-            <div>
-              <label className="block text-xs text-[#888] uppercase tracking-wider mb-2">
-                Symbol
-              </label>
-              <input
+            </Field>
+            <Field label="Symbol">
+              <Input
                 type="text"
                 value={symbol}
                 onChange={(e) => setSymbol(e.target.value)}
                 placeholder="e.g., MTK"
-                className="w-full bg-[#111] border border-white/10 rounded px-3 py-2 text-white font-mono text-sm focus:border-[#FFD700] focus:outline-none"
               />
-            </div>
+            </Field>
           </div>
 
-          {error && (
-            <div className="p-3 bg-[#FF003C]/10 border border-[#FF003C]/30 rounded text-[#FF003C] text-sm flex items-center gap-2">
-              <AlertCircle size={14} />
-              {error}
+          {globalError && (
+            <div role="alert" className="p-3 bg-error/10 border border-error/30 text-error text-sm flex items-center gap-2">
+              <AlertCircle size={14} aria-hidden="true" />
+              {globalError}
             </div>
           )}
 
           {validationResult?.isValid && (
-            <div className="p-3 bg-[#39FF14]/10 border border-[#39FF14]/30 rounded text-[#39FF14] text-sm">
+            <div role="status" className="p-3 bg-acid-green/10 border border-acid-green/30 text-acid-green text-sm">
               Valid BAGS token! Lifetime fees: {formatSol(validationResult.lifetimeFees || 0)} SOL
             </div>
           )}
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-white/10 text-[#888] hover:text-white hover:border-white/30 rounded transition-colors font-mono text-sm"
-          >
-            Cancel
-          </button>
-          <button
+          <DialogClose asChild>
+            <Button variant="ghost" size="md" fullWidth>Cancel</Button>
+          </DialogClose>
+          <Button
+            variant="gold"
+            size="md"
+            fullWidth
+            loading={isValidating}
+            disabled={!mint.trim()}
             onClick={validateAndAdd}
-            disabled={isValidating || !mint.trim()}
-            className="flex-1 px-4 py-2 bg-[#FFD700] text-black font-bold rounded hover:bg-[#FFD700]/90 transition-colors font-mono text-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            iconLeft={!isValidating ? <Plus size={14} /> : undefined}
           >
-            {isValidating ? (
-              <>
-                <Loader2 size={14} className="animate-spin" />
-                Validating...
-              </>
-            ) : (
-              <>
-                <Plus size={14} />
-                Add Token
-              </>
-            )}
-          </button>
+            {isValidating ? "Validating..." : "Add Token"}
+          </Button>
         </div>
-      </motion.div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -487,31 +472,33 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
             <div>
               <h2 className="text-xl font-bold font-mono flex items-center gap-2">
                 BAGS Fee-Sharing Tokens
-                <span className="text-[10px] bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">
+                <span className="text-meta bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">
                   LIVE DATA
                 </span>
               </h2>
-              <p className="text-sm text-[#888]">
+              <p className="text-sm text-fg-soft">
                 Tokens deployed on bags.fm with real-time fee earnings
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
+            <Button
+              variant="ghost"
+              size="md"
+              loading={isRefreshing}
               onClick={() => loadTokens(true)}
-              disabled={isRefreshing}
-              className="p-2 border border-white/10 rounded hover:border-[#FFD700] hover:text-[#FFD700] transition-colors disabled:opacity-50"
-            >
-              <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
-            </button>
-            <button
+              aria-label="Refresh BAGS tokens"
+              iconLeft={!isRefreshing ? <RefreshCw size={16} /> : undefined}
+            />
+            <Button
+              variant="gold"
+              size="md"
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#FFD700] text-black font-bold rounded hover:bg-[#FFD700]/90 transition-colors font-mono text-sm flex items-center gap-2"
+              iconLeft={<Plus size={14} />}
             >
-              <Plus size={14} />
               Add Token
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -524,7 +511,7 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
             </div>
             <div className="stat-card p-3">
               <div className="label label-gold">Total Fees Earned</div>
-              <div className="text-2xl font-mono font-bold text-[#FFD700]">
+              <div className="text-2xl font-mono font-bold text-gold">
                 {formatSol(totalLifetimeFees)} SOL
               </div>
             </div>
@@ -540,30 +527,24 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
       <div className="p-4">
         {isLoading ? (
           <div className="flex items-center justify-center py-12">
-            <Loader2 size={24} className="animate-spin text-[#FFD700] mr-3" />
-            <span className="text-[#888]">Loading BAGS tokens...</span>
+            <Loader2 size={24} className="animate-spin text-gold mr-3" />
+            <span className="text-fg-soft">Loading BAGS tokens...</span>
           </div>
         ) : error ? (
-          <div className="text-center py-12">
-            <AlertCircle size={32} className="mx-auto mb-4 text-[#FF003C] opacity-50" />
-            <p className="text-[#FF003C]">{error}</p>
-            <button
-              onClick={() => loadTokens()}
-              className="mt-4 px-4 py-2 border border-white/10 rounded hover:border-white/30 text-sm"
-            >
-              Try Again
-            </button>
+          <div role="alert" className="text-center py-12">
+            <AlertCircle size={32} aria-hidden="true" className="mx-auto mb-4 text-error opacity-50" />
+            <p className="text-error">{error}</p>
+            <div className="mt-4 inline-flex">
+              <Button variant="ghost" size="sm" onClick={() => loadTokens()}>Try Again</Button>
+            </div>
           </div>
         ) : tokens.length === 0 ? (
-          <div className="text-center py-12">
-            <Coins size={32} className="mx-auto mb-4 text-[#FFD700] opacity-30" />
-            <p className="text-[#888] mb-4">No BAGS tokens added yet</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 bg-[#FFD700] text-black font-bold rounded hover:bg-[#FFD700]/90 transition-colors font-mono text-sm"
-            >
-              Add Your First Token
-            </button>
+          <div role="status" className="text-center py-12">
+            <Coins size={32} aria-hidden="true" className="mx-auto mb-4 text-gold opacity-30" />
+            <p className="text-fg-soft mb-4">No BAGS tokens added yet</p>
+            <div className="inline-flex">
+              <Button variant="gold" size="md" onClick={() => setShowAddModal(true)}>Add Your First Token</Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">

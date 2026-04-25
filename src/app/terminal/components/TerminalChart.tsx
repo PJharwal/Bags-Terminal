@@ -24,7 +24,7 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
     if (!tokenMint) {
         return (
             <div className="relative w-full h-full bg-black min-h-[300px] flex items-center justify-center">
-                <span className="text-[#666] text-xs font-mono">NO_TOKEN_SELECTED</span>
+                <span className="text-muted-high text-xs font-mono">NO_TOKEN_SELECTED</span>
             </div>
         );
     }
@@ -36,10 +36,10 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
                 <div className="absolute inset-0 bg-[#0A0A0A] flex items-center justify-center z-10">
                     <div className="flex flex-col items-center gap-3">
                         <div className="w-8 h-8 border-2 border-[#39FF14] border-t-transparent rounded-full animate-spin" />
-                        <span className="text-[#666] text-[10px] font-mono uppercase tracking-widest">
+                        <span className="text-muted-high text-meta font-mono uppercase tracking-widest">
                             LOADING_CHART...
                         </span>
-                        <span className="text-[#444] text-[8px] font-mono mt-2 max-w-[200px] truncate">
+                        <span className="text-[#444] text-meta font-mono mt-2 max-w-[200px] truncate">
                             {tokenMint}
                         </span>
                     </div>

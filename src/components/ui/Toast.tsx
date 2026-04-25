@@ -52,8 +52,8 @@ const ICONS = {
 };
 
 const COLORS = {
-  success: 'border-[#39FF14]/30 text-[#39FF14]',
-  error: 'border-[#FF003C]/30 text-[#FF003C]',
+  success: 'border-[#39FF14]/30 text-acid-green',
+  error: 'border-[#FF003C]/30 text-error',
   warning: 'border-[#FFB800]/30 text-[#FFB800]',
   info: 'border-[#00BFFF]/30 text-[#00BFFF]',
 };
@@ -71,11 +71,19 @@ function ToastItem({ toast: t }: { toast: Toast }) {
   const Icon = ICONS[t.type];
 
   return (
-    <div className={`flex items-center gap-2 px-3 py-2.5 bg-[#0A0A0A]/95 backdrop-blur-sm border ${COLORS[t.type]} shadow-[0_8px_32px_rgba(0,0,0,0.4)] toast-enter`}>
-      <Icon size={12} />
-      <span className="text-[10px] font-mono flex-1">{t.message}</span>
-      <button onClick={() => removeToast(t.id)} className="text-[#666] hover:text-[#EDEDED] transition-colors duration-100 hover:scale-110 active:scale-90">
-        <X size={10} />
+    <div
+      role={t.type === 'error' ? 'alert' : 'status'}
+      className={`flex items-center gap-2 px-3 py-2.5 bg-[#0A0A0A]/95 backdrop-blur-sm border ${COLORS[t.type]} shadow-[0_8px_32px_rgba(0,0,0,0.4)] toast-enter`}
+    >
+      <Icon size={12} aria-hidden="true" />
+      <span className="text-meta font-mono flex-1">{t.message}</span>
+      <button
+        type="button"
+        onClick={() => removeToast(t.id)}
+        aria-label="Close notification"
+        className="flex items-center justify-center w-6 h-6 -mr-1 text-muted-high hover:text-fg transition-colors duration-100 hover:scale-110 active:scale-90 focus-ring"
+      >
+        <X size={10} aria-hidden="true" />
       </button>
     </div>
   );
@@ -87,7 +95,13 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm">
+    <div
+      role="region"
+      aria-label="Notifications"
+      aria-live="polite"
+      style={{ zIndex: 'var(--z-toast)' }}
+      className="fixed bottom-4 right-4 flex flex-col gap-2 max-w-sm"
+    >
       {toasts.map((t) => (
         <ToastItem key={t.id} toast={t} />
       ))}

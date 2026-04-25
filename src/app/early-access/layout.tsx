@@ -25,8 +25,9 @@ export default function EarlyAccessLayout({
 }>) {
   // We apply a fixed wrapper that covers the entire screen, blocking out the dark Global Layout.
   return (
-    <div 
-      className={`fixed inset-0 z-[100] overflow-y-auto bg-[#F0EEE9] text-[#1a1a1a] ${playfair.variable} ${inter.variable} font-sans`}
+    <div
+      style={{ zIndex: 'var(--z-toast)' }}
+      className={`fixed inset-0 overflow-y-auto bg-[#F0EEE9] text-[#1a1a1a] ${playfair.variable} ${inter.variable} font-sans`}
     >
       {children}
     </div>

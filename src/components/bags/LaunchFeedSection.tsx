@@ -39,12 +39,22 @@ function SkeletonRow() {
 
 function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
     const router = useRouter();
-    const createdAtMs = item.createdAt ? (item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt) : Date.now();
+    // Fallback timestamp for items missing createdAt — set on first mount in an effect
+    // (Date.now() is impure during render). Stored in state so the formatted age renders.
+    const [fallbackTs, setFallbackTs] = useState<number | null>(null);
+    useEffect(() => {
+        if (item.createdAt) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: capture fallback timestamp once on mount.
+        setFallbackTs(Date.now());
+    }, [item.createdAt]);
+    const createdAtMs = item.createdAt
+        ? (item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt)
+        : (fallbackTs ?? 0);
 
     return (
         <button
             onClick={() => router.push(`/terminal/${item.mint}`)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-white/[0.03] hover:bg-[#39FF14]/[0.02] transition-colors text-left group"
+            className="w-full flex items-center gap-3 px-3 py-2.5 border-b border-white/[0.03] hover:bg-acid-green/[0.02] transition-colors text-left group"
         >
             {item.image ? (
                 <img
@@ -61,14 +71,14 @@ function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
 
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                    <span className="text-[11px] font-bold text-[#EDEDED] truncate group-hover:text-[#39FF14] transition-colors">
+                    <span className="text-meta font-bold text-fg truncate group-hover:text-acid-green transition-colors">
                         {item.name}
                     </span>
-                    <span className="text-[9px] text-[#555] font-mono shrink-0">
+                    <span className="text-meta text-muted-mid font-mono shrink-0">
                         ${item.symbol}
                     </span>
                 </div>
-                <div className="flex items-center gap-2 text-[9px] text-[#444] font-mono mt-0.5">
+                <div className="flex items-center gap-2 text-meta text-[#444] font-mono mt-0.5">
                     <span>{truncateAddress(item.creator)}</span>
                     <span className="text-[#333]">&middot;</span>
                     <span>{item.status ? item.status.replace('_', ' ') : formatTimeAgo(createdAtMs)}</span>
@@ -76,17 +86,17 @@ function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
             </div>
 
             <div className="text-right shrink-0 space-y-0.5">
-                <div className="text-[10px] font-bold text-[#EDEDED] font-mono">
+                <div className="text-meta font-bold text-fg font-mono">
                     {formatMarketCap(item.marketCap)}
                 </div>
-                <div className="flex items-center gap-2 justify-end text-[9px] font-mono text-[#555]">
+                <div className="flex items-center gap-2 justify-end text-meta font-mono text-muted-mid">
                     {item.bondingCurve !== undefined && (
-                        <span className={item.bondingCurve >= 90 ? "text-[#39FF14]" : item.bondingCurve >= 50 ? "text-[#FAFF00]" : ""}>
+                        <span className={item.bondingCurve >= 90 ? "text-acid-green" : item.bondingCurve >= 50 ? "text-[#FAFF00]" : ""}>
                             {item.bondingCurve.toFixed(0)}%
                         </span>
                     )}
                     {item.lifetimeFees !== undefined && item.lifetimeFees > 0 && (
-                        <span className="text-[#FFD700] flex items-center gap-0.5">
+                        <span className="text-gold flex items-center gap-0.5">
                             <Coins size={8} />
                             {formatNumber(item.lifetimeFees)}
                         </span>
@@ -139,10 +149,10 @@ export function LaunchFeedSection() {
             <div className="flex-1 overflow-hidden">
                 <div className="px-4 py-2.5 flex items-center justify-between border-b border-white/[0.06]">
                     <span className="label flex items-center gap-2">
-                        <Rocket size={12} className="text-[#39FF14]" />
+                        <Rocket size={12} className="text-acid-green" />
                         BAGS LAUNCHES
                     </span>
-                    <span className="badge badge-green text-[8px] px-1.5 py-0.5 badge-live">LIVE</span>
+                    <span className="badge badge-green text-meta px-1.5 py-0.5 badge-live">LIVE</span>
                 </div>
                 {Array.from({ length: 8 }).map((_, i) => (
                     <SkeletonRow key={i} />
@@ -154,11 +164,11 @@ export function LaunchFeedSection() {
     if (error) {
         return (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 px-6 text-center">
-                <AlertTriangle size={20} className="text-[#FF003C]" />
-                <p className="text-[11px] text-[#888] font-mono">{error}</p>
+                <AlertTriangle size={20} className="text-error" />
+                <p className="text-meta text-fg-soft font-mono">{error}</p>
                 <button
                     onClick={() => fetchFeed()}
-                    className="btn-ghost px-3 py-1.5 text-[10px] font-bold uppercase flex items-center gap-1.5"
+                    className="btn-ghost px-3 py-1.5 text-meta font-bold uppercase flex items-center gap-1.5"
                 >
                     <RefreshCw size={10} />
                     RETRY
@@ -171,7 +181,7 @@ export function LaunchFeedSection() {
         return (
             <div className="flex-1 flex flex-col items-center justify-center gap-2 text-center">
                 <Rocket size={20} className="text-[#333]" />
-                <p className="text-[11px] text-[#555] font-mono">No launches found</p>
+                <p className="text-meta text-muted-mid font-mono">No launches found</p>
             </div>
         );
     }
@@ -180,7 +190,7 @@ export function LaunchFeedSection() {
         <div className="flex-1 flex flex-col min-h-0">
             <div className="px-4 py-2.5 flex items-center justify-between border-b border-white/[0.06] shrink-0">
                 <span className="label flex items-center gap-2">
-                    <Rocket size={12} className="text-[#39FF14]" />
+                    <Rocket size={12} className="text-acid-green" />
                     BAGS LAUNCHES
                     <span className="text-[#444]">({items.length})</span>
                 </span>
@@ -191,9 +201,9 @@ export function LaunchFeedSection() {
                         className="btn-ghost p-1 disabled:opacity-50"
                         title="Refresh"
                     >
-                        <RefreshCw size={10} className={`text-[#555] ${refreshing ? "animate-spin" : ""}`} />
+                        <RefreshCw size={10} className={`text-muted-mid ${refreshing ? "animate-spin" : ""}`} />
                     </button>
-                    <span className="badge badge-green text-[8px] px-1.5 py-0.5 badge-live">LIVE</span>
+                    <span className="badge badge-green text-meta px-1.5 py-0.5 badge-live">LIVE</span>
                 </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">

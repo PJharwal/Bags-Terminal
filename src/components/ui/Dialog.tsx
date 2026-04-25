@@ -49,7 +49,7 @@ export const DialogContent = forwardRef<
       {showClose && (
         <RadixDialog.Close
           aria-label="Close"
-          className="btn-press absolute top-3 right-3 flex items-center justify-center w-7 h-7 border border-white/10 text-[#666] hover:border-[#39FF14]/40 hover:text-[#EDEDED] focus-ring"
+          className="btn-press absolute top-3 right-3 flex items-center justify-center w-7 h-7 border border-white/10 text-muted-high hover:border-[#39FF14]/40 hover:text-fg focus-ring"
         >
           <X size={12} aria-hidden="true" />
         </RadixDialog.Close>
@@ -66,7 +66,7 @@ export const DialogTitle = forwardRef<
   <RadixDialog.Title
     ref={ref}
     className={cn(
-      "text-sm font-bold uppercase tracking-wider text-[#EDEDED] font-mono",
+      "text-sm font-bold uppercase tracking-wider text-fg font-mono",
       className,
     )}
     {...props}
@@ -80,8 +80,52 @@ export const DialogDescription = forwardRef<
 >(({ className, ...props }, ref) => (
   <RadixDialog.Description
     ref={ref}
-    className={cn("text-xs text-[#888] font-mono mt-2", className)}
+    className={cn("text-xs text-fg-soft font-mono mt-2", className)}
     {...props}
   />
 ));
 DialogDescription.displayName = "DialogDescription";
+
+/* -------------------------------------------------------------------------- */
+/* Modal layout primitives — composition for consistent header/body/footer    */
+/* -------------------------------------------------------------------------- */
+
+export interface ModalHeaderProps {
+  icon?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  className?: string;
+}
+
+export function ModalHeader({ icon, title, description, className }: ModalHeaderProps) {
+  return (
+    <div className={cn("mb-6", className)}>
+      <div className="flex items-center gap-2">
+        {icon && <span aria-hidden="true" className="inline-flex shrink-0 text-acid-green">{icon}</span>}
+        <DialogTitle>{title}</DialogTitle>
+      </div>
+      {description && <DialogDescription>{description}</DialogDescription>}
+    </div>
+  );
+}
+
+export function ModalBody({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={cn("space-y-4", className)}>{children}</div>;
+}
+
+export interface ModalFooterProps {
+  cancel?: ReactNode;
+  confirm?: ReactNode;
+  secondary?: ReactNode;
+  className?: string;
+}
+
+export function ModalFooter({ cancel, confirm, secondary, className }: ModalFooterProps) {
+  return (
+    <div className={cn("flex gap-3 mt-6", className)}>
+      {cancel}
+      {secondary}
+      {confirm}
+    </div>
+  );
+}

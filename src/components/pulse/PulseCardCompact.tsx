@@ -5,7 +5,9 @@ import { useSelectionStore } from "@/store/selection.store";
 import { formatAge } from "@/lib/lifecycle";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Users, TrendingUp, Zap, ExternalLink } from "lucide-react";
+import { Users, TrendingUp, ExternalLink } from "lucide-react";
+import { usePriceFlash } from "@/components/ui/usePriceFlash";
+import { cn } from "@/lib/utils";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -38,6 +40,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     );
     const bondingColor = getBondingColor(item.bondingProgress);
     const imgSrc = item.logoUrl || (item as unknown as { image?: string }).image;
+    const mcFlash = usePriceFlash(item.marketCap);
 
     const handleOpenTerminal = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -55,7 +58,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
             transition={{ duration: 0.2 }}
             className={`
                 relative cursor-pointer transition-all duration-100 group h-full
-                ${isSelected ? "bg-[#39FF14]/5" : "hover:bg-white/[0.02]"}
+                ${isSelected ? "bg-acid-green/5" : "hover:bg-white/[0.02]"}
                 ${isCritical ? "border-l-2 border-l-[#FF003C]" : hasRisk && !isSelected ? "border-l-2 border-l-[#FFD700]/60" : isSelected ? "border-l-2 border-l-[#39FF14]" : "border-l-2 border-l-transparent"}
             `}
         >
@@ -70,7 +73,7 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <span className="text-[10px] font-bold font-mono text-[#555] group-hover:text-[#888]">
+                            <span className="text-meta font-bold font-mono text-muted-mid group-hover:text-fg-soft">
                                 {item.symbol.replace("$", "").slice(0, 3)}
                             </span>
                         )}
@@ -82,32 +85,32 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     {/* Row 1: symbol + age | mcap */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2 min-w-0">
-                            <span className="text-xs font-bold text-[#EDEDED] font-mono truncate max-w-[90px] group-hover:text-white transition-colors">
+                            <span className="text-xs font-bold text-fg font-mono truncate max-w-[90px] group-hover:text-white transition-colors">
                                 {item.symbol}
                             </span>
-                            <span className="text-[9px] text-[#555] font-mono flex-shrink-0">
+                            <span className="text-meta text-muted-mid font-mono flex-shrink-0 num">
                                 {formatAge(item.ageSeconds)}
                             </span>
                         </div>
-                        <span className="text-xs font-bold font-mono text-[#EDEDED] flex-shrink-0">
+                        <span className={cn("text-xs font-bold font-mono text-fg flex-shrink-0 num px-1 -mx-1", mcFlash)}>
                             ${formatCompact(item.marketCap)}
                         </span>
                     </div>
 
                     {/* Row 2: holders + txns | bonding bar */}
                     <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-3 text-[9px] font-mono text-[#555]">
-                            <span className="flex items-center gap-1">
-                                <Users size={9} />{" "}
+                        <div className="flex items-center gap-3 text-meta font-mono text-muted-mid">
+                            <span className="flex items-center gap-1 num">
+                                <Users size={9} aria-hidden="true" />{" "}
                                 {formatCompact(item.holders)}
                             </span>
-                            <span className="flex items-center gap-1">
-                                <TrendingUp size={9} /> {item.txCount}
+                            <span className="flex items-center gap-1 num">
+                                <TrendingUp size={9} aria-hidden="true" /> {item.txCount}
                             </span>
                         </div>
                         {/* Bonding progress mini bar */}
                         <div className="flex items-center gap-1.5 flex-shrink-0">
-                            <div className="w-12 h-1 bg-[#1A1A1A] overflow-hidden">
+                            <div className="w-12 h-1 bg-elevated overflow-hidden">
                                 <div
                                     className="h-full transition-all duration-500"
                                     style={{
@@ -117,23 +120,25 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                                 />
                             </div>
                             <span
-                                className="text-[9px] font-mono font-bold tabular-nums"
+                                className="text-meta font-mono font-bold tabular-nums"
                                 style={{ color: bondingColor }}
                             >
-                                {item.bondingProgress}%
+                                {Math.round(item.bondingProgress)}%
                             </span>
                         </div>
                     </div>
                 </div>
 
                 {/* Hover action */}
-                <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                     <button
+                        type="button"
                         onClick={handleOpenTerminal}
-                        className="p-1.5 text-[#666] hover:text-[#39FF14] hover:bg-[#39FF14]/5 transition-all"
+                        className="p-1.5 text-muted-high hover:text-acid-green hover:bg-acid-green/5 transition-all focus-ring"
                         title="Open Terminal"
+                        aria-label={`Open ${item.symbol} in terminal`}
                     >
-                        <ExternalLink size={12} />
+                        <ExternalLink size={12} aria-hidden="true" />
                     </button>
                 </div>
             </div>

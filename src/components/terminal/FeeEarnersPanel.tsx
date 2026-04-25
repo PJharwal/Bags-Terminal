@@ -52,48 +52,51 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
     const sortedEarners = [...feeEarners].sort((a, b) => b.royaltyBps - a.royaltyBps);
 
     return (
-        <div className={`bg-[#0D0D0D] border border-white/10 overflow-hidden ${className}`}>
+        <div className={`card overflow-hidden ${className}`}>
             {/* Header */}
             <button
+                type="button"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors"
+                aria-expanded={isExpanded}
+                aria-controls="fee-earners-panel-body"
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/5 transition-colors focus-ring"
             >
                 <div className="flex items-center gap-3">
                     <BagsLogo size={14} />
                     <span className="label">Fee Earners</span>
-                    <span className="text-xs font-bold text-[#FFD700]">
+                    <span className="text-xs font-bold text-gold num">
                         {formatSOL(lifetimeFees)} SOL
                     </span>
-                    <span className="text-[10px] text-[#666]">
+                    <span className="text-meta text-muted-high">
                         ({feeEarners.length} {feeEarners.length === 1 ? "earner" : "earners"})
                     </span>
                 </div>
                 {isExpanded ? (
-                    <ChevronUp size={14} className="text-[#666]" />
+                    <ChevronUp size={14} aria-hidden="true" className="text-muted-high" />
                 ) : (
-                    <ChevronDown size={14} className="text-[#666]" />
+                    <ChevronDown size={14} aria-hidden="true" className="text-muted-high" />
                 )}
             </button>
 
             {/* Content */}
             {isExpanded && (
-                <div className="border-t border-white/10">
+                <div id="fee-earners-panel-body" className="border-t border-default">
                     {/* Dividend Status */}
                     {lifetimeFees !== undefined && (
                         <div className={`flex items-center justify-between px-3 py-2 border-b ${
                             lifetimeFees >= 10
-                                ? 'border-[#39FF14]/20 bg-[#39FF14]/5'
+                                ? 'border-[#39FF14]/20 bg-acid-green/5'
                                 : 'border-white/5 bg-white/[0.02]'
                         }`}>
                             <div className="flex items-center gap-2">
                                 <div className={`w-1.5 h-1.5 rounded-full ${
-                                    lifetimeFees >= 10 ? 'bg-[#39FF14] animate-pulse' : 'bg-[#666]'
+                                    lifetimeFees >= 10 ? 'bg-acid-green animate-pulse' : 'bg-[#666]'
                                 }`} />
-                                <span className="text-[9px] font-mono text-[#888] uppercase">
+                                <span className="text-meta font-mono text-fg-soft uppercase">
                                     {lifetimeFees >= 10 ? 'Auto-Dividends Active' : 'Dividends Inactive'}
                                 </span>
                             </div>
-                            <span className="text-[9px] font-mono text-[#666]">
+                            <span className="text-meta font-mono text-muted-high">
                                 {lifetimeFees >= 10
                                     ? 'Top 100 holders earn daily'
                                     : `${(10 - lifetimeFees).toFixed(2)} SOL until activation`}
@@ -102,7 +105,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                     )}
 
                     {/* Column Headers */}
-                    <div className="table-header grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2 text-[9px] text-[#666] uppercase tracking-widest">
+                    <div className="table-header grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2 text-meta text-muted-high uppercase tracking-widest">
                         <span>Earner</span>
                         <span className="text-right">Share</span>
                         <span className="text-right">Claimed</span>
@@ -113,7 +116,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                         {sortedEarners.map((earner, idx) => (
                             <div
                                 key={`${earner.wallet}-${idx}`}
-                                className="table-row grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2.5"
+                                className="table-row grid grid-cols-[1fr,80px,80px] gap-2 px-4 py-2"
                             >
                                 {/* Earner Info */}
                                 <div className="flex items-center gap-2 overflow-hidden">
@@ -126,7 +129,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                                         />
                                     ) : (
                                         <div className="w-6 h-6 rounded-full bg-gradient-to-br from-[#39FF14]/30 to-[#00F0FF]/30 border border-white/20 flex items-center justify-center flex-shrink-0">
-                                            <span className="text-[8px] font-bold text-[#EDEDED]">
+                                            <span className="text-meta font-bold text-fg">
                                                 {earner.username.charAt(0).toUpperCase()}
                                             </span>
                                         </div>
@@ -138,7 +141,7 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                                             {/* Provider Icon */}
                                             {earner.provider && providerIcons[earner.provider] && (
                                                 <span
-                                                    className="text-[10px]"
+                                                    className="text-meta"
                                                     style={{ color: providerIcons[earner.provider].color }}
                                                 >
                                                     {providerIcons[earner.provider].icon}
@@ -146,13 +149,13 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
                                             )}
 
                                             {/* Username */}
-                                            <span className="text-xs text-[#EDEDED] font-medium truncate">
+                                            <span className="text-xs text-fg font-medium truncate">
                                                 {earner.providerUsername || earner.username}
                                             </span>
 
                                             {/* Creator Badge */}
                                             {earner.isCreator && (
-                                                <span className="text-[8px] px-1 py-0.5 bg-[#39FF14]/20 text-[#39FF14] rounded">
+                                                <span className="text-meta px-1 py-0.5 bg-acid-green/20 text-acid-green rounded">
                                                     CREATOR
                                                 </span>
                                             )}
@@ -160,28 +163,31 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
 
                                         {/* Wallet Address */}
                                         <div className="flex items-center gap-1">
-                                            <span className="text-[10px] text-[#666] font-mono">
+                                            <span className="text-meta text-muted-high font-mono num">
                                                 {shortenAddress(earner.wallet)}
                                             </span>
                                             <button
+                                                type="button"
                                                 onClick={() => handleCopyWallet(earner.wallet)}
-                                                className="text-[#666] hover:text-[#EDEDED] transition-colors"
+                                                className="text-muted-high hover:text-fg transition-colors focus-ring"
                                                 title="Copy wallet address"
+                                                aria-label={`Copy wallet address ${shortenAddress(earner.wallet)}`}
                                             >
                                                 {copiedWallet === earner.wallet ? (
-                                                    <Check size={10} className="text-[#39FF14]" />
+                                                    <Check size={10} aria-hidden="true" className="text-acid-green" />
                                                 ) : (
-                                                    <Copy size={10} />
+                                                    <Copy size={10} aria-hidden="true" />
                                                 )}
                                             </button>
                                             <a
                                                 href={`https://solscan.io/account/${earner.wallet}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
-                                                className="text-[#666] hover:text-[#00F0FF] transition-colors"
+                                                className="text-muted-high hover:text-electric-blue transition-colors focus-ring"
                                                 title="View on Solscan"
+                                                aria-label={`View ${shortenAddress(earner.wallet)} on Solscan`}
                                             >
-                                                <ExternalLink size={10} />
+                                                <ExternalLink size={10} aria-hidden="true" />
                                             </a>
                                         </div>
                                     </div>
@@ -189,14 +195,14 @@ export function FeeEarnersPanel({ feeEarners, lifetimeFees, className = "" }: Fe
 
                                 {/* Share Percentage */}
                                 <div className="flex items-center justify-end">
-                                    <span className="text-xs font-bold text-[#00F0FF] font-mono">
+                                    <span className="text-xs font-bold text-electric-blue font-mono num">
                                         {earner.royaltyPercent.toFixed(1)}%
                                     </span>
                                 </div>
 
                                 {/* Total Claimed */}
                                 <div className="flex items-center justify-end">
-                                    <span className="text-xs text-[#EDEDED] font-mono">
+                                    <span className="text-xs text-fg font-mono num">
                                         {earner.totalClaimed !== undefined
                                             ? `${formatSOL(earner.totalClaimed)} SOL`
                                             : "—"}

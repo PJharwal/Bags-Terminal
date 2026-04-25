@@ -29,12 +29,12 @@ export function FilterPresets() {
                         key={preset.id}
                         onClick={() => handlePresetClick(preset.id)}
                         className={`btn-press w-full text-left px-3 py-2.5 text-sm transition-all ${activePreset === preset.id
-                                ? "bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/20"
-                                : "bg-white/[0.02] text-[#888] hover:bg-white/[0.04] hover:text-[#EDEDED] border border-white/[0.04]"
+                                ? "bg-acid-green/10 text-acid-green border border-[#39FF14]/20"
+                                : "bg-white/[0.02] text-fg-soft hover:bg-white/[0.04] hover:text-fg border border-white/[0.04]"
                             }`}
                     >
                         <div className="font-bold text-xs">{preset.name}</div>
-                        <div className="text-[9px] opacity-60 mt-0.5 font-mono">{preset.description}</div>
+                        <div className="text-meta opacity-60 mt-0.5 font-mono">{preset.description}</div>
                     </button>
                 ))}
             </div>

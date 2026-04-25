@@ -1,8 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Settings, X } from 'lucide-react';
+import { Settings } from 'lucide-react';
 import { useTerminalStore } from '@/store/terminal.store';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/Popover';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
 
 const SLIPPAGE_PRESETS = [50, 100, 200, 500]; // in bps (0.5%, 1%, 2%, 5%)
 const PRIORITY_PRESETS = [
@@ -13,7 +16,7 @@ const PRIORITY_PRESETS = [
 ];
 
 export function SlippageSettings() {
-  const [isOpen, setIsOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const { slippageBps, priorityFee, setSlippage, setPriorityFee } = useTerminalStore();
   const [customSlippage, setCustomSlippage] = useState('');
 
@@ -25,76 +28,79 @@ export function SlippageSettings() {
     }
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className="flex items-center gap-1 text-[9px] text-[#666] hover:text-[#EDEDED] transition-colors font-mono"
-      >
-        <Settings size={10} />
-        Slippage: {(slippageBps / 100).toFixed(1)}% · Priority: {PRIORITY_PRESETS.find(p => p.value === priorityFee)?.label || 'NONE'}
-      </button>
-    );
-  }
-
   return (
-    <div className="p-3 bg-[#0A0A0A] border border-white/10">
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-[10px] font-bold text-[#EDEDED] uppercase tracking-widest">Settings</span>
-        <button onClick={() => setIsOpen(false)} className="text-[#666] hover:text-[#EDEDED]">
-          <X size={12} />
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-1 text-meta text-muted-high hover:text-fg transition-colors font-mono focus-ring"
+          aria-label="Open slippage and priority fee settings"
+        >
+          <Settings size={10} aria-hidden="true" />
+          Slippage: {(slippageBps / 100).toFixed(1)}% · Priority: {PRIORITY_PRESETS.find(p => p.value === priorityFee)?.label || 'NONE'}
         </button>
-      </div>
-
-      {/* Slippage */}
-      <div className="mb-3">
-        <span className="text-[9px] text-[#666] uppercase tracking-widest">Slippage Tolerance</span>
-        <div className="grid grid-cols-4 gap-1 mt-1">
-          {SLIPPAGE_PRESETS.map((bps) => (
-            <button
-              key={bps}
-              onClick={() => { setSlippage(bps); setCustomSlippage(''); }}
-              className={`py-1.5 text-[10px] font-mono font-bold border transition-colors ${
-                slippageBps === bps
-                  ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                  : 'border-[#333] text-[#888] hover:border-[#666]'
-              }`}
-            >
-              {(bps / 100).toFixed(1)}%
-            </button>
-          ))}
+      </PopoverTrigger>
+      <PopoverContent align="end" sideOffset={8} className="w-72 p-3">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-meta font-bold text-fg uppercase tracking-widest">Settings</span>
         </div>
-        <input
-          type="number"
-          value={customSlippage}
-          onChange={(e) => handleCustomSlippage(e.target.value)}
-          placeholder="Custom %"
-          className="mt-1 w-full bg-[#1A1A1A] border border-[#333] px-2 py-1.5 text-[10px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-          step="0.1"
-          min="0.1"
-          max="50"
-        />
-      </div>
 
-      {/* Priority Fee */}
-      <div>
-        <span className="text-[9px] text-[#666] uppercase tracking-widest">Priority Fee</span>
-        <div className="grid grid-cols-4 gap-1 mt-1">
-          {PRIORITY_PRESETS.map((preset) => (
-            <button
-              key={preset.label}
-              onClick={() => setPriorityFee(preset.value)}
-              className={`py-1.5 text-[9px] font-bold uppercase border transition-colors ${
-                priorityFee === preset.value
-                  ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                  : 'border-[#333] text-[#888] hover:border-[#666]'
-              }`}
-            >
-              {preset.label}
-            </button>
-          ))}
+        <div className="mb-3">
+          <span className="text-meta text-muted-high uppercase tracking-widest">Slippage Tolerance</span>
+          <div className="grid grid-cols-4 gap-1 mt-1">
+            {SLIPPAGE_PRESETS.map((bps) => (
+              <button
+                key={bps}
+                type="button"
+                onClick={() => { setSlippage(bps); setCustomSlippage(''); }}
+                aria-pressed={slippageBps === bps}
+                className={`py-1.5 text-meta font-mono font-bold border transition-colors active:scale-95 focus-ring ${
+                  slippageBps === bps
+                    ? 'border-acid-green text-acid-green bg-acid-green/10'
+                    : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
+                }`}
+              >
+                {(bps / 100).toFixed(1)}%
+              </button>
+            ))}
+          </div>
+          <div className="mt-2">
+            <Field label="Custom (%)" helper="0.1 – 50">
+              <Input
+                inputSize="sm"
+                type="number"
+                value={customSlippage}
+                onChange={(e) => handleCustomSlippage(e.target.value)}
+                placeholder="0.5"
+                step="0.1"
+                min="0.1"
+                max="50"
+              />
+            </Field>
+          </div>
         </div>
-      </div>
-    </div>
+
+        <div>
+          <span className="text-meta text-muted-high uppercase tracking-widest">Priority Fee</span>
+          <div className="grid grid-cols-4 gap-1 mt-1">
+            {PRIORITY_PRESETS.map((preset) => (
+              <button
+                key={preset.label}
+                type="button"
+                onClick={() => setPriorityFee(preset.value)}
+                aria-pressed={priorityFee === preset.value}
+                className={`py-1.5 text-meta font-bold uppercase border transition-colors active:scale-95 focus-ring ${
+                  priorityFee === preset.value
+                    ? 'border-acid-green text-acid-green bg-acid-green/10'
+                    : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
+                }`}
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

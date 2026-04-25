@@ -70,19 +70,19 @@ export default function TerminalIndexPage() {
     };
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
+        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-fg overflow-hidden font-mono">
             {/* Header */}
             <div className="glass gradient-border flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-3">
-                    <Terminal size={20} className="text-[#39FF14]" />
+                    <Terminal size={20} className="text-acid-green" />
                     <h1 className="text-lg font-bold tracking-tight">TERMINAL</h1>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className={`flex items-center gap-2 text-[10px] ${isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                    <div className={`flex items-center gap-2 text-meta ${isConnected ? 'text-acid-green' : 'text-error'}`}>
                         {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
                         <span>{isConnected ? 'LIVE' : 'CONNECTING...'}</span>
                     </div>
-                    <span className="text-[10px] text-[#666] font-mono">SELECT_TOKEN_TO_ANALYZE</span>
+                    <span className="text-meta text-muted-high font-mono">SELECT_TOKEN_TO_ANALYZE</span>
                 </div>
             </div>
 
@@ -91,9 +91,9 @@ export default function TerminalIndexPage() {
                 {/* Trending Tokens from GMGN */}
                 <section className="mb-8">
                     <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={14} className="text-[#39FF14]" />
+                        <TrendingUp size={14} className="text-acid-green" />
                         <h2 className="label">Trending Tokens (1h)</h2>
-                        {isLoadingTrending && <Loader2 size={12} className="animate-spin text-[#666]" />}
+                        {isLoadingTrending && <Loader2 size={12} className="animate-spin text-muted-high" />}
                     </div>
                     {trendingTokens.length > 0 ? (
                         <div className="grid grid-cols-3 gap-4">
@@ -110,7 +110,7 @@ export default function TerminalIndexPage() {
                             ))}
                         </div>
                     ) : (
-                        <div className="text-[#666] text-sm py-4">
+                        <div className="text-muted-high text-sm py-4">
                             {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Try refreshing.'}
                         </div>
                     )}
@@ -138,7 +138,7 @@ export default function TerminalIndexPage() {
 
                 {/* Empty state when no tokens */}
                 {recentTokens.length === 0 && trendingTokens.length === 0 && !isLoadingTrending && (
-                    <div className="text-center py-12 text-[#666]">
+                    <div className="text-center py-12 text-muted-high">
                         <Terminal size={32} className="mx-auto mb-4 opacity-30" />
                         <p className="text-sm">
                             {isConnected
@@ -199,29 +199,30 @@ function TokenCard({
 }) {
     return (
         <button
+            type="button"
             onClick={onClick}
-            className="card group flex items-center justify-between p-4 text-left"
+            className="card group flex items-start justify-between gap-3 p-4 text-left"
         >
-            <div className="flex flex-col gap-1">
-                <span className="text-sm font-bold text-[#EDEDED]">{symbol}</span>
-                <span className="text-[10px] text-[#666] truncate max-w-[120px]">{name}</span>
+            <div className="flex flex-col gap-1 min-w-0 flex-1">
+                <span className="text-sm font-bold text-fg truncate" title={symbol}>{symbol}</span>
+                <span className="text-meta text-muted-high truncate" title={name}>{name}</span>
                 {marketCap !== undefined && (
-                    <span className="text-[10px] text-[#888] font-mono">
+                    <span className="text-meta text-fg-soft font-mono num">
                         MC: {formatCurrency(marketCap)}
                     </span>
                 )}
                 {bondingProgress !== undefined && (
-                    <span className={`text-[10px] font-mono ${bondingProgress >= 100 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                        {bondingProgress}% bonded
+                    <span className={`text-meta font-mono num ${bondingProgress >= 100 ? 'text-acid-green' : 'text-muted-high'}`}>
+                        {Math.round(bondingProgress)}% Bonded
                     </span>
                 )}
                 {priceChange !== undefined && (
-                    <span className={`text-[10px] font-mono ${priceChange >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                    <span className={`text-meta font-mono num ${priceChange >= 0 ? 'text-acid-green' : 'text-error'}`}>
                         {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
                     </span>
                 )}
             </div>
-            <ArrowRight size={14} className="text-[#666] group-hover:text-[#39FF14] transition-colors" />
+            <ArrowRight size={14} aria-hidden="true" className="shrink-0 mt-0.5 text-muted-high group-hover:text-acid-green transition-colors" />
         </button>
     );
 }

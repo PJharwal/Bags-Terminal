@@ -23,8 +23,10 @@ export function useFeeData(
     if (!tokenId) return;
     let mounted = true;
 
+    /* eslint-disable react-hooks/set-state-in-effect -- effect synchronizes loading state to an async fetch lifecycle (external system). */
     setIsLoading(true);
     setError(false);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     bagsService.getTokenFeeInfo(tokenId)
       .then((info) => {

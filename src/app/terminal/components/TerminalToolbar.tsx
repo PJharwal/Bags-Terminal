@@ -1,6 +1,7 @@
 "use client";
 
 import { BarChart2, Settings, Maximize2, Grid3X3, Bell } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 export function TerminalToolbar() {
     return (
@@ -9,7 +10,7 @@ export function TerminalToolbar() {
             <ToolbarButton icon={<Grid3X3 size={16} />} title="Layout" />
             <ToolbarButton icon={<Bell size={16} />} title="Alerts" />
 
-            <div className="my-2 w-full h-px bg-white/10" />
+            <div role="separator" className="my-2 w-full h-px bg-white/10" />
 
             <ToolbarButton icon={<Maximize2 size={16} />} title="Fullscreen" />
             <ToolbarButton icon={<Settings size={16} />} title="Settings" />
@@ -19,14 +20,14 @@ export function TerminalToolbar() {
 
 function ToolbarButton({ icon, title, active = false }: { icon: React.ReactNode; title: string; active?: boolean }) {
     return (
-        <button
-            className={`p-2 transition-colors ${active
-                    ? 'bg-[#39FF14]/20 text-[#39FF14]'
-                    : 'text-[#666] hover:text-[#EDEDED] hover:bg-white/5'
-                }`}
+        <Button
+            variant="bare"
+            size="sm"
+            iconLeft={icon}
             title={title}
-        >
-            {icon}
-        </button>
+            aria-label={title}
+            aria-pressed={active || undefined}
+            className={active ? "bg-acid-green/20 text-acid-green" : "hover:bg-white/5"}
+        />
     );
 }

@@ -5,6 +5,10 @@ import { useLaunchStore } from '@/store/launch.store';
 import { SocialHandleInput } from './SocialHandleInput';
 import type { FeeClaimerType, SocialProvider } from '@/lib/bags-types';
 import { X } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
+import { AddressInput } from '@/components/ui/AddressInput';
 
 interface AddClaimerFormProps {
   onClose: () => void;
@@ -17,31 +21,36 @@ export function AddClaimerForm({ onClose }: AddClaimerFormProps) {
   const [socialProvider, setSocialProvider] = useState<SocialProvider>('twitter');
   const [socialUsername, setSocialUsername] = useState('');
   const [percentage, setPercentage] = useState(50);
-  const [error, setError] = useState<string | null>(null);
+  const [walletError, setWalletError] = useState<string | null>(null);
+  const [socialError, setSocialError] = useState<string | null>(null);
+  const [percentageError, setPercentageError] = useState<string | null>(null);
 
   const validateSolanaAddress = (addr: string) => {
     return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(addr);
   };
 
   const handleSubmit = () => {
-    setError(null);
+    setWalletError(null);
+    setSocialError(null);
+    setPercentageError(null);
 
+    let valid = true;
     if (type === 'wallet') {
       if (!validateSolanaAddress(walletAddress)) {
-        setError('Invalid Solana address');
-        return;
+        setWalletError('Invalid Solana address');
+        valid = false;
       }
-    } else {
-      if (!socialUsername.trim()) {
-        setError('Username is required');
-        return;
-      }
+    } else if (!socialUsername.trim()) {
+      setSocialError('Username is required');
+      valid = false;
     }
 
     if (percentage <= 0 || percentage > 100) {
-      setError('Percentage must be between 1 and 100');
-      return;
+      setPercentageError('Must be between 1 and 100');
+      valid = false;
     }
+
+    if (!valid) return;
 
     addFeeClaimer({
       id: `claimer_${Date.now()}`,
@@ -55,32 +64,47 @@ export function AddClaimerForm({ onClose }: AddClaimerFormProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-3 bg-[#0A0A0A] border border-white/10">
+    <div
+      role="region"
+      aria-label="Add fee claimer"
+      className="flex flex-col gap-3 p-3 card"
+    >
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-[#EDEDED] uppercase tracking-widest">Add Claimer</span>
-        <button onClick={onClose} className="text-[#666] hover:text-[#EDEDED]">
-          <X size={12} />
+        <span className="text-meta font-bold text-fg uppercase tracking-widest">Add Claimer</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cancel adding claimer"
+          className="flex items-center justify-center w-6 h-6 text-muted-high hover:text-fg focus-ring"
+        >
+          <X size={12} aria-hidden="true" />
         </button>
       </div>
 
       {/* Type Selection */}
-      <div className="flex gap-2">
+      <div role="radiogroup" aria-label="Claimer type" className="flex gap-2">
         <button
+          type="button"
+          role="radio"
+          aria-checked={type === 'wallet'}
           onClick={() => setType('wallet')}
-          className={`flex-1 py-2 text-[10px] font-bold uppercase border transition-colors ${
+          className={`flex-1 py-2 text-meta font-bold uppercase border transition-colors active:scale-95 focus-ring ${
             type === 'wallet'
-              ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-              : 'border-[#333] text-[#888] hover:border-[#666]'
+              ? 'border-acid-green text-acid-green bg-acid-green/10'
+              : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
           }`}
         >
           Wallet
         </button>
         <button
+          type="button"
+          role="radio"
+          aria-checked={type === 'social'}
           onClick={() => setType('social')}
-          className={`flex-1 py-2 text-[10px] font-bold uppercase border transition-colors ${
+          className={`flex-1 py-2 text-meta font-bold uppercase border transition-colors active:scale-95 focus-ring ${
             type === 'social'
-              ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-              : 'border-[#333] text-[#888] hover:border-[#666]'
+              ? 'border-acid-green text-acid-green bg-acid-green/10'
+              : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
           }`}
         >
           Social
@@ -89,56 +113,49 @@ export function AddClaimerForm({ onClose }: AddClaimerFormProps) {
 
       {/* Wallet Input */}
       {type === 'wallet' && (
-        <div className="flex flex-col gap-1">
-          <label className="text-[9px] text-[#666] uppercase tracking-widest">Wallet Address</label>
-          <input
-            type="text"
+        <Field label="Wallet Address" error={walletError ?? undefined}>
+          <AddressInput
             value={walletAddress}
             onChange={(e) => setWalletAddress(e.target.value)}
-            className="bg-[#1A1A1A] border border-[#333] px-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
             placeholder="Enter Solana address..."
           />
-        </div>
+        </Field>
       )}
 
       {/* Social Input */}
       {type === 'social' && (
-        <SocialHandleInput
-          provider={socialProvider}
-          username={socialUsername}
-          onProviderChange={setSocialProvider}
-          onUsernameChange={setSocialUsername}
-        />
+        <div className="flex flex-col gap-1">
+          <SocialHandleInput
+            provider={socialProvider}
+            username={socialUsername}
+            onProviderChange={setSocialProvider}
+            onUsernameChange={setSocialUsername}
+          />
+          {socialError && (
+            <p role="alert" className="text-meta text-error font-mono">{socialError}</p>
+          )}
+        </div>
       )}
 
       {/* Percentage */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Fee Percentage</label>
-        <div className="relative">
-          <input
-            type="number"
-            value={percentage}
-            onChange={(e) => setPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
-            className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-            min="1"
-            max="100"
-          />
-          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">%</span>
-        </div>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <span className="text-[9px] text-[#FF003C] font-mono">{error}</span>
-      )}
+      <Field label="Fee Percentage" error={percentageError ?? undefined}>
+        <Input
+          type="number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          value={percentage}
+          onChange={(e) => setPercentage(Math.min(100, Math.max(0, parseInt(e.target.value) || 0)))}
+          min="1"
+          max="100"
+          suffix="%"
+          aria-label="Fee percentage"
+        />
+      </Field>
 
       {/* Submit */}
-      <button
-        onClick={handleSubmit}
-        className="py-2 text-[10px] font-bold uppercase tracking-wider bg-[#39FF14] text-black hover:brightness-110 transition-all"
-      >
+      <Button variant="primary" size="sm" fullWidth onClick={handleSubmit}>
         Add Claimer
-      </button>
+      </Button>
     </div>
   );
 }

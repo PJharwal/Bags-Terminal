@@ -14,24 +14,24 @@ interface TokenAuditProps {
 
 // Map risk level to Tailwind classes
 const dotColors: Record<RiskLevel, string> = {
-    safe: "bg-[#39FF14]",
+    safe: "bg-acid-green",
     warning: "bg-[#FAFF00]",
     danger: "bg-[#FF003C]",
     neutral: "bg-[#444444]"
 };
 
 const valueColors: Record<RiskLevel, string> = {
-    safe: "text-[#39FF14]",
+    safe: "text-acid-green",
     warning: "text-[#FAFF00]",
-    danger: "text-[#FF003C]",
-    neutral: "text-[#EDEDED]"
+    danger: "text-error",
+    neutral: "text-fg"
 };
 
 export function TokenAudit({ stats }: TokenAuditProps) {
     if (!stats) {
         return (
             <div className="card p-4">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED]">TOKEN AUDIT</h3>
+                <h3 className="text-sm font-bold tracking-wider text-fg">TOKEN AUDIT</h3>
                 <div className="skeleton-shimmer h-4 w-24 mt-2" />
             </div>
         );
@@ -44,7 +44,7 @@ export function TokenAudit({ stats }: TokenAuditProps) {
     return (
         <div className="card p-4 space-y-3 font-mono">
             <div className="flex items-center justify-between border-b border-white/[0.06] pb-2">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED]">TOKEN AUDIT</h3>
+                <h3 className="text-sm font-bold tracking-wider text-fg">TOKEN AUDIT</h3>
                 <span className="text-sm font-bold" style={{ color: scoreColor }}>
                     {audit.score}/100
                 </span>

@@ -25,7 +25,7 @@ export default function CreatorPage() {
 
   if (!connected) {
     return (
-      <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+      <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-fg font-mono flex-1 flex flex-col items-center justify-center text-muted-high py-12">
         <Wallet size={32} className="mb-4 opacity-30" />
         <p className="text-sm font-mono">Connect your wallet to view created tokens</p>
       </div>
@@ -33,13 +33,13 @@ export default function CreatorPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-fg font-mono max-w-6xl mx-auto px-4 py-8">
       {/* Page Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold text-[#EDEDED] tracking-tight text-display flex items-center gap-2">
+          <h1 className="text-xl font-bold text-fg tracking-tight text-display flex items-center gap-2">
             <BagsLogo size={18} />
-            CREATOR<span className="text-[#39FF14]">_</span>DASHBOARD
+            CREATOR<span className="text-acid-green">_</span>DASHBOARD
           </h1>
           <p className="label mt-2">
             Manage tokens, claim fees on bags.fm, and link social accounts
@@ -76,11 +76,11 @@ function CreatorShareCards({ wallet }: { wallet: string }) {
     <div className="mt-6 border-t border-white/5 pt-6">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-[#888] hover:text-[#39FF14] transition-colors mb-4"
+        className="flex items-center gap-2 text-meta font-mono uppercase tracking-widest text-fg-soft hover:text-acid-green transition-colors mb-4"
       >
         <Share2 size={14} />
         Share Your Stats
-        <span className="text-[#666]">{open ? '−' : '+'}</span>
+        <span className="text-muted-high">{open ? '−' : '+'}</span>
       </button>
 
       {open && (
@@ -88,20 +88,20 @@ function CreatorShareCards({ wallet }: { wallet: string }) {
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setActiveCard('fees')}
-              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+              className={`px-3 py-1.5 text-meta font-mono uppercase tracking-widest border transition-colors ${
                 activeCard === 'fees'
-                  ? 'border-[#FFD700]/30 text-[#FFD700] bg-[#FFD700]/5'
-                  : 'border-white/10 text-[#666]'
+                  ? 'border-[#FFD700]/30 text-gold bg-[#FFD700]/5'
+                  : 'border-white/10 text-muted-high'
               }`}
             >
               Fee Earnings
             </button>
             <button
               onClick={() => setActiveCard('portfolio')}
-              className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-widest border transition-colors ${
+              className={`px-3 py-1.5 text-meta font-mono uppercase tracking-widest border transition-colors ${
                 activeCard === 'portfolio'
                   ? 'border-[#00F0FF]/30 text-[#00F0FF] bg-[#00F0FF]/5'
-                  : 'border-white/10 text-[#666]'
+                  : 'border-white/10 text-muted-high'
               }`}
             >
               Portfolio

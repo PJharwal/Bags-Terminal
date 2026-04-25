@@ -33,15 +33,15 @@ export function DashboardTabs() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`btn-press px-5 py-3 text-[10px] font-bold tracking-widest transition-all relative ${
+            className={`btn-press px-5 py-3 text-meta font-bold tracking-widest transition-all relative ${
               activeTab === tab.id
-                ? 'text-[#39FF14]'
-                : 'text-[#666] hover:text-[#EDEDED]'
+                ? 'text-acid-green'
+                : 'text-muted-high hover:text-fg'
             }`}
           >
             {tab.label}
             {activeTab === tab.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#39FF14]" style={{ boxShadow: '0 0 8px rgba(57, 255, 20, 0.3)' }} />
+              <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-acid-green" style={{ boxShadow: '0 0 8px rgba(57, 255, 20, 0.3)' }} />
             )}
           </button>
         ))}

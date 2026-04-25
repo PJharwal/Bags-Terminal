@@ -19,9 +19,9 @@ export function BagsLogo({ size = 20, className = '', withText = false }: BagsLo
         className="shrink-0"
       />
       {withText && (
-        <span className="text-[#39FF14] font-bold font-mono tracking-tight">
+        <span className="text-acid-green font-bold font-mono tracking-tight">
           bags
-          <span className="text-[#888]">.fm</span>
+          <span className="text-fg-soft">.fm</span>
         </span>
       )}
     </span>

@@ -25,17 +25,17 @@ export function HoldersTable({ data }: HoldersTableProps) {
     return (
         <div className="card overflow-hidden">
             <div className="p-4 border-b border-white/[0.06]">
-                <h3 className="text-sm font-bold tracking-wider text-[#EDEDED] uppercase">Top Holders</h3>
+                <h3 className="text-sm font-bold tracking-wider text-fg uppercase">Top Holders</h3>
             </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-sm font-mono">
-                    <thead className="table-header text-[#555]">
+                    <thead className="table-header text-muted-mid">
                         <tr>
-                            <th className="p-4 font-medium uppercase text-[10px] tracking-widest">Holder</th>
-                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">Balance</th>
-                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">Value</th>
-                            <th className="p-4 font-medium text-right uppercase text-[10px] tracking-widest">%</th>
-                            <th className="p-4 font-medium text-center uppercase text-[10px] tracking-widest">Tags</th>
+                            <th className="p-4 font-medium uppercase text-meta tracking-widest">Holder</th>
+                            <th className="p-4 font-medium text-right uppercase text-meta tracking-widest">Balance</th>
+                            <th className="p-4 font-medium text-right uppercase text-meta tracking-widest">Value</th>
+                            <th className="p-4 font-medium text-right uppercase text-meta tracking-widest">%</th>
+                            <th className="p-4 font-medium text-center uppercase text-meta tracking-widest">Tags</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -43,13 +43,13 @@ export function HoldersTable({ data }: HoldersTableProps) {
                             <tr key={holder.address} className="table-row group">
                                 <td className="p-4 text-xs text-[#888888]">
                                     <div className="flex flex-col">
-                                        <span className="text-[#EDEDED] font-medium">
+                                        <span className="text-fg font-medium">
                                             {holder.wallet_tag_v2 || "Holder"}
                                         </span>
                                         <span className="truncate max-w-[100px]">{holder.address.slice(0, 8)}...</span>
                                     </div>
                                 </td>
-                                <td className="p-4 text-right text-[#EDEDED] font-medium">
+                                <td className="p-4 text-right text-fg font-medium">
                                     {formatNumber(holder.balance)}
                                 </td>
                                 <td className="p-4 text-right text-[#888888]">
@@ -61,7 +61,7 @@ export function HoldersTable({ data }: HoldersTableProps) {
                                 <td className="p-4 text-center">
                                     <div className="flex flex-wrap gap-1 justify-center">
                                         {holder.maker_token_tags?.map((tag) => (
-                                            <span key={tag} className="badge badge-muted text-[9px] px-1.5 py-0.5">
+                                            <span key={tag} className="badge badge-muted text-meta px-1.5 py-0.5">
                                                 {tag.replace("_", " ")}
                                             </span>
                                         ))}

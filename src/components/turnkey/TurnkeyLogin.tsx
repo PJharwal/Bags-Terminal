@@ -22,12 +22,12 @@ export const TurnkeyLogin: FC<TurnkeyLoginProps> = ({ onSuccess }) => {
 
   return (
     <div className="space-y-4">
-      <p className="text-[10px] text-[#888]">
+      <p className="text-meta text-fg-soft">
         Connect your Phantom wallet to create a one-click trading wallet.
       </p>
       <button
         onClick={handleConnect}
-        className="w-full py-3 text-xs font-bold uppercase tracking-wider text-black bg-[#39FF14] hover:brightness-110 transition-all flex items-center justify-center gap-2"
+        className="w-full py-3 text-xs font-bold uppercase tracking-wider text-black bg-acid-green hover:brightness-110 transition-all flex items-center justify-center gap-2"
       >
         <Wallet size={14} />
         Connect Phantom

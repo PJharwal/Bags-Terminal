@@ -30,22 +30,22 @@ export function SignalCard({ event, onClick }: SignalCardProps) {
                         <span className={`text-sm font-medium ${getSeverityColor(event.severity)}`}>
                             {event.title}
                         </span>
-                        <span className="text-[10px] text-[#666] whitespace-nowrap font-mono">
+                        <span className="text-meta text-muted-high whitespace-nowrap font-mono">
                             {formatTimeAgo(event.timestamp)}
                         </span>
                     </div>
-                    <p className="text-xs text-[#888] mt-1 line-clamp-2 font-mono">
+                    <p className="text-xs text-fg-soft mt-1 line-clamp-2 font-mono">
                         {event.description}
                     </p>
                     {(event.related_token || event.related_deployer) && (
                         <div className="flex gap-2 mt-2">
                             {event.related_token && (
-                                <span className="badge badge-blue text-[10px] px-1.5 py-0.5">
+                                <span className="badge badge-blue text-meta px-1.5 py-0.5">
                                     {event.related_token}
                                 </span>
                             )}
                             {event.related_deployer && (
-                                <span className="badge badge-muted text-[10px] px-1.5 py-0.5 font-mono">
+                                <span className="badge badge-muted text-meta px-1.5 py-0.5 font-mono">
                                     {event.related_deployer}
                                 </span>
                             )}

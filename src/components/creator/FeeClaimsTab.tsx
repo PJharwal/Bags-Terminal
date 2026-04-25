@@ -50,15 +50,15 @@ export function FeeClaimsTab() {
           <span className="label flex items-center gap-1" style={{ fontSize: '8px' }}>
             <BagsLogo size={10} /> Total Earned
           </span>
-          <span className="text-sm font-mono text-[#EDEDED] font-bold">{totalEarned.toFixed(4)} SOL</span>
+          <span className="text-sm font-mono text-fg font-bold">{totalEarned.toFixed(4)} SOL</span>
         </div>
         <div className="stat-card flex flex-col gap-1 p-3">
           <span className="label" style={{ fontSize: '8px' }}>Total Claimed</span>
-          <span className="text-sm font-mono text-[#EDEDED] font-bold">{totalClaimed.toFixed(4)} SOL</span>
+          <span className="text-sm font-mono text-fg font-bold">{totalClaimed.toFixed(4)} SOL</span>
         </div>
         <div className="stat-card flex flex-col gap-1 p-3">
           <span className="label" style={{ fontSize: '8px' }}>Pending</span>
-          <span className="text-sm font-mono text-[#39FF14] font-bold">{totalPending.toFixed(4)} SOL</span>
+          <span className="text-sm font-mono text-acid-green font-bold">{totalPending.toFixed(4)} SOL</span>
         </div>
       </div>
 
@@ -67,7 +67,7 @@ export function FeeClaimsTab() {
         <button
           onClick={handleClaimAll}
           disabled={!!claimingToken}
-          className="btn-primary w-full py-3 text-[11px]"
+          className="btn-primary w-full py-3 text-meta"
         >
           {claimingToken ? 'Claiming...' : `Claim All (${totalPending.toFixed(4)} SOL)`}
         </button>
@@ -85,20 +85,20 @@ export function FeeClaimsTab() {
                 <img src={earning.tokenImage} alt={earning.tokenSymbol} className="w-8 h-8 border border-white/10" />
               )}
               <div className="flex flex-col">
-                <span className="text-[11px] font-mono text-[#EDEDED] font-bold">{earning.tokenSymbol}</span>
+                <span className="text-meta font-mono text-fg font-bold">{earning.tokenSymbol}</span>
                 <span className="label" style={{ fontSize: '9px' }}>
                   Earned: {earning.totalEarned.toFixed(4)} SOL
                 </span>
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-[11px] font-mono text-[#39FF14] font-bold">
+              <span className="text-meta font-mono text-acid-green font-bold">
                 {earning.claimableAmount.toFixed(4)} SOL
               </span>
               <button
                 onClick={() => handleClaim(earning.tokenMint)}
                 disabled={earning.claimableAmount <= 0 || claimingToken === earning.tokenMint}
-                className="btn-primary px-3 py-1.5 text-[9px]"
+                className="btn-primary px-3 py-1.5 text-meta"
               >
                 {claimingToken === earning.tokenMint ? (
                   <Loader2 size={10} className="animate-spin" />
@@ -111,7 +111,7 @@ export function FeeClaimsTab() {
         ))}
 
         {claimableEarnings.length === 0 && (
-          <p className="text-center text-[10px] text-[#666] font-mono py-8">
+          <p className="text-center text-meta text-muted-high font-mono py-8">
             No claimable fees yet.
           </p>
         )}

@@ -10,14 +10,14 @@ export function EmptyState() {
         <Rocket size={24} className="text-[#333]" />
       </div>
       <div className="flex flex-col items-center gap-1">
-        <span className="text-sm font-bold text-[#EDEDED]">No tokens launched yet</span>
-        <span className="text-[10px] text-[#666] font-mono">
+        <span className="text-sm font-bold text-fg">No tokens launched yet</span>
+        <span className="text-meta text-muted-high font-mono">
           Create your first token to start earning fees
         </span>
       </div>
       <Link
         href="/launch"
-        className="btn-primary flex items-center gap-2 px-5 py-2.5 text-[11px]"
+        className="btn-primary flex items-center gap-2 px-5 py-2.5 text-meta"
       >
         <Rocket size={12} />
         Launch Your First Token

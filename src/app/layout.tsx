@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
-      <body className="antialiased text-[#EDEDED]">
+      <body className="antialiased text-fg">
         <ErrorBoundary fallbackMessage="App initialization failed">
           <WalletProviderWrapper>
             <TurnkeyProvider>

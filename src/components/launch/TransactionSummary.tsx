@@ -63,36 +63,36 @@ export function TransactionSummary() {
 
       {/* Cost Breakdown */}
       <div className="flex flex-col gap-2">
-        <div className="flex justify-between text-[10px]">
-          <span className="text-[#888]">Initial buy</span>
-          <span className="text-[#EDEDED] font-mono">{initialBuyAmount} SOL</span>
+        <div className="flex justify-between text-meta">
+          <span className="text-fg-soft">Initial buy</span>
+          <span className="text-fg font-mono">{initialBuyAmount} SOL</span>
         </div>
-        <div className="flex justify-between text-[10px]">
-          <span className="text-[#888]">Solana tx fees</span>
-          <span className="text-[#EDEDED] font-mono">~{txFeeEstimate} SOL</span>
+        <div className="flex justify-between text-meta">
+          <span className="text-fg-soft">Solana tx fees</span>
+          <span className="text-fg font-mono">~{txFeeEstimate} SOL</span>
         </div>
-        <div className="flex justify-between text-[10px]">
-          <span className="text-[#888]">API fees</span>
-          <span className="text-[#39FF14] font-mono font-bold">FREE</span>
+        <div className="flex justify-between text-meta">
+          <span className="text-fg-soft">API fees</span>
+          <span className="text-acid-green font-mono font-bold">FREE</span>
         </div>
         {tipEnabled && tipAmountSol > 0 && (
-          <div className="flex justify-between text-[10px]">
-            <span className="text-[#FFD700] flex items-center gap-1">
+          <div className="flex justify-between text-meta">
+            <span className="text-gold flex items-center gap-1">
               <Heart size={8} /> Tip
             </span>
-            <span className="text-[#FFD700] font-mono">{tipAmountSol} SOL</span>
+            <span className="text-gold font-mono">{tipAmountSol} SOL</span>
           </div>
         )}
-        <div className="border-t border-white/10 pt-2 flex justify-between text-[11px]">
-          <span className="text-[#EDEDED] font-bold">Total</span>
-          <span className="text-[#39FF14] font-mono font-bold">~{totalCost.toFixed(3)} SOL</span>
+        <div className="border-t border-white/10 pt-2 flex justify-between text-meta">
+          <span className="text-fg font-bold">Total</span>
+          <span className="text-acid-green font-mono font-bold">~{totalCost.toFixed(3)} SOL</span>
         </div>
       </div>
 
       {/* Large claimer set notice */}
       {feeClaimers.length > 15 && (
         <div className="badge-blue p-2.5">
-          <span className="text-[9px] font-mono">
+          <span className="text-meta font-mono">
             {feeClaimers.length} fee claimers — additional lookup table TX will be created
           </span>
         </div>
@@ -101,7 +101,7 @@ export function TransactionSummary() {
       {/* Balance Warning */}
       {connected && !hasSufficientBalance && (
         <div className="badge-red p-2.5">
-          <span className="text-[9px] font-mono">
+          <span className="text-meta font-mono">
             Insufficient balance. Need {totalCost.toFixed(3)} SOL, have {(balance || 0).toFixed(3)} SOL
           </span>
         </div>
@@ -111,14 +111,14 @@ export function TransactionSummary() {
       {isProcessing && (
         <div className="badge-green flex items-center gap-2 p-2.5">
           <Loader2 size={12} className="animate-spin" />
-          <span className="text-[9px] font-mono">{STATUS_LABELS[status]}</span>
+          <span className="text-meta font-mono">{STATUS_LABELS[status]}</span>
         </div>
       )}
 
       {status === 'success' && result && (
         <div className="badge-green flex items-center gap-2 p-2.5">
           <CheckCircle2 size={12} />
-          <span className="text-[9px] font-mono">
+          <span className="text-meta font-mono">
             Token launched! Redirecting to terminal...
           </span>
         </div>
@@ -127,7 +127,7 @@ export function TransactionSummary() {
       {status === 'error' && error && (
         <div className="badge-red flex items-center gap-2 p-2.5">
           <XCircle size={12} />
-          <span className="text-[9px] font-mono">{error}</span>
+          <span className="text-meta font-mono">{error}</span>
         </div>
       )}
 
@@ -147,7 +147,7 @@ export function TransactionSummary() {
       </button>
 
       {!isFormValid && connected && (
-        <p className="text-[8px] text-[#666] font-mono text-center">
+        <p className="text-meta text-muted-high font-mono text-center">
           Fill all fields and configure fee claimers (total must equal 100%)
         </p>
       )}

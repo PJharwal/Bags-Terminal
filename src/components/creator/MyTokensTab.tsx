@@ -23,7 +23,7 @@ export function MyTokensTab() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 size={20} className="text-[#39FF14] animate-spin" />
+        <Loader2 size={20} className="text-acid-green animate-spin" />
       </div>
     );
   }
