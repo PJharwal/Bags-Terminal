@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Copy, ExternalLink, Link2, Check } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
 import { BagsLogo } from "@/components/ui/BagsLogo";
+import { usePriceFlash } from "@/components/ui/usePriceFlash";
+import { cn } from "@/lib/utils";
 
 // Provider icon mapping
 const providerIcons: Record<string, string> = {
@@ -57,8 +59,9 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
         });
     };
 
-    const priceChangeColor = token.priceChange24h >= 0 ? "text-[#39FF14]" : "text-[#FF003C]";
+    const priceChangeColor = token.priceChange24h >= 0 ? "text-acid-green" : "text-error";
     const priceChangeSign = token.priceChange24h >= 0 ? "+" : "";
+    const priceFlash = usePriceFlash(token.priceUsd);
 
     return (
         <div className="glass-heavy gradient-border flex items-center justify-between px-4 py-3">
@@ -74,31 +77,37 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                         />
                     ) : (
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#39FF14]/30 to-[#00F0FF]/30 border border-white/20 flex items-center justify-center">
-                            <span className="text-xs font-bold text-[#EDEDED]">
+                            <span className="text-xs font-bold text-fg">
                                 {token.symbol.charAt(0)}
                             </span>
                         </div>
                     )}
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-[#EDEDED]">{token.symbol}</span>
+                    <div className="flex flex-col min-w-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span
+                                className="text-sm font-bold text-fg truncate max-w-[120px]"
+                                title={token.symbol}
+                            >
+                                {token.symbol}
+                            </span>
                             {token.hasBagsFees && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#39FF14]/10 border border-[#39FF14]/20 text-[8px] text-[#39FF14] font-bold uppercase">
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-acid-green/10 border border-acid-green/20 text-meta text-acid-green font-bold uppercase shrink-0">
                                     <BagsLogo size={10} /> BAGS
                                 </span>
                             )}
-                            <span className="text-xs text-[#666]">{token.name}</span>
+                            <span className="text-xs text-muted-high truncate" title={token.name}>{token.name}</span>
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className="text-[10px] text-[#888] font-mono">
+                            <span className="text-meta text-fg-soft font-mono num">
                                 {token.tokenId.slice(0, 6)}...{token.tokenId.slice(-4)}
                             </span>
                             <button
                                 onClick={handleCopyAddress}
-                                className="text-[#666] hover:text-[#EDEDED] transition-colors"
+                                className="text-muted-high hover:text-fg transition-colors focus-ring"
                                 title="Copy address"
+                                aria-label="Copy token address"
                             >
-                                <Copy size={10} />
+                                <Copy size={10} aria-hidden="true" />
                             </button>
                         </div>
                     </div>
@@ -111,10 +120,10 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <div className="flex flex-col">
                     <span className="label">Price</span>
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-[#EDEDED]">
+                        <span className={cn("text-sm font-bold text-fg num px-1 -mx-1", priceFlash)}>
                             ${formatPrice(token.priceUsd)}
                         </span>
-                        <span className={`text-[10px] font-mono ${token.priceChange24h >= 0 ? 'number-glow-green' : 'number-glow-red'}`}>
+                        <span className={`text-meta font-mono num ${priceChangeColor} ${token.priceChange24h >= 0 ? 'number-glow-green' : 'number-glow-red'}`}>
                             {priceChangeSign}{token.priceChange24h.toFixed(1)}%
                         </span>
                     </div>
@@ -136,7 +145,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                         FEES
                     </span>
                     <div className="flex items-center gap-1">
-                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "number-glow-gold" : "text-[#EDEDED]"}`}>
+                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "number-glow-gold" : "text-fg"}`}>
                             {formatSOL(token.lifetimeFees)} SOL
                         </span>
                     </div>
@@ -148,7 +157,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                         <span className="label">EARNERS</span>
                         <div className="flex items-center gap-1">
                             {token.topEarner && (
-                                <span className="text-[10px] text-[#00F0FF] font-mono">
+                                <span className="text-meta text-[#00F0FF] font-mono">
                                     {token.topEarner.provider && providerIcons[token.topEarner.provider]
                                         ? `${providerIcons[token.topEarner.provider]} `
                                         : ""}
@@ -158,7 +167,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                                 </span>
                             )}
                             {token.feeEarners.length > 1 && (
-                                <span className="text-[9px] text-[#666]">
+                                <span className="text-meta text-muted-high">
                                     +{token.feeEarners.length - 1}
                                 </span>
                             )}
@@ -176,8 +185,8 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                                 style={{ width: `${token.bondingProgress}%` }}
                             />
                         </div>
-                        <span className="text-[10px] font-mono text-[#EDEDED]">
-                            {token.bondingProgress}%
+                        <span className="text-meta font-mono text-fg num">
+                            {Math.round(token.bondingProgress)}%
                         </span>
                     </div>
                 </div>
@@ -187,11 +196,11 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
             <div className="flex items-center gap-2">
                 {/* Deployer Badge */}
                 {token.deployerName && (
-                    <div className="flex items-center gap-2 px-2 py-1 bg-[#1A1A1A] border border-white/10 rounded">
-                        <span className="text-[9px] text-[#666] uppercase">DEV</span>
-                        <span className="text-[10px] text-[#EDEDED] font-mono">{token.deployerName}</span>
+                    <div className="flex items-center gap-2 px-2 py-1 bg-elevated border border-white/10 rounded">
+                        <span className="text-meta text-muted-high uppercase">DEV</span>
+                        <span className="text-meta text-fg font-mono">{token.deployerName}</span>
                         {token.deployerSuccessRate && (
-                            <span className="text-[10px] text-[#39FF14] font-mono">
+                            <span className="text-meta text-acid-green font-mono">
                                 {token.deployerSuccessRate}%
                             </span>
                         )}
@@ -211,7 +220,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                         title="Copy share link"
                     >
                         {linkCopied ? (
-                            <Check size={12} className="text-[#39FF14]" />
+                            <Check size={12} className="text-acid-green" />
                         ) : (
                             <Link2 size={12} />
                         )}
@@ -226,7 +235,7 @@ function StatItem({ label, value }: { label: string; value: string }) {
     return (
         <div className="flex flex-col">
             <span className="label">{label}</span>
-            <span className="text-xs font-bold text-[#EDEDED] font-mono">{value}</span>
+            <span className="text-xs font-bold text-fg font-mono num">{value}</span>
         </div>
     );
 }

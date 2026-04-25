@@ -23,6 +23,7 @@ import {
     TrendingUp,
     ArrowUpRight,
 } from "lucide-react";
+import { LiveDot } from "@/components/ui/LiveDot";
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 import type { RawTokenData } from "@/lib/bags-types";
 import { useSolPrice } from "@/hooks/useSolPrice";
@@ -278,39 +279,36 @@ export default function PulsePage() {
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
+        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-fg overflow-hidden relative font-mono">
             {/* ── HEADER BAR ──────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808] z-10">
-                <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-5 py-3 border-b border-white/5 bg-[#080808] z-10">
+                <div className="flex items-center gap-4 flex-wrap">
                     {/* Logo / Title */}
                     <div className="flex items-center gap-2">
-                        <Activity size={16} className="text-[#39FF14]" />
+                        <Activity size={16} className="text-acid-green" />
                         <h1 className="text-sm font-display font-bold tracking-tight uppercase">
                             PULSE
                         </h1>
                     </div>
 
                     {/* Connection badge */}
-                    <div
-                        className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest border ${
-                            isConnected
-                                ? "border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5"
-                                : "border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5"
-                        }`}
-                    >
-                        {isConnected ? (
-                            <Wifi size={10} />
-                        ) : (
-                            <WifiOff size={10} />
-                        )}
-                        {isConnected ? "LIVE" : "OFFLINE"}
-                    </div>
+                    <LiveDot
+                        status={isConnected ? "live" : "down"}
+                        size="xs"
+                        label={
+                            <span className="inline-flex items-center gap-1 font-bold uppercase tracking-widest">
+                                {isConnected ? <Wifi size={10} aria-hidden="true" /> : <WifiOff size={10} aria-hidden="true" />}
+                                {isConnected ? "LIVE" : "OFFLINE"}
+                            </span>
+                        }
+                        className={`px-2.5 py-1.5 min-h-6 border ${isConnected ? "border-acid-green/20 bg-acid-green/5" : "border-error/20 bg-error/5"}`}
+                    />
 
                     {/* Refresh */}
                     <button
                         onClick={handleRefresh}
                         disabled={isLoading}
-                        className="p-1.5 text-[#666] hover:text-[#EDEDED] hover:bg-white/5 transition-all disabled:opacity-30"
+                        className="p-1.5 text-muted-high hover:text-fg hover:bg-white/5 transition-all disabled:opacity-30"
                         title="Refresh data"
                     >
                         <RefreshCw
@@ -321,17 +319,17 @@ export default function PulsePage() {
                 </div>
 
                 {/* Right side: network + stats */}
-                <div className="flex items-center gap-5">
+                <div className="flex items-center gap-3 sm:gap-5 flex-wrap">
                     {/* Token count */}
                     {activeTab === "live" && (
-                        <div className="flex items-center gap-4 text-[10px] font-mono">
+                        <div className="flex items-center gap-4 text-meta font-mono">
                             <div className="flex items-center gap-1.5">
-                                <span className="text-[#666]">TOKENS</span>
+                                <span className="text-muted-high">TOKENS</span>
                                 <span
                                     className={
                                         totalTokens > 0
-                                            ? "text-[#39FF14] font-bold"
-                                            : "text-[#666]"
+                                            ? "text-acid-green font-bold"
+                                            : "text-muted-high"
                                     }
                                 >
                                     {totalTokens}
@@ -344,10 +342,10 @@ export default function PulsePage() {
                     <div className="flex border border-white/5">
                         <button
                             onClick={() => setNetwork("solana")}
-                            className={`px-3 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                            className={`px-3 py-1.5 min-h-6 text-meta font-bold uppercase tracking-wider transition-all ${
                                 network === "solana"
-                                    ? "bg-[#39FF14] text-black"
-                                    : "text-[#666] hover:text-[#EDEDED]"
+                                    ? "bg-acid-green text-black"
+                                    : "text-muted-high hover:text-fg"
                             }`}
                         >
                             SOL
@@ -356,7 +354,7 @@ export default function PulsePage() {
                             <button
                                 key={net}
                                 disabled
-                                className="px-3 py-1 text-[9px] font-bold uppercase text-[#333] cursor-not-allowed border-l border-white/5"
+                                className="px-3 py-1.5 min-h-6 text-meta font-bold uppercase text-[#333] cursor-not-allowed border-l border-white/5"
                             >
                                 {net === "base" ? "BASE" : "ETH"}
                             </button>
@@ -366,16 +364,16 @@ export default function PulsePage() {
             </div>
 
             {/* ── TAB BAR + FILTERS ──────────────────────────────── */}
-            <div className="flex items-center justify-between px-5 py-2 border-b border-white/5 bg-[#060606] z-10">
-                <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center justify-between gap-y-2 px-5 py-2 border-b border-white/5 bg-[#060606] z-10">
+                <div className="flex items-center gap-3 flex-wrap">
                     {/* Tabs */}
                     <div className="flex border border-white/5">
                         <button
                             onClick={() => setActiveTab("live")}
-                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
+                            className={`px-3 py-1.5 text-meta font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all ${
                                 activeTab === "live"
-                                    ? "bg-[#39FF14] text-black"
-                                    : "text-[#888] hover:text-[#EDEDED]"
+                                    ? "bg-acid-green text-black"
+                                    : "text-fg-soft hover:text-fg"
                             }`}
                         >
                             <Radio size={10} />
@@ -383,10 +381,10 @@ export default function PulsePage() {
                         </button>
                         <button
                             onClick={() => setActiveTab("bags")}
-                            className={`px-3 py-1.5 text-[9px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border-l border-white/5 ${
+                            className={`px-3 py-1.5 text-meta font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all border-l border-white/5 ${
                                 activeTab === "bags"
                                     ? "bg-[#FFD700] text-black"
-                                    : "text-[#888] hover:text-[#EDEDED]"
+                                    : "text-fg-soft hover:text-fg"
                             }`}
                         >
                             <Rocket size={10} />
@@ -411,10 +409,10 @@ export default function PulsePage() {
                                         onClick={() =>
                                             setFilters({ tierFilter: f.key })
                                         }
-                                        className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                        className={`px-2.5 py-1.5 min-h-6 text-meta font-bold uppercase tracking-wider transition-all ${
                                             filters.tierFilter === f.key
-                                                ? "bg-white/10 text-[#EDEDED]"
-                                                : "text-[#666] hover:text-[#EDEDED]"
+                                                ? "bg-white/10 text-fg"
+                                                : "text-muted-high hover:text-fg"
                                         }`}
                                     >
                                         {f.label}
@@ -430,10 +428,10 @@ export default function PulsePage() {
                                         hideRisky: !filters.hideRisky,
                                     })
                                 }
-                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 min-h-6 text-meta font-bold uppercase tracking-wider transition-all ${
                                     filters.hideRisky
-                                        ? "bg-[#FF003C]/10 text-[#FF003C] border border-[#FF003C]/20"
-                                        : "text-[#666] hover:text-[#EDEDED]"
+                                        ? "bg-[#FF003C]/10 text-error border border-[#FF003C]/20"
+                                        : "text-muted-high hover:text-fg"
                                 }`}
                             >
                                 <ShieldAlert size={10} />
@@ -448,10 +446,10 @@ export default function PulsePage() {
                                     });
                                     handleRefresh();
                                 }}
-                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                className={`flex items-center gap-1.5 px-2.5 py-1.5 min-h-6 text-meta font-bold uppercase tracking-wider transition-all ${
                                     filters.bagsOnly
-                                        ? "bg-[#39FF14]/10 text-[#39FF14] border border-[#39FF14]/20"
-                                        : "text-[#666] hover:text-[#EDEDED]"
+                                        ? "bg-acid-green/10 text-acid-green border border-[#39FF14]/20"
+                                        : "text-muted-high hover:text-fg"
                                 }`}
                             >
                                 BAGS{filters.bagsOnly ? " ON" : ""}
@@ -466,12 +464,12 @@ export default function PulsePage() {
                 <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
-                    className="px-5 py-2 bg-[#FF003C]/10 border-b border-[#FF003C]/20 text-[#FF003C] text-[10px] font-mono flex items-center justify-between"
+                    className="px-5 py-2 bg-[#FF003C]/10 border-b border-[#FF003C]/20 text-error text-meta font-mono flex items-center justify-between"
                 >
                     <span>{error}</span>
                     <button
                         onClick={() => setError(null)}
-                        className="text-[#FF003C]/60 hover:text-[#FF003C] text-xs"
+                        className="text-error/60 hover:text-error text-xs"
                     >
                         Dismiss
                     </button>
@@ -485,11 +483,11 @@ export default function PulsePage() {
                 {activeTab === "bags" ? (
                     <LaunchFeedSection />
                 ) : (
-                    <div className="flex-1 grid grid-cols-3 divide-x divide-white/5">
+                    <div className="flex-1 overflow-x-auto custom-scrollbar grid grid-cols-3 divide-x divide-white/5 min-w-0 [grid-auto-columns:minmax(280px,1fr)] sm:[grid-auto-columns:auto]">
                         {COLUMNS.map((col) => (
                             <div
                                 key={col.state}
-                                className="relative flex flex-col min-h-0"
+                                className="relative flex flex-col min-h-0 min-w-[280px] sm:min-w-0"
                             >
                                 {/* Column header */}
                                 <div className="px-4 py-2.5 border-b border-white/5 bg-[#080808] flex justify-between items-center">
@@ -499,23 +497,23 @@ export default function PulsePage() {
                                             style={{ color: col.color }}
                                         />
                                         <span
-                                            className="text-[10px] font-bold uppercase tracking-widest"
+                                            className="text-meta font-bold uppercase tracking-widest"
                                             style={{ color: col.color }}
                                         >
                                             {col.label}
                                         </span>
-                                        <span className="text-[9px] text-[#444] hidden lg:inline">
+                                        <span className="text-meta text-[#444] hidden lg:inline">
                                             {col.description}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono text-[#555]">
+                                        <span className="text-meta font-mono text-muted-mid">
                                             {items[col.state].length}
                                         </span>
                                         {/* Live pulse dot for NEW column */}
                                         {col.state === "NEW" &&
                                             isConnected && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
+                                                <div className="w-1.5 h-1.5 rounded-full bg-acid-green animate-pulse" />
                                             )}
                                     </div>
                                 </div>
@@ -525,17 +523,21 @@ export default function PulsePage() {
                                     {isLoading ? (
                                         <div className="flex flex-col items-center justify-center h-full gap-3">
                                             <div className="w-5 h-5 border-2 border-white/10 border-t-[#39FF14] rounded-full animate-spin" />
-                                            <span className="text-[10px] text-[#555] uppercase tracking-widest">
+                                            <span className="text-meta text-muted-mid uppercase tracking-widest">
                                                 Loading...
                                             </span>
                                         </div>
                                     ) : items[col.state].length === 0 ? (
-                                        <div className="flex flex-col items-center justify-center h-full gap-2 px-6">
+                                        <div
+                                            role="status"
+                                            className="flex flex-col items-center justify-center h-full gap-2 px-6"
+                                        >
                                             <col.icon
                                                 size={20}
-                                                className="text-[#222]"
+                                                aria-hidden="true"
+                                                className="text-white/30"
                                             />
-                                            <span className="text-[10px] text-[#444] text-center">
+                                            <span className="text-meta text-muted-high text-center">
                                                 {filters.bagsOnly
                                                     ? col.emptyBagsMsg
                                                     : col.emptyMsg}

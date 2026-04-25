@@ -25,7 +25,7 @@ import { useState } from "react";
 function StatBlock({
     label,
     value,
-    color = "text-[#EDEDED]",
+    color = "text-fg",
 }: {
     label: string;
     value: string | number;
@@ -33,7 +33,7 @@ function StatBlock({
 }) {
     return (
         <div className="p-3 bg-[#0A0A0A] border border-white/5 hover:border-white/10 transition-colors">
-            <div className="text-[8px] text-[#555] uppercase tracking-widest mb-1 font-mono">
+            <div className="text-meta text-muted-mid uppercase tracking-widest mb-1 font-mono">
                 {label}
             </div>
             <div className={`text-sm font-bold font-mono ${color}`}>
@@ -98,7 +98,7 @@ export function PulseDrawer() {
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (
-                                    <span className="text-xs font-bold text-[#555]">
+                                    <span className="text-xs font-bold text-muted-mid">
                                         {item.symbol
                                             .replace("$", "")
                                             .slice(0, 2)}
@@ -106,33 +106,33 @@ export function PulseDrawer() {
                                 )}
                             </div>
                             <div>
-                                <h2 className="text-lg font-bold text-[#EDEDED]">
+                                <h2 className="text-lg font-bold text-fg">
                                     {item.symbol}
                                 </h2>
-                                <div className="text-[10px] text-[#666]">
+                                <div className="text-meta text-muted-high">
                                     {item.name}
                                 </div>
                             </div>
                         </div>
                         <button
                             onClick={closeDrawer}
-                            className="p-1.5 text-[#666] hover:text-[#EDEDED] hover:bg-white/5 transition-all"
+                            className="p-1.5 text-muted-high hover:text-fg hover:bg-white/5 transition-all"
                         >
                             <X size={14} />
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-3 text-[10px] text-[#888]">
+                    <div className="flex items-center gap-3 text-meta text-fg-soft">
                         <span className="flex items-center gap-1">
                             <Activity size={10} />{" "}
                             {formatAge(item.ageSeconds)}
                         </span>
                         <div className="w-px h-3 bg-white/10" />
-                        <span style={{ color: bondingColor }}>
-                            {item.bondingProgress}% BONDED
+                        <span className="num" style={{ color: bondingColor }}>
+                            {Math.round(item.bondingProgress)}% BONDED
                         </span>
                         <div className="w-px h-3 bg-white/10" />
-                        <span className="text-[#666]">
+                        <span className="text-muted-high">
                             {item.state.replace("_", " ")}
                         </span>
                     </div>
@@ -145,7 +145,7 @@ export function PulseDrawer() {
                         <StatBlock
                             label="MARKET CAP"
                             value={formatCurrency(item.marketCap)}
-                            color="text-[#39FF14]"
+                            color="text-acid-green"
                         />
                         <StatBlock
                             label="LIQUIDITY"
@@ -164,14 +164,14 @@ export function PulseDrawer() {
                     {/* Bonding Curve */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-[#666]">
+                            <span className="text-meta font-bold uppercase tracking-widest text-muted-high">
                                 BONDING CURVE
                             </span>
                             <span
-                                className="text-xs font-bold font-mono"
+                                className="text-xs font-bold font-mono num"
                                 style={{ color: bondingColor }}
                             >
-                                {item.bondingProgress}%
+                                {Math.round(item.bondingProgress)}%
                             </span>
                         </div>
                         <div className="h-1.5 w-full bg-[#111] overflow-hidden">
@@ -192,7 +192,7 @@ export function PulseDrawer() {
 
                     {/* Risk Assessment */}
                     <div>
-                        <h3 className="text-[9px] font-bold uppercase tracking-widest text-[#666] mb-2 flex items-center gap-1.5">
+                        <h3 className="text-meta font-bold uppercase tracking-widest text-muted-high mb-2 flex items-center gap-1.5">
                             <Shield size={10} /> RISK
                         </h3>
                         {item.riskFlags.length > 0 ? (
@@ -202,24 +202,24 @@ export function PulseDrawer() {
                                         key={i}
                                         className={`flex items-center gap-2 p-2.5 text-xs font-bold uppercase ${
                                             flag.severity === "critical"
-                                                ? "bg-[#FF003C]/8 border border-[#FF003C]/20 text-[#FF003C]"
-                                                : "bg-[#FFD700]/8 border border-[#FFD700]/20 text-[#FFD700]"
+                                                ? "bg-[#FF003C]/8 border border-[#FF003C]/20 text-error"
+                                                : "bg-[#FFD700]/8 border border-[#FFD700]/20 text-gold"
                                         }`}
                                     >
                                         <AlertTriangle size={12} />
-                                        <span className="text-[10px]">
+                                        <span className="text-meta">
                                             {flag.type.replace(/_/g, " ")}
                                         </span>
-                                        <span className="ml-auto text-[8px] opacity-60">
+                                        <span className="ml-auto text-meta opacity-60">
                                             {flag.severity}
                                         </span>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="p-2.5 bg-[#39FF14]/5 border border-[#39FF14]/15 text-[#39FF14] flex items-center gap-2">
+                            <div className="p-2.5 bg-acid-green/5 border border-[#39FF14]/15 text-acid-green flex items-center gap-2">
                                 <Shield size={12} />
-                                <span className="text-[10px] font-bold uppercase">
+                                <span className="text-meta font-bold uppercase">
                                     NO RISKS DETECTED
                                 </span>
                             </div>
@@ -237,25 +237,25 @@ export function PulseDrawer() {
 
                     {/* Deployer Info */}
                     <div>
-                        <h3 className="text-[9px] font-bold uppercase tracking-widest text-[#666] mb-2 flex items-center gap-1.5">
+                        <h3 className="text-meta font-bold uppercase tracking-widest text-muted-high mb-2 flex items-center gap-1.5">
                             <Terminal size={10} /> DEPLOYER
                         </h3>
                         <div className="p-3 bg-[#0A0A0A] border border-white/5 space-y-2">
                             <div className="flex justify-between items-center">
-                                <span className="text-[9px] text-[#555]">
+                                <span className="text-meta text-muted-mid">
                                     ADDRESS
                                 </span>
-                                <div className="flex items-center gap-2 text-[10px] font-mono text-[#EDEDED]">
+                                <div className="flex items-center gap-2 text-meta font-mono text-fg">
                                     {item.tokenId.slice(0, 6)}...
                                     {item.tokenId.slice(-4)}
                                     <button
                                         onClick={handleCopyAddress}
-                                        className="text-[#666] hover:text-[#EDEDED] transition-colors"
+                                        className="text-muted-high hover:text-fg transition-colors"
                                     >
                                         {copied ? (
                                             <Check
                                                 size={10}
-                                                className="text-[#39FF14]"
+                                                className="text-acid-green"
                                             />
                                         ) : (
                                             <Copy size={10} />
@@ -264,10 +264,10 @@ export function PulseDrawer() {
                                 </div>
                             </div>
                             <div className="flex justify-between items-center">
-                                <span className="text-[9px] text-[#555]">
+                                <span className="text-meta text-muted-mid">
                                     LAUNCHES
                                 </span>
-                                <span className="text-[10px] font-mono text-[#EDEDED]">
+                                <span className="text-meta font-mono text-fg">
                                     {item.deployerLaunches || 0}
                                 </span>
                             </div>
@@ -282,7 +282,7 @@ export function PulseDrawer() {
                             router.push(`/terminal/${item.tokenId}?action=buy`);
                             closeDrawer();
                         }}
-                        className="w-full py-3 bg-[#39FF14] text-black font-bold uppercase tracking-wider hover:bg-[#32E010] transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-acid-green text-black font-bold uppercase tracking-wider hover:bg-[#32E010] transition-colors flex items-center justify-center gap-2"
                     >
                         <Zap size={16} /> OPEN_TERMINAL
                     </button>
@@ -290,7 +290,7 @@ export function PulseDrawer() {
                         href={`https://solscan.io/token/${item.tokenId}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-3 bg-transparent border border-white/10 text-[#888] font-bold uppercase tracking-wider hover:border-white/30 hover:text-[#EDEDED] transition-colors flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-transparent border border-white/10 text-fg-soft font-bold uppercase tracking-wider hover:border-white/30 hover:text-fg transition-colors flex items-center justify-center gap-2"
                     >
                         <ExternalLink size={16} /> VIEW_ON_SOLSCAN
                     </a>

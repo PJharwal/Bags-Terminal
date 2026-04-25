@@ -43,6 +43,7 @@ export function useSolPrice() {
     }, []);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- refresh() updates state from an external network fetch on mount + interval; this is the documented pattern for subscriptions.
         refresh();
         const interval = setInterval(refresh, CACHE_DURATION);
         return () => clearInterval(interval);

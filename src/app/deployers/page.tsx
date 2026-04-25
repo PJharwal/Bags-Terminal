@@ -7,6 +7,7 @@ import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency, getScoreColor } from "@/lib/format";
 import type { PulseItem } from "@/lib/types";
 import { Search, Shield, AlertTriangle, Crosshair, Database, Wifi, WifiOff, Loader2 } from "lucide-react";
+import { SearchInput } from "@/components/ui/SearchInput";
 import Link from "next/link";
 
 // Aggregate deployers from tokens
@@ -123,38 +124,35 @@ export default function DeployersPage() {
             <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
                 <div className="border-b border-white/10 px-6 py-6 bg-[#0A0A0A]">
-                    <div className="flex justify-between items-start mb-6">
+                    <div className="flex flex-wrap justify-between items-start gap-3 mb-6">
                         <div>
-                            <h1 className="text-3xl font-display font-bold text-[#EDEDED] mb-2 tracking-tighter">
+                            <h1 className="text-3xl font-display font-bold text-fg mb-2 tracking-tighter">
                                 DEPLOYER_DB
                             </h1>
-                            <p className="text-xs text-[#888] uppercase tracking-widest">
+                            <p className="text-xs text-fg-soft uppercase tracking-widest">
                                 Aggregated from live token data
                             </p>
                         </div>
-                        <div className="flex items-center gap-4">
-                            <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2`}>
-                                {isConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+                            <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2 px-2 py-1`}>
+                                {isConnected ? <Wifi size={14} aria-hidden="true" /> : <WifiOff size={14} aria-hidden="true" />}
                                 <span className="text-xs font-bold">{isConnected ? 'LIVE' : 'OFFLINE'}</span>
                             </div>
-                            <div className="badge-muted flex items-center gap-2">
-                                <Database size={14} />
-                                <span className="text-xs font-bold">{deployers.length} DEPLOYERS</span>
+                            <div className="badge-muted flex items-center gap-2 px-2 py-1">
+                                <Database size={14} aria-hidden="true" />
+                                <span className="text-xs font-bold num">{deployers.length} DEPLOYERS</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Search Bar */}
-                    <div className="relative">
-                        <input
-                            type="text"
-                            placeholder="SEARCH_WALLET_OR_ALIAS..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="input w-full pl-10 uppercase"
-                        />
-                        <Search className="absolute left-3 top-3.5 text-[#666]" size={16} />
-                    </div>
+                    <SearchInput
+                        placeholder="SEARCH_WALLET_OR_ALIAS..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        aria-label="Search wallet or alias"
+                        className="uppercase"
+                    />
                 </div>
 
                 {/* List Content */}
@@ -163,7 +161,7 @@ export default function DeployersPage() {
 
                     {!isConnected && filteredDeployers.length === 0 ? (
                         <div className="flex-1 flex items-center justify-center">
-                            <div className="flex items-center gap-3 text-[#666]">
+                            <div className="flex items-center gap-3 text-muted-high">
                                 <Loader2 size={16} className="animate-spin" />
                                 <span className="text-sm font-mono">LOADING_DATA...</span>
                             </div>
@@ -184,22 +182,22 @@ export default function DeployersPage() {
                                         key={deployer.wallet}
                                         onClick={() => setSelectedDeployer(deployer)}
                                         className={`table-row cursor-pointer group ${selectedDeployer?.wallet === deployer.wallet
-                                                ? "bg-[#39FF14]/10 border-l-2 border-[#39FF14]"
+                                                ? "bg-acid-green/10 border-l-2 border-[#39FF14]"
                                                 : "border-l-2 border-transparent"
                                             }`}
                                     >
                                         <td className="py-4 px-6">
                                             <div className="flex items-center gap-3">
                                                 <div className={`w-8 h-8 flex items-center justify-center border ${
-                                                    deployer.risk_flags.length > 0 ? 'border-[#FF003C] text-[#FF003C]' : 'border-[#39FF14] text-[#39FF14]'
+                                                    deployer.risk_flags.length > 0 ? 'border-[#FF003C] text-error' : 'border-[#39FF14] text-acid-green'
                                                 } bg-black`}>
                                                     <Crosshair size={14} />
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-[#EDEDED] group-hover:text-[#39FF14] transition-colors">
+                                                    <div className="font-bold text-fg group-hover:text-acid-green transition-colors">
                                                         {deployer.name || deployer.wallet}
                                                     </div>
-                                                    <div className="text-[10px] text-[#666] font-mono">{deployer.wallet}</div>
+                                                    <div className="text-meta text-muted-high font-mono">{deployer.wallet}</div>
                                                 </div>
                                             </div>
                                         </td>
@@ -218,11 +216,11 @@ export default function DeployersPage() {
                                             </div>
                                         </td>
 
-                                        <td className="py-4 px-4 text-center font-mono text-[#888]">
+                                        <td className="py-4 px-4 text-center font-mono text-fg-soft">
                                             {deployer.total_launches}
                                         </td>
 
-                                        <td className="py-4 px-6 text-right font-mono text-[#EDEDED]">
+                                        <td className="py-4 px-6 text-right font-mono text-fg">
                                             {formatCurrency(deployer.total_volume)}
                                         </td>
                                     </tr>
@@ -230,7 +228,7 @@ export default function DeployersPage() {
                             </tbody>
                         </table>
                     ) : (
-                        <div className="flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+                        <div className="flex-1 flex flex-col items-center justify-center text-muted-high py-12">
                             <Database size={32} className="mb-4 opacity-30" />
                             <p className="text-sm font-mono">No deployers found. Waiting for tokens...</p>
                         </div>
@@ -251,12 +249,12 @@ export default function DeployersPage() {
                         {/* Dossier Header */}
                         <div className="p-6 border-b border-white/10 bg-[#0A0A0A] sticky top-0 z-10">
                             <div className="flex justify-between items-start mb-4">
-                                <h2 className="text-xl font-display font-bold text-[#EDEDED] tracking-tight">
+                                <h2 className="text-xl font-display font-bold text-fg tracking-tight">
                                     TARGET_DOSSIER
                                 </h2>
                                 <button
                                     onClick={() => setSelectedDeployer(null)}
-                                    className="btn-ghost uppercase text-[10px] font-bold tracking-widest"
+                                    className="btn-ghost uppercase text-meta font-bold tracking-widest"
                                 >
                                     CLOSE [ESC]
                                 </button>
@@ -264,11 +262,11 @@ export default function DeployersPage() {
 
                             <div className="flex items-center gap-4 mb-4">
                                 <div className="w-16 h-16 bg-black border border-white/20 flex items-center justify-center">
-                                    <Shield size={24} className={selectedDeployer.risk_flags.length > 0 ? "text-[#FF003C]" : "text-[#39FF14]"} />
+                                    <Shield size={24} className={selectedDeployer.risk_flags.length > 0 ? "text-error" : "text-acid-green"} />
                                 </div>
                                 <div>
                                     <div className="text-lg font-bold text-white">{selectedDeployer.name || selectedDeployer.wallet}</div>
-                                    <div className="text-[10px] text-[#666] font-mono break-all">{selectedDeployer.wallet}</div>
+                                    <div className="text-meta text-muted-high font-mono break-all">{selectedDeployer.wallet}</div>
                                 </div>
                             </div>
 
@@ -292,7 +290,7 @@ export default function DeployersPage() {
 
                         {/* Risk Analysis */}
                         <div className="p-6 border-b border-white/10">
-                            <h3 className="text-xs font-bold text-[#666] uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <h3 className="text-xs font-bold text-muted-high uppercase tracking-widest mb-4 flex items-center gap-2">
                                 <AlertTriangle size={12} /> Risk_Profile
                             </h3>
 
@@ -315,7 +313,7 @@ export default function DeployersPage() {
 
                         {/* Launch History */}
                         <div className="p-6">
-                            <h3 className="text-xs font-bold text-[#666] uppercase tracking-widest mb-4">
+                            <h3 className="text-xs font-bold text-muted-high uppercase tracking-widest mb-4">
                                 Recent_Deployment_Log ({selectedDeployer.tokens.length})
                             </h3>
                             <div className="space-y-1">
@@ -323,14 +321,14 @@ export default function DeployersPage() {
                                     <Link key={token.tokenId} href={`/terminal/${token.tokenId}`}>
                                         <div className="flex items-center justify-between p-3 border border-white/5 hover:border-[#39FF14]/30 bg-black/20 transition-colors group cursor-pointer">
                                             <div className="flex items-center gap-3">
-                                                <span className="text-[10px] text-[#444] font-mono">0{i+1}</span>
-                                                <span className="font-bold text-[#EDEDED] group-hover:text-[#39FF14] transition-colors">{token.symbol}</span>
+                                                <span className="text-meta text-[#444] font-mono">0{i+1}</span>
+                                                <span className="font-bold text-fg group-hover:text-acid-green transition-colors">{token.symbol}</span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] ${token.state === 'MIGRATED' ? 'badge-green' : 'badge-muted'}`}>
+                                                <span className={`text-meta ${token.state === 'MIGRATED' ? 'badge-green' : 'badge-muted'}`}>
                                                     {token.state}
                                                 </span>
-                                                <span className="text-xs font-mono text-[#666]">
+                                                <span className="text-xs font-mono text-muted-high">
                                                     {formatCurrency(token.marketCap)}
                                                 </span>
                                             </div>

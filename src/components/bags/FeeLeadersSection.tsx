@@ -20,7 +20,7 @@ import type { BagsLeaderboardItem } from "@/lib/bags-types";
 
 const AVATAR_COLORS = [
   "bg-[#FF003C]",
-  "bg-[#39FF14]",
+  "bg-acid-green",
   "bg-[#00F0FF]",
   "bg-[#FAFF00]",
   "bg-[#FF00FF]",
@@ -37,13 +37,13 @@ function formatFeeSol(lamports: string): string {
 }
 
 function getOrganicScoreColor(score: number): string {
-  if (score >= 80) return "text-[#39FF14]";
+  if (score >= 80) return "text-acid-green";
   if (score >= 50) return "text-[#FAFF00]";
-  return "text-[#FF003C]";
+  return "text-error";
 }
 
 function getOrganicScoreBg(score: number): string {
-  if (score >= 80) return "bg-[#39FF14]/10 border-[#39FF14]/20";
+  if (score >= 80) return "bg-acid-green/10 border-[#39FF14]/20";
   if (score >= 50) return "bg-[#FAFF00]/10 border-[#FAFF00]/20";
   return "bg-[#FF003C]/10 border-[#FF003C]/20";
 }
@@ -52,7 +52,7 @@ function getRankStyle(index: number) {
   if (index === 0) return { border: "border-[#FFD700]/40", glow: "shadow-[0_0_20px_rgba(255,215,0,0.15)]", badge: "bg-[#FFD700] text-black" };
   if (index === 1) return { border: "border-[#C0C0C0]/30", glow: "shadow-[0_0_15px_rgba(192,192,192,0.1)]", badge: "bg-[#C0C0C0] text-black" };
   if (index === 2) return { border: "border-[#CD7F32]/30", glow: "shadow-[0_0_15px_rgba(205,127,50,0.1)]", badge: "bg-[#CD7F32] text-black" };
-  return { border: "border-white/6", glow: "", badge: "bg-white/10 text-[#888]" };
+  return { border: "border-white/6", glow: "", badge: "bg-white/10 text-fg-soft" };
 }
 
 function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number }) {
@@ -80,11 +80,11 @@ function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number 
       >
         {/* Rank badge */}
         <div className="flex items-center justify-between px-4 pt-3 pb-0">
-          <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${rank.badge}`}>
+          <span className={`text-meta font-mono font-bold px-2 py-0.5 rounded ${rank.badge}`}>
             #{index + 1}
           </span>
           {index < 3 && (
-            <Trophy size={14} className={index === 0 ? "text-[#FFD700]" : index === 1 ? "text-[#C0C0C0]" : "text-[#CD7F32]"} />
+            <Trophy size={14} className={index === 0 ? "text-gold" : index === 1 ? "text-[#C0C0C0]" : "text-[#CD7F32]"} />
           )}
         </div>
 
@@ -101,21 +101,21 @@ function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number 
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors truncate">
+              <span className="font-mono font-bold text-white group-hover:text-acid-green transition-colors truncate">
                 ${symbol}
               </span>
             </div>
-            <div className="text-[11px] text-[#666] truncate">{name}</div>
+            <div className="text-meta text-muted-high truncate">{name}</div>
           </div>
         </div>
 
         {/* Fee highlight */}
         <div className="mx-4 mb-3 p-2.5 bg-[#FFD700]/5 border border-[#FFD700]/15 rounded">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#FFD700] font-mono uppercase tracking-wider flex items-center gap-1">
+            <span className="text-meta text-gold font-mono uppercase tracking-wider flex items-center gap-1">
               <Coins size={10} /> Lifetime Fees
             </span>
-            <span className="text-base font-mono font-bold text-[#FFD700]">
+            <span className="text-base font-mono font-bold text-gold">
               {feeSol} SOL
             </span>
           </div>
@@ -124,19 +124,19 @@ function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number 
         {/* Metrics grid */}
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 px-4 pb-3">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#666] font-mono flex items-center gap-1">
+            <span className="text-meta text-muted-high font-mono flex items-center gap-1">
               <DollarSign size={9} /> MCap
             </span>
             <span className="text-xs font-mono text-white">{mcap > 0 ? formatCurrency(mcap) : "—"}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#666] font-mono flex items-center gap-1">
+            <span className="text-meta text-muted-high font-mono flex items-center gap-1">
               <Users size={9} /> Holders
             </span>
             <span className="text-xs font-mono text-white">{holderCount > 0 ? formatNumber(holderCount) : "—"}</span>
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#666] font-mono flex items-center gap-1">
+            <span className="text-meta text-muted-high font-mono flex items-center gap-1">
               <Shield size={9} /> Organic
             </span>
             {organicScore > 0 ? (
@@ -148,7 +148,7 @@ function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number 
             )}
           </div>
           <div className="flex items-center justify-between">
-            <span className="text-[10px] text-[#666] font-mono flex items-center gap-1">
+            <span className="text-meta text-muted-high font-mono flex items-center gap-1">
               <TrendingUp size={9} /> Creators
             </span>
             <span className="text-xs font-mono text-white">{creatorCount > 0 ? creatorCount : "—"}</span>
@@ -158,12 +158,12 @@ function LeaderCard({ item, index }: { item: BagsLeaderboardItem; index: number 
         {/* Bottom badges */}
         <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
           {organicScore > 0 && (
-            <span className={`text-[8px] px-1.5 py-0.5 rounded border font-mono ${getOrganicScoreBg(organicScore)} ${getOrganicScoreColor(organicScore)}`}>
+            <span className={`text-meta px-1.5 py-0.5 rounded border font-mono ${getOrganicScoreBg(organicScore)} ${getOrganicScoreColor(organicScore)}`}>
               {organicLabel || (organicScore >= 80 ? "HIGH" : organicScore >= 50 ? "MED" : "LOW")}
             </span>
           )}
           {item.creators && item.creators.length > 0 && (
-            <span className="text-[8px] px-1.5 py-0.5 rounded bg-[#FFD700]/10 border border-[#FFD700]/20 text-[#FFD700] font-mono">
+            <span className="text-meta px-1.5 py-0.5 rounded bg-[#FFD700]/10 border border-[#FFD700]/20 text-gold font-mono">
               FEE SHARING
             </span>
           )}
@@ -234,13 +234,13 @@ export default function FeeLeadersSection() {
             <div className="label label-gold mb-1 flex items-center gap-1">
               <Trophy size={10} /> Top Tokens
             </div>
-            <div className="text-2xl font-bold text-[#FFD700]">{items.length}</div>
+            <div className="text-2xl font-bold text-gold">{items.length}</div>
           </div>
           <div className="stat-card p-4">
             <div className="label mb-1 flex items-center gap-1">
-              <Coins size={10} className="text-[#FFD700]" /> Total Fees
+              <Coins size={10} className="text-gold" /> Total Fees
             </div>
-            <div className="text-2xl font-bold text-[#FFD700]">
+            <div className="text-2xl font-bold text-gold">
               {totalFees < 1 ? totalFees.toFixed(4) : totalFees.toFixed(2)} SOL
             </div>
           </div>
@@ -257,14 +257,14 @@ export default function FeeLeadersSection() {
                 <button
                   onClick={() => loadData(true)}
                   disabled={isRefreshing}
-                  className="text-[#666] hover:text-[#39FF14] transition-colors disabled:opacity-50"
+                  className="text-muted-high hover:text-acid-green transition-colors disabled:opacity-50"
                   title="Refresh"
                 >
                   <RefreshCw size={10} className={isRefreshing ? "animate-spin" : ""} />
                 </button>
               </div>
             </div>
-            <div className="text-2xl font-bold text-[#39FF14]">
+            <div className="text-2xl font-bold text-acid-green">
               {items.length > 0
                 ? Math.round(
                     items.reduce((s, i) => s + (i.tokenInfo?.organicScore || 0), 0) /
@@ -282,8 +282,8 @@ export default function FeeLeadersSection() {
       {/* Error */}
       {!isLoading && error && (
         <div className="text-center py-16">
-          <Trophy size={32} className="mx-auto mb-4 text-[#FFD700] opacity-30" />
-          <p className="text-[#FF003C] mb-4 font-mono">{error}</p>
+          <Trophy size={32} className="mx-auto mb-4 text-gold opacity-30" />
+          <p className="text-error mb-4 font-mono">{error}</p>
           <button
             onClick={() => loadData()}
             className="px-4 py-2 border border-white/10 rounded hover:border-white/30 text-sm font-mono"
@@ -296,8 +296,8 @@ export default function FeeLeadersSection() {
       {/* Empty */}
       {!isLoading && !error && items.length === 0 && (
         <div className="text-center py-16">
-          <Trophy size={32} className="mx-auto mb-4 text-[#FFD700] opacity-30" />
-          <p className="text-[#888] font-mono">No leaderboard data available</p>
+          <Trophy size={32} className="mx-auto mb-4 text-gold opacity-30" />
+          <p className="text-fg-soft font-mono">No leaderboard data available</p>
         </div>
       )}
 

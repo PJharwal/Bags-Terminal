@@ -71,12 +71,12 @@ export function BagsFeeIndicator({
 
     return (
         <div
-            className={`inline-flex items-center gap-1 text-[#FFD700] ${className}`}
+            className={`inline-flex items-center gap-1 text-gold ${className}`}
             title={`Bags Token - ${feeData.lifetimeFees.toFixed(2)} SOL in fees earned`}
         >
             <Coins size={iconSize} />
             {showAmount && (
-                <span className={`font-mono font-bold ${size === "sm" ? "text-[9px]" : "text-xs"}`}>
+                <span className={`font-mono font-bold ${size === "sm" ? "text-meta" : "text-xs"}`}>
                     {feeData.lifetimeFees < 1
                         ? feeData.lifetimeFees.toFixed(2)
                         : feeData.lifetimeFees < 100
@@ -106,11 +106,11 @@ export function BagsFeeBadge({
 
     return (
         <div
-            className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#FFD700]/10 border border-[#FFD700]/30 rounded text-[#FFD700] ${className}`}
+            className={`inline-flex items-center gap-1 px-1.5 py-0.5 bg-[#FFD700]/10 border border-[#FFD700]/30 rounded text-gold ${className}`}
             title={`${lifetimeFees.toFixed(2)} SOL in fees earned`}
         >
             <BagsLogo size={iconSize} />
-            <span className={`font-mono font-bold ${size === "sm" ? "text-[9px]" : "text-xs"}`}>
+            <span className={`font-mono font-bold ${size === "sm" ? "text-meta" : "text-xs"}`}>
                 {lifetimeFees < 1
                     ? lifetimeFees.toFixed(2)
                     : lifetimeFees < 100

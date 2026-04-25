@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, MotionConfig } from 'framer-motion';
 import {
   ChevronLeft,
   ChevronRight,
@@ -119,15 +119,15 @@ const fadeUp = {
 
 function StatBox({ value, label, accent = 'green' }: { value: string; label: string; accent?: 'green' | 'red' | 'gold' | 'blue' }) {
   const colors = {
-    green: 'text-[#39FF14] border-[#39FF14]/20 number-glow-green',
-    red: 'text-[#FF003C] border-[#FF003C]/20 number-glow-red',
-    gold: 'text-[#FFD700] border-[#FFD700]/20 number-glow-gold',
+    green: 'text-acid-green border-[#39FF14]/20 number-glow-green',
+    red: 'text-error border-[#FF003C]/20 number-glow-red',
+    gold: 'text-gold border-[#FFD700]/20 number-glow-gold',
     blue: 'text-[#00F0FF] border-[#00F0FF]/20',
   };
   return (
     <motion.div variants={fadeUp} className={`border ${colors[accent].split(' ').slice(1).join(' ')} bg-[#0A0A0A] p-5 sm:p-6 flex flex-col items-center justify-center gap-2`}>
       <span className={`text-2xl sm:text-3xl lg:text-4xl font-bold font-mono ${colors[accent].split(' ')[0]}`}>{value}</span>
-      <span className="text-[10px] sm:text-xs text-[#666] uppercase tracking-widest text-center font-mono">{label}</span>
+      <span className="text-meta sm:text-xs text-muted-high uppercase tracking-widest text-center font-mono">{label}</span>
     </motion.div>
   );
 }
@@ -139,8 +139,8 @@ function FeatureCard({ icon: Icon, title, desc, color }: { icon: React.ElementTy
       <div className="w-10 h-10 flex items-center justify-center border bg-black/30" style={{ borderColor: `${c}33` }}>
         <Icon size={18} style={{ color: c }} />
       </div>
-      <h3 className="text-sm font-bold uppercase tracking-wide text-[#EDEDED] font-mono">{title}</h3>
-      <p className="text-xs text-[#888] leading-relaxed font-mono">{desc}</p>
+      <h3 className="text-sm font-bold uppercase tracking-wide text-fg font-mono">{title}</h3>
+      <p className="text-xs text-fg-soft leading-relaxed font-mono">{desc}</p>
     </motion.div>
   );
 }
@@ -148,29 +148,29 @@ function FeatureCard({ icon: Icon, title, desc, color }: { icon: React.ElementTy
 function SectionTag({ children }: { children: React.ReactNode }) {
   return (
     <div className="inline-flex items-center gap-2 mb-6">
-      <div className="w-2 h-2 bg-[#39FF14]" />
-      <span className="text-[10px] uppercase tracking-[0.2em] text-[#39FF14] font-bold font-mono">{children}</span>
+      <div className="w-2 h-2 bg-acid-green" />
+      <span className="text-meta uppercase tracking-[0.2em] text-acid-green font-bold font-mono">{children}</span>
     </div>
   );
 }
 
 function SlideTitle({ children }: { children: React.ReactNode }) {
-  return <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold uppercase tracking-tight text-[#EDEDED] font-[family-name:var(--font-display)] leading-[1.1] mb-6">{children}</h2>;
+  return <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold uppercase tracking-tight text-fg font-[family-name:var(--font-display)] leading-[1.1] mb-6">{children}</h2>;
 }
 
 function SlideSubtitle({ children }: { children: React.ReactNode }) {
-  return <p className="text-sm sm:text-base text-[#888] leading-relaxed max-w-2xl font-mono">{children}</p>;
+  return <p className="text-sm sm:text-base text-fg-soft leading-relaxed max-w-2xl font-mono">{children}</p>;
 }
 
 function CompetitorRow({ name, fee, social, api, risk, dividend }: { name: string; fee: string; social: string; api: string; risk: string; dividend: string }) {
   return (
     <motion.div variants={fadeUp} className="grid grid-cols-6 text-xs font-mono py-3 border-b border-white/5 items-center">
-      <span className="text-[#EDEDED] font-bold">{name}</span>
-      <span className={fee === 'YES' ? 'text-[#39FF14]' : 'text-[#FF003C]'}>{fee}</span>
-      <span className={social === 'YES' ? 'text-[#39FF14]' : 'text-[#FF003C]'}>{social}</span>
-      <span className={api === 'YES' ? 'text-[#39FF14]' : 'text-[#FF003C]'}>{api}</span>
-      <span className={risk === 'YES' ? 'text-[#39FF14]' : 'text-[#FF003C]'}>{risk}</span>
-      <span className={dividend === 'YES' ? 'text-[#39FF14]' : 'text-[#FF003C]'}>{dividend}</span>
+      <span className="text-fg font-bold">{name}</span>
+      <span className={fee === 'YES' ? 'text-acid-green' : 'text-error'}>{fee}</span>
+      <span className={social === 'YES' ? 'text-acid-green' : 'text-error'}>{social}</span>
+      <span className={api === 'YES' ? 'text-acid-green' : 'text-error'}>{api}</span>
+      <span className={risk === 'YES' ? 'text-acid-green' : 'text-error'}>{risk}</span>
+      <span className={dividend === 'YES' ? 'text-acid-green' : 'text-error'}>{dividend}</span>
     </motion.div>
   );
 }
@@ -182,9 +182,9 @@ function MockupFrame({ children, title }: { children: React.ReactNode; title: st
         <div className="flex gap-1.5">
           <div className="w-2.5 h-2.5 rounded-full bg-[#FF003C]/40" />
           <div className="w-2.5 h-2.5 rounded-full bg-[#FFD700]/40" />
-          <div className="w-2.5 h-2.5 rounded-full bg-[#39FF14]/40" />
+          <div className="w-2.5 h-2.5 rounded-full bg-acid-green/40" />
         </div>
-        <span className="text-[9px] uppercase tracking-widest text-[#555] font-mono font-bold ml-2">{title}</span>
+        <span className="text-meta uppercase tracking-widest text-muted-mid font-mono font-bold ml-2">{title}</span>
       </div>
       <div className="p-4">{children}</div>
     </motion.div>
@@ -201,23 +201,23 @@ function CoverSlide() {
       <div className="absolute inset-0 bg-grid-pattern opacity-30" />
       <div className="relative z-10 flex flex-col items-center">
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-[#39FF14] font-bold font-mono mb-6">BAGS TERMINAL</div>
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold uppercase tracking-tight text-[#EDEDED] font-[family-name:var(--font-display)] leading-[1.05] mb-8">
+          <div className="text-meta uppercase tracking-[0.3em] text-acid-green font-bold font-mono mb-6">BAGS TERMINAL</div>
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-bold uppercase tracking-tight text-fg font-[family-name:var(--font-display)] leading-[1.05] mb-8">
             THE INTELLIGENCE<br />
-            <span className="text-[#39FF14]">LAYER</span> FOR<br />
+            <span className="text-acid-green">LAYER</span> FOR<br />
             SOLANA TOKENS
           </h1>
-          <p className="text-sm sm:text-base text-[#888] font-mono max-w-xl mx-auto mb-12 leading-relaxed">
+          <p className="text-sm sm:text-base text-fg-soft font-mono max-w-xl mx-auto mb-12 leading-relaxed">
             Real-time monitoring. Creator monetization. Risk intelligence.<br />
             Built on bags.fm -- the platform that paid $20M+ to creators.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
-            <div className="badge badge-green px-3 py-1.5 text-[10px]">LIVE ON SOLANA</div>
-            <div className="badge badge-gold px-3 py-1.5 text-[10px]">$3B+ VOLUME</div>
-            <div className="badge badge-blue px-3 py-1.5 text-[10px]">AWARD WINNING</div>
+            <div className="badge badge-green px-3 py-1.5 text-meta">LIVE ON SOLANA</div>
+            <div className="badge badge-gold px-3 py-1.5 text-meta">$3B+ VOLUME</div>
+            <div className="badge badge-blue px-3 py-1.5 text-meta">AWARD WINNING</div>
           </div>
         </motion.div>
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="absolute -bottom-8 flex items-center gap-2 text-[10px] text-[#444] font-mono uppercase tracking-widest">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="absolute -bottom-8 flex items-center gap-2 text-meta text-[#444] font-mono uppercase tracking-widest">
           <span>PRESS ARROW KEYS OR SWIPE</span>
           <ArrowRight size={12} />
         </motion.div>
@@ -230,22 +230,22 @@ function WhatIsBagsSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>WHAT IS BAGS TERMINAL</SectionTag>
-      <SlideTitle>THE ALL-IN-ONE <span className="text-[#39FF14]">COMMAND CENTER</span> FOR SOLANA TOKENS</SlideTitle>
+      <SlideTitle>THE ALL-IN-ONE <span className="text-acid-green">COMMAND CENTER</span> FOR SOLANA TOKENS</SlideTitle>
       <SlideSubtitle>
         BAGS Terminal is a real-time Solana token monitoring, trading intelligence, and creator monetization platform built on bags.fm. It gives traders, creators, and deployers everything they need in one interface.
       </SlideSubtitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-10">
         <motion.div variants={fadeUp} className="card p-6 border-l-2 border-l-[#39FF14]">
-          <div className="text-xs font-mono font-bold text-[#39FF14] uppercase tracking-widest mb-3">FOR TRADERS</div>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Discover tokens in real-time, analyze risk before buying, execute swaps, and track deployer reputation -- all before the crowd.</p>
+          <div className="text-xs font-mono font-bold text-acid-green uppercase tracking-widest mb-3">FOR TRADERS</div>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Discover tokens in real-time, analyze risk before buying, execute swaps, and track deployer reputation -- all before the crowd.</p>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6 border-l-2 border-l-[#FFD700]">
-          <div className="text-xs font-mono font-bold text-[#FFD700] uppercase tracking-widest mb-3">FOR CREATORS</div>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Launch tokens with perpetual 1% royalties. Split fees with up to 100 people. Claim earnings. Build a monetized community.</p>
+          <div className="text-xs font-mono font-bold text-gold uppercase tracking-widest mb-3">FOR CREATORS</div>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Launch tokens with perpetual 1% royalties. Split fees with up to 100 people. Claim earnings. Build a monetized community.</p>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6 border-l-2 border-l-[#00F0FF]">
           <div className="text-xs font-mono font-bold text-[#00F0FF] uppercase tracking-widest mb-3">FOR DEVELOPERS</div>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">REST API + TypeScript SDK. Build apps on BAGS infrastructure. Participate in the $4M hackathon fund.</p>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">REST API + TypeScript SDK. Build apps on BAGS infrastructure. Participate in the $4M hackathon fund.</p>
         </motion.div>
       </motion.div>
       <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-6 p-4 border border-white/5 bg-[#0A0A0A]">
@@ -258,8 +258,8 @@ function WhatIsBagsSlide() {
             { val: '4', lbl: 'Wallet Adapters' },
           ].map((s) => (
             <div key={s.lbl}>
-              <div className="text-lg font-bold font-mono text-[#39FF14]">{s.val}</div>
-              <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest">{s.lbl}</div>
+              <div className="text-lg font-bold font-mono text-acid-green">{s.val}</div>
+              <div className="text-meta text-muted-high font-mono uppercase tracking-widest">{s.lbl}</div>
             </div>
           ))}
         </div>
@@ -272,25 +272,25 @@ function ProblemLandscapeSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>THE PROBLEM</SectionTag>
-      <SlideTitle>SOLANA&apos;S TOKEN MARKET IS A <span className="text-[#FF003C]">MINEFIELD</span></SlideTitle>
+      <SlideTitle>SOLANA&apos;S TOKEN MARKET IS A <span className="text-error">MINEFIELD</span></SlideTitle>
       <SlideSubtitle>
         20,000-30,000 tokens launch daily on Solana. The vast majority are scams, pump-and-dumps, or abandoned projects. Traders lose money. Creators can&apos;t monetize. Nobody has transparency.
       </SlideSubtitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
         <motion.div variants={fadeUp} className="border border-[#FF003C]/20 bg-[#FF003C]/5 p-6">
-          <AlertTriangle size={24} className="text-[#FF003C] mb-3" />
-          <h3 className="text-sm font-bold text-[#FF003C] font-mono mb-2">98.6% SCAM RATE</h3>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Of all pump.fun tokens are rug pulls or pump-and-dump schemes (Solidus Labs)</p>
+          <AlertTriangle size={24} className="text-error mb-3" />
+          <h3 className="text-sm font-bold text-error font-mono mb-2">98.6% SCAM RATE</h3>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Of all pump.fun tokens are rug pulls or pump-and-dump schemes (Solidus Labs)</p>
         </motion.div>
         <motion.div variants={fadeUp} className="border border-[#FF003C]/20 bg-[#FF003C]/5 p-6">
-          <DollarSign size={24} className="text-[#FF003C] mb-3" />
-          <h3 className="text-sm font-bold text-[#FF003C] font-mono mb-2">80% LOSE MONEY</h3>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Only 20% of memecoin investors made any profit at all. 0.4% made over $10K.</p>
+          <DollarSign size={24} className="text-error mb-3" />
+          <h3 className="text-sm font-bold text-error font-mono mb-2">80% LOSE MONEY</h3>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Only 20% of memecoin investors made any profit at all. 0.4% made over $10K.</p>
         </motion.div>
         <motion.div variants={fadeUp} className="border border-[#FF003C]/20 bg-[#FF003C]/5 p-6">
-          <Eye size={24} className="text-[#FF003C] mb-3" />
-          <h3 className="text-sm font-bold text-[#FF003C] font-mono mb-2">ZERO TRANSPARENCY</h3>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Anonymous devs behind 92% of rug pulls. No deployer accountability anywhere.</p>
+          <Eye size={24} className="text-error mb-3" />
+          <h3 className="text-sm font-bold text-error font-mono mb-2">ZERO TRANSPARENCY</h3>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Anonymous devs behind 92% of rug pulls. No deployer accountability anywhere.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -301,7 +301,7 @@ function ProblemStatsSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>BY THE NUMBERS</SectionTag>
-      <SlideTitle>A $1B PLATFORM THAT PAYS CREATORS <span className="text-[#FF003C]">$0</span></SlideTitle>
+      <SlideTitle>A $1B PLATFORM THAT PAYS CREATORS <span className="text-error">$0</span></SlideTitle>
       <SlideSubtitle>
         Pump.fun generated over $1 billion in revenue. Zero goes back to creators. Less than 1% of tokens survive. The house always wins.
       </SlideSubtitle>
@@ -324,7 +324,7 @@ function WhatWeSolveSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>WHAT WE&apos;RE SOLVING</SectionTag>
-      <SlideTitle>5 CRITICAL PROBLEMS. <span className="text-[#39FF14]">ONE PLATFORM.</span></SlideTitle>
+      <SlideTitle>5 CRITICAL PROBLEMS. <span className="text-acid-green">ONE PLATFORM.</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
         {[
           {
@@ -375,11 +375,11 @@ function WhatWeSolveSlide() {
             <div className="space-y-2">
               <div className="flex gap-2 items-start">
                 <div className="w-1 h-1 mt-1.5 bg-[#FF003C] flex-shrink-0" />
-                <p className="text-[10px] text-[#666] font-mono leading-relaxed">{p.before}</p>
+                <p className="text-meta text-muted-high font-mono leading-relaxed">{p.before}</p>
               </div>
               <div className="flex gap-2 items-start">
-                <div className="w-1 h-1 mt-1.5 bg-[#39FF14] flex-shrink-0" />
-                <p className="text-[10px] text-[#EDEDED] font-mono leading-relaxed">{p.after}</p>
+                <div className="w-1 h-1 mt-1.5 bg-acid-green flex-shrink-0" />
+                <p className="text-meta text-fg font-mono leading-relaxed">{p.after}</p>
               </div>
             </div>
           </motion.div>
@@ -399,7 +399,7 @@ function ProblemCreatorsSlide() {
       </SlideSubtitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
         <motion.div variants={fadeUp} className="card p-6">
-          <h3 className="text-xs uppercase tracking-widest text-[#FF003C] font-mono font-bold mb-4">TRADITIONAL MODEL</h3>
+          <h3 className="text-xs uppercase tracking-widest text-error font-mono font-bold mb-4">TRADITIONAL MODEL</h3>
           <div className="space-y-3">
             {[
               'Creator tweets about a token launch',
@@ -407,19 +407,19 @@ function ProblemCreatorsSlide() {
               'Creator gets a one-time sponsor payment',
               'No ongoing revenue. No alignment.',
             ].map((t) => (
-              <div key={t} className="flex items-center gap-3 text-xs font-mono text-[#888]">
+              <div key={t} className="flex items-center gap-3 text-xs font-mono text-fg-soft">
                 <div className="w-1.5 h-1.5 bg-[#FF003C]" />
                 <span>{t}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-white/5 text-center">
-            <span className="text-xl font-bold font-mono text-[#FF003C] number-glow-red">$0</span>
-            <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">ONGOING CREATOR REVENUE</div>
+            <span className="text-xl font-bold font-mono text-error number-glow-red">$0</span>
+            <div className="text-meta text-muted-high font-mono uppercase tracking-widest mt-1">ONGOING CREATOR REVENUE</div>
           </div>
         </motion.div>
         <motion.div variants={fadeUp} className="card card-gold p-6">
-          <h3 className="text-xs uppercase tracking-widest text-[#39FF14] font-mono font-bold mb-4">BAGS MODEL</h3>
+          <h3 className="text-xs uppercase tracking-widest text-acid-green font-mono font-bold mb-4">BAGS MODEL</h3>
           <div className="space-y-3">
             {[
               'Creator launches token with fee sharing',
@@ -427,15 +427,15 @@ function ProblemCreatorsSlide() {
               'Up to 100 fee earners per token',
               'Perpetual, transparent, on-chain revenue',
             ].map((t) => (
-              <div key={t} className="flex items-center gap-3 text-xs font-mono text-[#888]">
-                <div className="w-1.5 h-1.5 bg-[#39FF14]" />
+              <div key={t} className="flex items-center gap-3 text-xs font-mono text-fg-soft">
+                <div className="w-1.5 h-1.5 bg-acid-green" />
                 <span>{t}</span>
               </div>
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-[#39FF14]/10 text-center">
-            <span className="text-xl font-bold font-mono text-[#39FF14] number-glow-green">$20M+</span>
-            <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">PAID TO CREATORS SO FAR</div>
+            <span className="text-xl font-bold font-mono text-acid-green number-glow-green">$20M+</span>
+            <div className="text-meta text-muted-high font-mono uppercase tracking-widest mt-1">PAID TO CREATORS SO FAR</div>
           </div>
         </motion.div>
       </motion.div>
@@ -449,7 +449,7 @@ function SolutionSlide() {
       <SectionTag>THE SOLUTION</SectionTag>
       <SlideTitle>
         BAGS TERMINAL<br />
-        <span className="text-[#39FF14]">INTELLIGENCE + MONETIZATION</span>
+        <span className="text-acid-green">INTELLIGENCE + MONETIZATION</span>
       </SlideTitle>
       <SlideSubtitle>
         A unified platform where creators launch tokens with built-in revenue sharing, traders discover opportunities with real-time intelligence, and everyone operates with full transparency.
@@ -467,7 +467,7 @@ function HowItWorksSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>HOW IT WORKS</SectionTag>
-      <SlideTitle>FROM LAUNCH TO REVENUE IN <span className="text-[#39FF14]">4 STEPS</span></SlideTitle>
+      <SlideTitle>FROM LAUNCH TO REVENUE IN <span className="text-acid-green">4 STEPS</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
         {[
           { step: '01', title: 'LAUNCH', desc: 'Creator launches token with name, symbol, image. Configures up to 100 fee earners with custom split percentages.', icon: Rocket, color: '#39FF14' },
@@ -479,7 +479,7 @@ function HowItWorksSlide() {
             <div className="absolute top-3 right-3 text-[40px] font-bold font-[family-name:var(--font-display)] opacity-5 text-white">{s.step}</div>
             <s.icon size={20} style={{ color: s.color }} className="mb-4" />
             <h3 className="text-sm font-bold font-mono mb-2" style={{ color: s.color }}>{s.title}</h3>
-            <p className="text-xs text-[#888] font-mono leading-relaxed">{s.desc}</p>
+            <p className="text-xs text-fg-soft font-mono leading-relaxed">{s.desc}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -487,8 +487,8 @@ function HowItWorksSlide() {
       <motion.div variants={fadeUp} initial="hidden" animate="show" className="hidden lg:flex items-center justify-center gap-2 mt-6">
         {['BONDING CURVE', 'NEAR MIGRATION', 'DEX LIVE', 'FEES FLOWING'].map((phase, i) => (
           <React.Fragment key={phase}>
-            <div className="text-[9px] font-mono text-[#666] uppercase tracking-widest bg-[#111] px-3 py-1.5 border border-white/5">{phase}</div>
-            {i < 3 && <ArrowRight size={12} className="text-[#39FF14]/40" />}
+            <div className="text-meta font-mono text-muted-high uppercase tracking-widest bg-[#111] px-3 py-1.5 border border-white/5">{phase}</div>
+            {i < 3 && <ArrowRight size={12} className="text-acid-green/40" />}
           </React.Fragment>
         ))}
       </motion.div>
@@ -500,7 +500,7 @@ function PlatformOverviewSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>THE PLATFORM</SectionTag>
-      <SlideTitle>6 MODULES. <span className="text-[#39FF14]">ONE TERMINAL.</span></SlideTitle>
+      <SlideTitle>6 MODULES. <span className="text-acid-green">ONE TERMINAL.</span></SlideTitle>
       <SlideSubtitle>
         Every tool a Solana trader and creator needs -- from discovery to execution to earnings -- unified in a single interface.
       </SlideSubtitle>
@@ -516,11 +516,11 @@ function PlatformOverviewSlide() {
           <motion.div key={m.title} variants={fadeUp} className="card p-5 flex flex-col gap-3 group cursor-pointer">
             <div className="flex items-center justify-between">
               <m.icon size={20} style={{ color: m.color }} />
-              <span className="text-[9px] font-mono text-[#333]">{m.route}</span>
+              <span className="text-meta font-mono text-[#333]">{m.route}</span>
             </div>
             <div>
               <h3 className="text-xs font-bold font-mono" style={{ color: m.color }}>{m.title}</h3>
-              <p className="text-[10px] text-[#666] font-mono mt-1 leading-relaxed">{m.desc}</p>
+              <p className="text-meta text-muted-high font-mono mt-1 leading-relaxed">{m.desc}</p>
             </div>
           </motion.div>
         ))}
@@ -533,7 +533,7 @@ function FeaturePulseSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>PULSE MONITOR</SectionTag>
-      <SlideTitle>SEE EVERY TOKEN. <span className="text-[#39FF14]">THE MOMENT IT LAUNCHES.</span></SlideTitle>
+      <SlideTitle>SEE EVERY TOKEN. <span className="text-acid-green">THE MOMENT IT LAUNCHES.</span></SlideTitle>
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.2fr] gap-6 mt-8">
         <div>
           <SlideSubtitle>
@@ -548,10 +548,10 @@ function FeaturePulseSlide() {
               { label: 'Auto-refresh feed', detail: 'Every 30s from bags.fm API' },
             ].map((f) => (
               <motion.div key={f.label} variants={fadeUp} className="flex gap-3 items-start">
-                <CheckCircle size={14} className="text-[#39FF14] mt-0.5 flex-shrink-0" />
+                <CheckCircle size={14} className="text-acid-green mt-0.5 flex-shrink-0" />
                 <div>
-                  <div className="text-xs font-mono text-[#EDEDED]">{f.label}</div>
-                  <div className="text-[10px] font-mono text-[#555]">{f.detail}</div>
+                  <div className="text-xs font-mono text-fg">{f.label}</div>
+                  <div className="text-meta font-mono text-muted-mid">{f.detail}</div>
                 </div>
               </motion.div>
             ))}
@@ -561,12 +561,12 @@ function FeaturePulseSlide() {
         <MockupFrame title="bagsterminal.com/pulse">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-[#39FF14] badge-live" />
-              <span className="text-[9px] uppercase tracking-widest text-[#39FF14] font-mono font-bold">LIVE</span>
+              <div className="w-2 h-2 rounded-full bg-acid-green badge-live" />
+              <span className="text-meta uppercase tracking-widest text-acid-green font-mono font-bold">LIVE</span>
             </div>
             <div className="flex gap-1.5">
-              <div className="badge badge-green px-2 py-0.5 text-[8px]">SOL</div>
-              <div className="badge badge-muted px-2 py-0.5 text-[8px]">BASE</div>
+              <div className="badge badge-green px-2 py-0.5 text-meta">SOL</div>
+              <div className="badge badge-muted px-2 py-0.5 text-meta">BASE</div>
             </div>
           </div>
           <div className="grid grid-cols-3 gap-2">
@@ -576,14 +576,14 @@ function FeaturePulseSlide() {
               { col: 'MIGRATED', color: '#00F0FF', pcts: [100, 100, 100] },
             ].map((c) => (
               <div key={c.col}>
-                <div className="text-[8px] uppercase tracking-widest font-mono font-bold mb-2" style={{ color: c.color }}>{c.col}</div>
+                <div className="text-meta uppercase tracking-widest font-mono font-bold mb-2" style={{ color: c.color }}>{c.col}</div>
                 {c.pcts.map((pct, j) => (
                   <div key={j} className="bg-[#111] p-2 mb-1.5 border border-white/5">
                     <div className="flex items-center justify-between mb-1">
                       <div className="w-12 h-2 skeleton-shimmer rounded" />
-                      <span className="text-[8px] font-mono" style={{ color: c.color }}>{pct}%</span>
+                      <span className="text-meta font-mono" style={{ color: c.color }}>{pct}%</span>
                     </div>
-                    <div className="w-full h-1 bg-[#1A1A1A] rounded-full overflow-hidden">
+                    <div className="w-full h-1 bg-elevated rounded-full overflow-hidden">
                       <div className="h-full rounded-full" style={{ width: `${pct}%`, backgroundColor: `${c.color}66` }} />
                     </div>
                   </div>
@@ -619,13 +619,13 @@ function FeatureTerminalSlide() {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full bg-[#39FF14]/10 border border-[#39FF14]/20" />
+                <div className="w-6 h-6 rounded-full bg-acid-green/10 border border-[#39FF14]/20" />
                 <div>
-                  <div className="text-xs font-mono font-bold text-[#EDEDED]">$TOKEN</div>
-                  <div className="text-[9px] font-mono text-[#666]">7xKp...bags</div>
+                  <div className="text-xs font-mono font-bold text-fg">$TOKEN</div>
+                  <div className="text-meta font-mono text-muted-high">7xKp...bags</div>
                 </div>
               </div>
-              <div className="badge badge-green text-[8px] px-2 py-0.5">MIGRATED</div>
+              <div className="badge badge-green text-meta px-2 py-0.5">MIGRATED</div>
             </div>
             <div className="grid grid-cols-4 gap-2">
               {[
@@ -635,7 +635,7 @@ function FeatureTerminalSlide() {
                 { l: 'BONDING', v: '100%', c: '#39FF14' },
               ].map((m) => (
                 <div key={m.l} className="bg-[#111] p-2 border border-white/5 text-center">
-                  <div className="text-[8px] font-mono text-[#555] uppercase">{m.l}</div>
+                  <div className="text-meta font-mono text-muted-mid uppercase">{m.l}</div>
                   <div className="text-xs font-mono font-bold" style={{ color: m.c }}>{m.v}</div>
                 </div>
               ))}
@@ -650,20 +650,20 @@ function FeatureTerminalSlide() {
                 </linearGradient>
                 <polygon fill="url(#cg)" points="0,50 20,45 40,48 60,30 80,35 100,20 120,25 140,15 160,18 180,8 200,12 200,60 0,60" />
               </svg>
-              <div className="absolute top-1 right-2 text-[8px] font-mono text-[#39FF14]">+247%</div>
+              <div className="absolute top-1 right-2 text-meta font-mono text-acid-green">+247%</div>
             </div>
             {/* Fee earners */}
             <div className="bg-[#111] p-2 border border-[#FFD700]/10">
-              <div className="text-[8px] font-mono text-[#FFD700] uppercase tracking-widest mb-1.5 font-bold">FEE EARNERS</div>
+              <div className="text-meta font-mono text-gold uppercase tracking-widest mb-1.5 font-bold">FEE EARNERS</div>
               {[
                 { name: '@creator', pct: '40%', earned: '12.4 SOL' },
                 { name: '@partner', pct: '35%', earned: '10.8 SOL' },
               ].map((f) => (
-                <div key={f.name} className="flex items-center justify-between text-[9px] font-mono py-0.5">
-                  <span className="text-[#888]">{f.name}</span>
+                <div key={f.name} className="flex items-center justify-between text-meta font-mono py-0.5">
+                  <span className="text-fg-soft">{f.name}</span>
                   <div className="flex gap-3">
-                    <span className="text-[#FFD700]">{f.pct}</span>
-                    <span className="text-[#39FF14]">{f.earned}</span>
+                    <span className="text-gold">{f.pct}</span>
+                    <span className="text-acid-green">{f.earned}</span>
                   </div>
                 </div>
               ))}
@@ -683,7 +683,7 @@ function LaunchpadOverviewSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>THE LAUNCHPAD</SectionTag>
-      <SlideTitle>LAUNCH TOKENS WITH <span className="text-[#FFD700]">BUILT-IN REVENUE SHARING</span></SlideTitle>
+      <SlideTitle>LAUNCH TOKENS WITH <span className="text-gold">BUILT-IN REVENUE SHARING</span></SlideTitle>
       <SlideSubtitle>
         The BAGS Launchpad is not just another token creator. It&apos;s a revenue-sharing engine that turns every token into a monetization vehicle for creators, communities, and teams.
       </SlideSubtitle>
@@ -693,32 +693,32 @@ function LaunchpadOverviewSlide() {
           <div className="space-y-3">
             {/* Token form */}
             <div className="space-y-2">
-              <div className="text-[8px] font-mono text-[#FFD700] uppercase tracking-widest font-bold">TOKEN DETAILS</div>
+              <div className="text-meta font-mono text-gold uppercase tracking-widest font-bold">TOKEN DETAILS</div>
               <div className="grid grid-cols-2 gap-2">
                 <div className="bg-[#111] px-3 py-2 border border-white/5">
-                  <div className="text-[8px] text-[#555] font-mono">NAME</div>
-                  <div className="text-xs text-[#EDEDED] font-mono">My Token</div>
+                  <div className="text-meta text-muted-mid font-mono">NAME</div>
+                  <div className="text-xs text-fg font-mono">My Token</div>
                 </div>
                 <div className="bg-[#111] px-3 py-2 border border-white/5">
-                  <div className="text-[8px] text-[#555] font-mono">SYMBOL</div>
-                  <div className="text-xs text-[#EDEDED] font-mono">$MYTKN</div>
+                  <div className="text-meta text-muted-mid font-mono">SYMBOL</div>
+                  <div className="text-xs text-fg font-mono">$MYTKN</div>
                 </div>
               </div>
               <div className="bg-[#111] px-3 py-2 border border-white/5">
-                <div className="text-[8px] text-[#555] font-mono">DESCRIPTION</div>
-                <div className="text-[10px] text-[#888] font-mono">Community-driven token with fee sharing...</div>
+                <div className="text-meta text-muted-mid font-mono">DESCRIPTION</div>
+                <div className="text-meta text-fg-soft font-mono">Community-driven token with fee sharing...</div>
               </div>
             </div>
             {/* Image upload */}
             <div className="flex gap-2 items-center">
               <div className="w-12 h-12 border border-dashed border-white/10 flex items-center justify-center bg-[#111]">
-                <ImageIcon size={14} className="text-[#555]" />
+                <ImageIcon size={14} className="text-muted-mid" />
               </div>
-              <div className="text-[9px] font-mono text-[#666]">Upload token image<br /><span className="text-[#39FF14]">PNG, JPG up to 5MB</span></div>
+              <div className="text-meta font-mono text-muted-high">Upload token image<br /><span className="text-acid-green">PNG, JPG up to 5MB</span></div>
             </div>
             {/* Fee earners */}
             <div>
-              <div className="text-[8px] font-mono text-[#39FF14] uppercase tracking-widest font-bold mb-2">FEE EARNERS (4/100)</div>
+              <div className="text-meta font-mono text-acid-green uppercase tracking-widest font-bold mb-2">FEE EARNERS (4/100)</div>
               {[
                 { handle: '@creator_x', pct: 40, color: '#39FF14' },
                 { handle: '@partner_kick', pct: 25, color: '#00F0FF' },
@@ -726,17 +726,17 @@ function LaunchpadOverviewSlide() {
                 { handle: '@dev_github', pct: 15, color: '#888' },
               ].map((e) => (
                 <div key={e.handle} className="flex items-center justify-between py-1 border-b border-white/3">
-                  <span className="text-[9px] font-mono text-[#888]">{e.handle}</span>
+                  <span className="text-meta font-mono text-fg-soft">{e.handle}</span>
                   <div className="flex items-center gap-2">
-                    <div className="w-16 h-1.5 bg-[#1A1A1A] overflow-hidden">
+                    <div className="w-16 h-1.5 bg-elevated overflow-hidden">
                       <div className="h-full" style={{ width: `${e.pct}%`, backgroundColor: e.color }} />
                     </div>
-                    <span className="text-[9px] font-mono font-bold" style={{ color: e.color }}>{e.pct}%</span>
+                    <span className="text-meta font-mono font-bold" style={{ color: e.color }}>{e.pct}%</span>
                   </div>
                 </div>
               ))}
             </div>
-            <div className="bg-[#39FF14] text-black text-[10px] font-mono font-bold uppercase tracking-widest text-center py-2">
+            <div className="bg-acid-green text-black text-meta font-mono font-bold uppercase tracking-widest text-center py-2">
               LAUNCH TOKEN
             </div>
           </div>
@@ -755,7 +755,7 @@ function LaunchpadOverviewSlide() {
               </div>
               <div>
                 <h3 className="text-xs font-bold font-mono mb-1" style={{ color: f.color }}>{f.title}</h3>
-                <p className="text-[10px] text-[#888] font-mono leading-relaxed">{f.desc}</p>
+                <p className="text-meta text-fg-soft font-mono leading-relaxed">{f.desc}</p>
               </div>
             </motion.div>
           ))}
@@ -769,7 +769,7 @@ function LaunchpadFeaturesSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>LAUNCHPAD FEATURES</SectionTag>
-      <SlideTitle>EVERYTHING A TOKEN NEEDS TO <span className="text-[#39FF14]">SUCCEED</span></SlideTitle>
+      <SlideTitle>EVERYTHING A TOKEN NEEDS TO <span className="text-acid-green">SUCCEED</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 lg:grid-cols-4 gap-3 mt-8">
         {[
           { icon: ImageIcon, title: 'TOKEN METADATA', desc: 'Name, symbol, description, image upload with preview', color: '#39FF14' },
@@ -783,8 +783,8 @@ function LaunchpadFeaturesSlide() {
         ].map((f) => (
           <motion.div key={f.title} variants={fadeUp} className="card p-4">
             <f.icon size={16} style={{ color: f.color }} className="mb-2" />
-            <h3 className="text-[10px] font-bold font-mono mb-1" style={{ color: f.color }}>{f.title}</h3>
-            <p className="text-[9px] text-[#666] font-mono leading-relaxed">{f.desc}</p>
+            <h3 className="text-meta font-bold font-mono mb-1" style={{ color: f.color }}>{f.title}</h3>
+            <p className="text-meta text-muted-high font-mono leading-relaxed">{f.desc}</p>
           </motion.div>
         ))}
       </motion.div>
@@ -799,8 +799,8 @@ function LaunchpadFeaturesSlide() {
             { val: '4', lbl: 'Social Providers' },
           ].map((s) => (
             <div key={s.lbl} className="text-center">
-              <div className="text-lg font-bold font-mono text-[#FFD700]">{s.val}</div>
-              <div className="text-[8px] text-[#666] font-mono uppercase tracking-widest">{s.lbl}</div>
+              <div className="text-lg font-bold font-mono text-gold">{s.val}</div>
+              <div className="text-meta text-muted-high font-mono uppercase tracking-widest">{s.lbl}</div>
             </div>
           ))}
         </div>
@@ -813,7 +813,7 @@ function LaunchpadFlowSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>LAUNCH FLOW</SectionTag>
-      <SlideTitle>FROM IDEA TO <span className="text-[#FFD700]">LIVE TOKEN</span> IN 60 SECONDS</SlideTitle>
+      <SlideTitle>FROM IDEA TO <span className="text-gold">LIVE TOKEN</span> IN 60 SECONDS</SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-8 space-y-3">
         {[
           { step: 1, title: 'CONNECT WALLET', desc: 'Phantom, Solflare, Coinbase, Trust Wallet. One click to authenticate.', icon: Wallet, color: '#39FF14', time: '5s' },
@@ -828,14 +828,14 @@ function LaunchpadFlowSlide() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="text-[9px] font-mono font-bold" style={{ color: s.color }}>STEP {s.step}</span>
-                <h3 className="text-xs font-bold font-mono text-[#EDEDED]">{s.title}</h3>
+                <span className="text-meta font-mono font-bold" style={{ color: s.color }}>STEP {s.step}</span>
+                <h3 className="text-xs font-bold font-mono text-fg">{s.title}</h3>
               </div>
-              <p className="text-[10px] text-[#888] font-mono mt-0.5">{s.desc}</p>
+              <p className="text-meta text-fg-soft font-mono mt-0.5">{s.desc}</p>
             </div>
             <div className="flex-shrink-0 text-right">
               <div className="text-sm font-bold font-mono" style={{ color: s.color }}>{s.time}</div>
-              <div className="text-[8px] font-mono text-[#555]">avg</div>
+              <div className="text-meta font-mono text-muted-mid">avg</div>
             </div>
           </motion.div>
         ))}
@@ -848,7 +848,7 @@ function FeatureCreatorSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>CREATOR DASHBOARD</SectionTag>
-      <SlideTitle>YOUR TOKENS. YOUR FEES. <span className="text-[#39FF14]">YOUR COMMAND CENTER.</span></SlideTitle>
+      <SlideTitle>YOUR TOKENS. YOUR FEES. <span className="text-acid-green">YOUR COMMAND CENTER.</span></SlideTitle>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 gap-3">
           <FeatureCard icon={Wallet} title="My Tokens" desc="All created tokens with market cap, fees earned, holders" color="#39FF14" />
@@ -861,7 +861,7 @@ function FeatureCreatorSlide() {
           <div className="space-y-3">
             <div className="flex gap-2">
               {['MY TOKENS', 'FEE CLAIMS', 'PARTNER', 'ADMIN'].map((t, i) => (
-                <div key={t} className={`text-[8px] font-mono font-bold uppercase tracking-widest px-2 py-1 ${i === 1 ? 'text-[#39FF14] border-b border-[#39FF14]' : 'text-[#555]'}`}>{t}</div>
+                <div key={t} className={`text-meta font-mono font-bold uppercase tracking-widest px-2 py-1 ${i === 1 ? 'text-acid-green border-b border-[#39FF14]' : 'text-muted-mid'}`}>{t}</div>
               ))}
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -871,7 +871,7 @@ function FeatureCreatorSlide() {
                 { l: 'TOKENS', v: '8', c: '#00F0FF' },
               ].map((s) => (
                 <div key={s.l} className="bg-[#111] p-2 border border-white/5 text-center">
-                  <div className="text-[8px] text-[#555] font-mono">{s.l}</div>
+                  <div className="text-meta text-muted-mid font-mono">{s.l}</div>
                   <div className="text-sm font-mono font-bold" style={{ color: s.c }}>{s.v}</div>
                 </div>
               ))}
@@ -884,12 +884,12 @@ function FeatureCreatorSlide() {
             ].map((c) => (
               <div key={c.token} className="flex items-center justify-between bg-[#111] p-2 border border-white/5">
                 <div>
-                  <div className="text-[10px] font-mono font-bold text-[#EDEDED]">{c.token}</div>
-                  <div className="text-[8px] font-mono text-[#666]">Earned: {c.earned}</div>
+                  <div className="text-meta font-mono font-bold text-fg">{c.token}</div>
+                  <div className="text-meta font-mono text-muted-high">Earned: {c.earned}</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-[10px] font-mono text-[#FFD700]">{c.claimable}</div>
-                  <div className={`text-[8px] font-mono font-bold ${c.status === 'CLAIM' ? 'text-[#39FF14]' : 'text-[#555]'}`}>{c.status}</div>
+                  <div className="text-meta font-mono text-gold">{c.claimable}</div>
+                  <div className={`text-meta font-mono font-bold ${c.status === 'CLAIM' ? 'text-acid-green' : 'text-muted-mid'}`}>{c.status}</div>
                 </div>
               </div>
             ))}
@@ -904,7 +904,7 @@ function FeatureAnalyzeSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>RISK ENGINE</SectionTag>
-      <SlideTitle>DETECT THREATS <span className="text-[#FF003C]">BEFORE THEY STRIKE</span></SlideTitle>
+      <SlideTitle>DETECT THREATS <span className="text-error">BEFORE THEY STRIKE</span></SlideTitle>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
         <motion.div variants={stagger} initial="hidden" animate="show">
           <SlideSubtitle>
@@ -919,10 +919,10 @@ function FeatureAnalyzeSlide() {
             ].map((t) => (
               <motion.div key={t.threat} variants={fadeUp} className="flex items-center justify-between bg-[#0A0A0A] p-3 border border-white/5">
                 <div>
-                  <div className="text-xs font-mono font-bold text-[#EDEDED]">{t.threat}</div>
-                  <div className="text-[10px] font-mono text-[#666] mt-0.5">{t.desc}</div>
+                  <div className="text-xs font-mono font-bold text-fg">{t.threat}</div>
+                  <div className="text-meta font-mono text-muted-high mt-0.5">{t.desc}</div>
                 </div>
-                <div className={`badge text-[9px] px-2 py-0.5 ${t.severity === 'CRITICAL' ? 'badge-red' : t.severity === 'HIGH' ? 'badge-yellow' : 'badge-muted'}`}>
+                <div className={`badge text-meta px-2 py-0.5 ${t.severity === 'CRITICAL' ? 'badge-red' : t.severity === 'HIGH' ? 'badge-yellow' : 'badge-muted'}`}>
                   {t.severity}
                 </div>
               </motion.div>
@@ -933,12 +933,12 @@ function FeatureAnalyzeSlide() {
         <MockupFrame title="Deployer Intelligence">
           <div className="space-y-3">
             <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 bg-[#39FF14]/10 border border-[#39FF14]/20 flex items-center justify-center">
-                <Crosshair size={14} className="text-[#39FF14]" />
+              <div className="w-8 h-8 bg-acid-green/10 border border-[#39FF14]/20 flex items-center justify-center">
+                <Crosshair size={14} className="text-acid-green" />
               </div>
               <div>
-                <div className="text-xs font-mono font-bold text-[#EDEDED]">Deployer 7xKp...3nR2</div>
-                <div className="text-[9px] font-mono text-[#39FF14]">LOW RISK</div>
+                <div className="text-xs font-mono font-bold text-fg">Deployer 7xKp...3nR2</div>
+                <div className="text-meta font-mono text-acid-green">LOW RISK</div>
               </div>
             </div>
             {[
@@ -949,20 +949,20 @@ function FeatureAnalyzeSlide() {
               { label: 'Holder Retention', value: '68%', bar: 68 },
             ].map((s) => (
               <div key={s.label}>
-                <div className="flex items-center justify-between text-[10px] font-mono mb-1">
-                  <span className="text-[#666]">{s.label}</span>
-                  <span className="text-[#EDEDED] font-bold">{s.value}</span>
+                <div className="flex items-center justify-between text-meta font-mono mb-1">
+                  <span className="text-muted-high">{s.label}</span>
+                  <span className="text-fg font-bold">{s.value}</span>
                 </div>
-                <div className="w-full h-1 bg-[#1A1A1A] overflow-hidden">
-                  <div className="h-full bg-[#39FF14]/30" style={{ width: `${s.bar}%` }} />
+                <div className="w-full h-1 bg-elevated overflow-hidden">
+                  <div className="h-full bg-acid-green/30" style={{ width: `${s.bar}%` }} />
                 </div>
               </div>
             ))}
             <div className="bg-[#111] p-2 border border-[#39FF14]/10 mt-2">
-              <div className="text-[8px] font-mono text-[#39FF14] uppercase tracking-widest font-bold">CREDIBILITY SCORE</div>
+              <div className="text-meta font-mono text-acid-green uppercase tracking-widest font-bold">CREDIBILITY SCORE</div>
               <div className="flex items-end gap-2 mt-1">
-                <span className="text-2xl font-bold font-mono text-[#39FF14] number-glow-green">82</span>
-                <span className="text-[10px] font-mono text-[#666] mb-1">/100</span>
+                <span className="text-2xl font-bold font-mono text-acid-green number-glow-green">82</span>
+                <span className="text-meta font-mono text-muted-high mb-1">/100</span>
               </div>
             </div>
           </div>
@@ -980,7 +980,7 @@ function KPIsSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>KEY PERFORMANCE INDICATORS</SectionTag>
-      <SlideTitle>METRICS THAT <span className="text-[#39FF14]">MATTER</span></SlideTitle>
+      <SlideTitle>METRICS THAT <span className="text-acid-green">MATTER</span></SlideTitle>
       <SlideSubtitle>
         The KPIs we track to measure platform health, creator success, and ecosystem growth.
       </SlideSubtitle>
@@ -1050,16 +1050,16 @@ function KPIsSlide() {
           <motion.div key={cat.category} variants={fadeUp} className="card p-5">
             <div className="flex items-center gap-2 mb-3">
               <cat.icon size={14} style={{ color: cat.color }} />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest" style={{ color: cat.color }}>{cat.category}</span>
+              <span className="text-meta font-mono font-bold uppercase tracking-widest" style={{ color: cat.color }}>{cat.category}</span>
             </div>
             <div className="space-y-2.5">
               {cat.kpis.map((k) => (
                 <div key={k.metric}>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-mono text-[#888]">{k.metric}</span>
-                    <span className="text-[10px] font-mono font-bold text-[#EDEDED]">{k.value}</span>
+                    <span className="text-meta font-mono text-fg-soft">{k.metric}</span>
+                    <span className="text-meta font-mono font-bold text-fg">{k.value}</span>
                   </div>
-                  <div className="text-[8px] font-mono text-[#555]">Target: {k.target}</div>
+                  <div className="text-meta font-mono text-muted-mid">Target: {k.target}</div>
                 </div>
               ))}
             </div>
@@ -1074,7 +1074,7 @@ function MilestonesSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>MILESTONES</SectionTag>
-      <SlideTitle>WHAT WE&apos;VE <span className="text-[#39FF14]">ACHIEVED</span> & WHERE WE&apos;RE <span className="text-[#00F0FF]">GOING</span></SlideTitle>
+      <SlideTitle>WHAT WE&apos;VE <span className="text-acid-green">ACHIEVED</span> & WHERE WE&apos;RE <span className="text-[#00F0FF]">GOING</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-8 relative">
         {/* Timeline line */}
         <div className="absolute left-[19px] top-0 bottom-0 w-px bg-gradient-to-b from-[#39FF14]/40 via-[#00F0FF]/30 to-[#FFD700]/20 hidden sm:block" />
@@ -1089,19 +1089,19 @@ function MilestonesSlide() {
           ].map((m) => (
             <motion.div key={m.date} variants={fadeUp} className="flex gap-4 sm:gap-6 items-start">
               <div className="flex-shrink-0 relative z-10">
-                <div className={`w-10 h-10 flex items-center justify-center border ${m.done ? 'bg-[#39FF14]/10 border-[#39FF14]/30' : 'bg-[#111] border-white/10'}`}>
-                  {m.done ? <CheckCircle size={16} className="text-[#39FF14]" /> : <Clock size={16} className="text-[#666]" />}
+                <div className={`w-10 h-10 flex items-center justify-center border ${m.done ? 'bg-acid-green/10 border-[#39FF14]/30' : 'bg-[#111] border-white/10'}`}>
+                  {m.done ? <CheckCircle size={16} className="text-acid-green" /> : <Clock size={16} className="text-muted-high" />}
                 </div>
               </div>
               <div className="flex-1 card p-4">
                 <div className="flex items-center gap-3 mb-2">
-                  <span className="text-[10px] font-mono font-bold" style={{ color: m.color }}>{m.date}</span>
-                  <h3 className="text-xs font-bold font-mono text-[#EDEDED]">{m.title}</h3>
-                  {m.done && <div className="badge badge-green text-[8px] px-1.5 py-0.5">DONE</div>}
+                  <span className="text-meta font-mono font-bold" style={{ color: m.color }}>{m.date}</span>
+                  <h3 className="text-xs font-bold font-mono text-fg">{m.title}</h3>
+                  {m.done && <div className="badge badge-green text-meta px-1.5 py-0.5">DONE</div>}
                 </div>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1">
                   {m.items.map((item) => (
-                    <div key={item} className="flex items-center gap-2 text-[10px] font-mono text-[#888]">
+                    <div key={item} className="flex items-center gap-2 text-meta font-mono text-fg-soft">
                       <div className="w-1 h-1 flex-shrink-0" style={{ backgroundColor: m.color }} />
                       {item}
                     </div>
@@ -1124,7 +1124,7 @@ function DifferentiatorsSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>WHY BAGS TERMINAL</SectionTag>
-      <SlideTitle>WHAT MAKES US <span className="text-[#39FF14]">DIFFERENT</span></SlideTitle>
+      <SlideTitle>WHAT MAKES US <span className="text-acid-green">DIFFERENT</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-10">
         <FeatureCard icon={DollarSign} title="Perpetual Royalties" desc="1% of ALL volume flows to creators -- forever. Not just at launch. Not just at graduation. Every trade." color="#FFD700" />
         <FeatureCard icon={Users} title="100-Way Fee Split" desc="Configure up to 100 fee earners per token. Split revenue across teams, KOLs, communities, DAOs." color="#39FF14" />
@@ -1141,10 +1141,10 @@ function CompetitiveSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>COMPETITIVE LANDSCAPE</SectionTag>
-      <SlideTitle>FEATURE <span className="text-[#39FF14]">COMPARISON</span></SlideTitle>
+      <SlideTitle>FEATURE <span className="text-acid-green">COMPARISON</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-10 overflow-x-auto">
         <div className="min-w-[500px]">
-          <div className="grid grid-cols-6 text-[9px] sm:text-[10px] font-mono uppercase tracking-widest text-[#666] pb-3 border-b border-white/10 font-bold">
+          <div className="grid grid-cols-6 text-meta sm:text-meta font-mono uppercase tracking-widest text-muted-high pb-3 border-b border-white/10 font-bold">
             <span>PLATFORM</span>
             <span>FEE SHARING</span>
             <span>SOCIAL LINK</span>
@@ -1159,8 +1159,8 @@ function CompetitiveSlide() {
           <CompetitorRow name="SunPump" fee="NO" social="NO" api="NO" risk="NO" dividend="NO" />
         </div>
       </motion.div>
-      <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-8 p-4 border border-[#39FF14]/20 bg-[#39FF14]/5">
-        <p className="text-xs font-mono text-[#39FF14] text-center">
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-8 p-4 border border-[#39FF14]/20 bg-acid-green/5">
+        <p className="text-xs font-mono text-acid-green text-center">
           BAGS Terminal is the ONLY platform combining creator monetization, risk intelligence, and real-time monitoring in one interface.
         </p>
       </motion.div>
@@ -1172,22 +1172,22 @@ function MarketSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>MARKET OPPORTUNITY</SectionTag>
-      <SlideTitle>A MARKET THAT ONLY <span className="text-[#39FF14]">GROWS</span></SlideTitle>
+      <SlideTitle>A MARKET THAT ONLY <span className="text-acid-green">GROWS</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
         <motion.div variants={fadeUp} className="card p-6 text-center">
-          <div className="text-3xl sm:text-4xl font-bold text-[#39FF14] font-mono number-glow-green mb-2">$80B+</div>
-          <div className="text-[10px] uppercase tracking-widest text-[#666] font-mono font-bold mb-3">MEMECOIN MARKET CAP</div>
-          <div className="text-xs text-[#888] font-mono">Growing at 26.7% CAGR through 2035</div>
+          <div className="text-3xl sm:text-4xl font-bold text-acid-green font-mono number-glow-green mb-2">$80B+</div>
+          <div className="text-meta uppercase tracking-widest text-muted-high font-mono font-bold mb-3">MEMECOIN MARKET CAP</div>
+          <div className="text-xs text-fg-soft font-mono">Growing at 26.7% CAGR through 2035</div>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6 text-center">
-          <div className="text-3xl sm:text-4xl font-bold text-[#FFD700] font-mono number-glow-gold mb-2">$250B</div>
-          <div className="text-[10px] uppercase tracking-widest text-[#666] font-mono font-bold mb-3">CREATOR ECONOMY</div>
-          <div className="text-xs text-[#888] font-mono">Projected $480B by 2027. 22.5% YoY growth.</div>
+          <div className="text-3xl sm:text-4xl font-bold text-gold font-mono number-glow-gold mb-2">$250B</div>
+          <div className="text-meta uppercase tracking-widest text-muted-high font-mono font-bold mb-3">CREATOR ECONOMY</div>
+          <div className="text-xs text-fg-soft font-mono">Projected $480B by 2027. 22.5% YoY growth.</div>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6 text-center">
           <div className="text-3xl sm:text-4xl font-bold text-[#00F0FF] font-mono mb-2">$2.4B</div>
-          <div className="text-[10px] uppercase tracking-widest text-[#666] font-mono font-bold mb-3">SOLANA APP REVENUE</div>
-          <div className="text-xs text-[#888] font-mono">2025 total. Memecoins = 83.7% of DApp revenue.</div>
+          <div className="text-meta uppercase tracking-widest text-muted-high font-mono font-bold mb-3">SOLANA APP REVENUE</div>
+          <div className="text-xs text-fg-soft font-mono">2025 total. Memecoins = 83.7% of DApp revenue.</div>
         </motion.div>
       </motion.div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-3 gap-3 mt-4">
@@ -1203,7 +1203,7 @@ function TractionSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>TRACTION</SectionTag>
-      <SlideTitle>ALREADY <span className="text-[#39FF14]">SHIPPING & SCALING</span></SlideTitle>
+      <SlideTitle>ALREADY <span className="text-acid-green">SHIPPING & SCALING</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
         <StatBox value="$3B+" label="Total On-chain Volume" accent="green" />
         <StatBox value="$20M+" label="Paid to Creators" accent="gold" />
@@ -1212,14 +1212,14 @@ function TractionSlide() {
       </motion.div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
         <motion.div variants={fadeUp} className="card p-5">
-          <Award size={20} className="text-[#FFD700] mb-3" />
-          <h3 className="text-sm font-bold font-mono text-[#FFD700] mb-2">AWARD RECOGNITION</h3>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">Winner of the &ldquo;Crowdfunding Innovation Award&rdquo; at the 2026 FinTech Breakthrough Awards (10th annual program).</p>
+          <Award size={20} className="text-gold mb-3" />
+          <h3 className="text-sm font-bold font-mono text-gold mb-2">AWARD RECOGNITION</h3>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">Winner of the &ldquo;Crowdfunding Innovation Award&rdquo; at the 2026 FinTech Breakthrough Awards (10th annual program).</p>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-5">
           <Code size={20} className="text-[#00F0FF] mb-3" />
           <h3 className="text-sm font-bold font-mono text-[#00F0FF] mb-2">DEVELOPER ECOSYSTEM</h3>
-          <p className="text-xs text-[#888] font-mono leading-relaxed">$4M hackathon fund. REST API + TypeScript SDK. Bags App Store launching for third-party apps.</p>
+          <p className="text-xs text-fg-soft font-mono leading-relaxed">$4M hackathon fund. REST API + TypeScript SDK. Bags App Store launching for third-party apps.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -1230,10 +1230,10 @@ function BusinessModelSlide() {
   return (
     <div className="flex flex-col justify-center h-full">
       <SectionTag>BUSINESS MODEL</SectionTag>
-      <SlideTitle>REVENUE FROM <span className="text-[#FFD700]">EVERY TRANSACTION</span></SlideTitle>
+      <SlideTitle>REVENUE FROM <span className="text-gold">EVERY TRANSACTION</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-10">
         <motion.div variants={fadeUp} className="card p-6">
-          <h3 className="text-xs uppercase tracking-widest text-[#39FF14] font-mono font-bold mb-4">REVENUE STREAMS</h3>
+          <h3 className="text-xs uppercase tracking-widest text-acid-green font-mono font-bold mb-4">REVENUE STREAMS</h3>
           <div className="space-y-4">
             {[
               { source: 'Trading Fees', desc: 'Platform fee on every swap executed', pct: 'PRIMARY' },
@@ -1244,28 +1244,28 @@ function BusinessModelSlide() {
             ].map((r) => (
               <div key={r.source} className="flex items-center justify-between">
                 <div>
-                  <div className="text-xs font-mono font-bold text-[#EDEDED]">{r.source}</div>
-                  <div className="text-[10px] font-mono text-[#666] mt-0.5">{r.desc}</div>
+                  <div className="text-xs font-mono font-bold text-fg">{r.source}</div>
+                  <div className="text-meta font-mono text-muted-high mt-0.5">{r.desc}</div>
                 </div>
-                <div className="badge badge-green text-[9px] px-2 py-0.5">{r.pct}</div>
+                <div className="badge badge-green text-meta px-2 py-0.5">{r.pct}</div>
               </div>
             ))}
           </div>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6">
-          <h3 className="text-xs uppercase tracking-widest text-[#FFD700] font-mono font-bold mb-4">FLYWHEEL ECONOMICS</h3>
+          <h3 className="text-xs uppercase tracking-widest text-gold font-mono font-bold mb-4">FLYWHEEL ECONOMICS</h3>
           <div className="space-y-4">
             <div className="bg-[#111] p-4 border border-white/5">
-              <div className="text-xs font-mono text-[#39FF14] font-bold mb-1">Volume = Revenue</div>
-              <div className="text-[10px] font-mono text-[#888]">Every $1B in volume = direct platform revenue from trading fees</div>
+              <div className="text-xs font-mono text-acid-green font-bold mb-1">Volume = Revenue</div>
+              <div className="text-meta font-mono text-fg-soft">Every $1B in volume = direct platform revenue from trading fees</div>
             </div>
             <div className="bg-[#111] p-4 border border-white/5">
-              <div className="text-xs font-mono text-[#FFD700] font-bold mb-1">Creator Lock-in</div>
-              <div className="text-[10px] font-mono text-[#888]">Perpetual royalties create lifetime creator retention</div>
+              <div className="text-xs font-mono text-gold font-bold mb-1">Creator Lock-in</div>
+              <div className="text-meta font-mono text-fg-soft">Perpetual royalties create lifetime creator retention</div>
             </div>
             <div className="bg-[#111] p-4 border border-white/5">
               <div className="text-xs font-mono text-[#00F0FF] font-bold mb-1">Network Effects</div>
-              <div className="text-[10px] font-mono text-[#888]">More creators = more tokens = more volume = more fees</div>
+              <div className="text-meta font-mono text-fg-soft">More creators = more tokens = more volume = more fees</div>
             </div>
           </div>
         </motion.div>
@@ -1288,13 +1288,13 @@ function RoadmapSlide() {
           <motion.div key={p.phase} variants={fadeUp} className="card p-5 flex gap-6 items-start">
             <div className="flex-shrink-0 w-20 text-center">
               <div className="text-xs font-mono font-bold mb-1" style={{ color: p.color }}>{p.phase}</div>
-              {p.done && <div className="badge badge-green text-[8px] px-1.5 py-0.5">LIVE</div>}
+              {p.done && <div className="badge badge-green text-meta px-1.5 py-0.5">LIVE</div>}
             </div>
             <div className="flex-1">
-              <h3 className="text-sm font-bold font-mono text-[#EDEDED] mb-2">{p.title}</h3>
+              <h3 className="text-sm font-bold font-mono text-fg mb-2">{p.title}</h3>
               <div className="grid grid-cols-2 gap-1">
                 {p.items.map((item) => (
-                  <div key={item} className="flex items-center gap-2 text-xs font-mono text-[#888]">
+                  <div key={item} className="flex items-center gap-2 text-xs font-mono text-fg-soft">
                     <div className="w-1 h-1" style={{ backgroundColor: p.color }} />
                     {item}
                   </div>
@@ -1314,34 +1314,34 @@ function ClosingSlide() {
       <div className="absolute inset-0 bg-grid-pattern opacity-20" />
       <div className="relative z-10 flex flex-col items-center">
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }}>
-          <div className="text-[10px] uppercase tracking-[0.3em] text-[#39FF14] font-bold font-mono mb-6">THE OPPORTUNITY</div>
-          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold uppercase tracking-tight text-[#EDEDED] font-[family-name:var(--font-display)] leading-[1.1] mb-8">
+          <div className="text-meta uppercase tracking-[0.3em] text-acid-green font-bold font-mono mb-6">THE OPPORTUNITY</div>
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold uppercase tracking-tight text-fg font-[family-name:var(--font-display)] leading-[1.1] mb-8">
             THE TOKEN ECONOMY<br />
-            NEEDS AN <span className="text-[#39FF14]">INTELLIGENCE LAYER</span>
+            NEEDS AN <span className="text-acid-green">INTELLIGENCE LAYER</span>
           </h1>
-          <p className="text-sm sm:text-base text-[#888] font-mono max-w-2xl mx-auto mb-12 leading-relaxed">
+          <p className="text-sm sm:text-base text-fg-soft font-mono max-w-2xl mx-auto mb-12 leading-relaxed">
             30,000 tokens launch daily. $80B+ market. $250B creator economy.
             Zero transparency. Zero creator monetization. Until now.
           </p>
           <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-12">
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#39FF14] font-mono number-glow-green">$3B+</div>
-              <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">VOLUME</div>
+              <div className="text-2xl font-bold text-acid-green font-mono number-glow-green">$3B+</div>
+              <div className="text-meta text-muted-high font-mono uppercase tracking-widest mt-1">VOLUME</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#FFD700] font-mono number-glow-gold">$20M+</div>
-              <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">TO CREATORS</div>
+              <div className="text-2xl font-bold text-gold font-mono number-glow-gold">$20M+</div>
+              <div className="text-meta text-muted-high font-mono uppercase tracking-widest mt-1">TO CREATORS</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-[#00F0FF] font-mono">$4M</div>
-              <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">DEV FUND</div>
+              <div className="text-meta text-muted-high font-mono uppercase tracking-widest mt-1">DEV FUND</div>
             </div>
           </div>
           <div className="flex flex-col items-center gap-4">
             <div className="badge badge-green px-6 py-2.5 text-sm font-bold">
               BAGS TERMINAL
             </div>
-            <span className="text-[10px] text-[#444] font-mono uppercase tracking-widest">
+            <span className="text-meta text-[#444] font-mono uppercase tracking-widest">
               bagsterminal.com
             </span>
           </div>
@@ -1433,24 +1433,46 @@ export default function PitchDeckPage() {
   const progress = ((current + 1) / SLIDES.length) * 100;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-[#050505] text-[#EDEDED] flex flex-col overflow-hidden select-none">
+    <MotionConfig reducedMotion="user">
+    <div
+      style={{ zIndex: 'var(--z-toast)' }}
+      className="fixed inset-0 bg-[#050505] text-fg flex flex-col overflow-hidden select-none"
+    >
       {/* Top bar */}
       <div className="flex-shrink-0 flex items-center justify-between px-4 sm:px-6 h-12 border-b border-white/5 relative z-20">
         <div className="flex items-center gap-3">
-          <button onClick={() => setNavOpen(!navOpen)} className="text-[10px] uppercase tracking-widest text-[#888] font-mono font-bold hover:text-[#39FF14] transition-colors">
+          <button
+            type="button"
+            onClick={() => setNavOpen(!navOpen)}
+            aria-label="Toggle slide navigation"
+            aria-expanded={navOpen}
+            className="inline-flex items-center min-h-6 px-1 -mx-1 text-meta uppercase tracking-widest text-fg-soft font-mono font-bold hover:text-acid-green transition-colors focus-ring"
+          >
             {SECTIONS[slide.section]}
           </button>
-          <span className="text-[#333]">/</span>
-          <span className="text-[10px] uppercase tracking-widest text-[#EDEDED] font-mono font-bold">{slide.label}</span>
+          <span aria-hidden="true" className="text-line">/</span>
+          <span className="text-meta uppercase tracking-widest text-fg font-mono font-bold">{slide.label}</span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-[10px] font-mono text-[#666]">{current + 1} / {SLIDES.length}</span>
+          <span className="text-meta font-mono text-muted-high">{current + 1} / {SLIDES.length}</span>
           <div className="hidden sm:flex items-center gap-1">
-            <button onClick={prev} disabled={current === 0} className="w-7 h-7 flex items-center justify-center border border-white/10 hover:border-[#39FF14]/30 disabled:opacity-20 transition-colors">
-              <ChevronLeft size={14} />
+            <button
+              type="button"
+              onClick={prev}
+              disabled={current === 0}
+              aria-label="Previous slide"
+              className="w-7 h-7 flex items-center justify-center border border-white/10 hover:border-acid-green/30 disabled:opacity-20 transition-colors focus-ring"
+            >
+              <ChevronLeft size={14} aria-hidden="true" />
             </button>
-            <button onClick={next} disabled={current === SLIDES.length - 1} className="w-7 h-7 flex items-center justify-center border border-white/10 hover:border-[#39FF14]/30 disabled:opacity-20 transition-colors">
-              <ChevronRight size={14} />
+            <button
+              type="button"
+              onClick={next}
+              disabled={current === SLIDES.length - 1}
+              aria-label="Next slide"
+              className="w-7 h-7 flex items-center justify-center border border-white/10 hover:border-acid-green/30 disabled:opacity-20 transition-colors focus-ring"
+            >
+              <ChevronRight size={14} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -1458,7 +1480,7 @@ export default function PitchDeckPage() {
 
       {/* Progress bar */}
       <div className="flex-shrink-0 h-[2px] bg-[#111] relative z-20">
-        <motion.div className="h-full bg-[#39FF14]" animate={{ width: `${progress}%` }} transition={{ duration: 0.3, ease: 'easeOut' }} />
+        <motion.div className="h-full bg-acid-green" animate={{ width: `${progress}%` }} transition={{ duration: 0.3, ease: 'easeOut' }} />
       </div>
 
       {/* Navigation drawer */}
@@ -1476,7 +1498,7 @@ export default function PitchDeckPage() {
               if (sectionSlides.length === 0) return null;
               return (
                 <div key={key} className="mb-4">
-                  <div className="text-[9px] uppercase tracking-widest text-[#39FF14] font-mono font-bold mb-2">{label}</div>
+                  <div className="text-meta uppercase tracking-widest text-acid-green font-mono font-bold mb-2">{label}</div>
                   {sectionSlides.map((s) => {
                     const idx = SLIDES.indexOf(s);
                     return (
@@ -1484,7 +1506,7 @@ export default function PitchDeckPage() {
                         key={s.id}
                         onClick={() => goTo(idx)}
                         className={`block w-full text-left text-xs font-mono py-1.5 px-3 mb-0.5 transition-colors ${
-                          idx === current ? 'text-[#39FF14] bg-[#39FF14]/5' : 'text-[#888] hover:text-[#EDEDED]'
+                          idx === current ? 'text-acid-green bg-acid-green/5' : 'text-fg-soft hover:text-fg'
                         }`}
                       >
                         {s.label}
@@ -1516,18 +1538,32 @@ export default function PitchDeckPage() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom progress dots */}
-      <div className="flex-shrink-0 flex items-center justify-center gap-1 py-3 border-t border-white/5">
+      {/* Bottom progress dots — visual is 4px tall but the button itself reserves 24px hit area. */}
+      <div
+        role="tablist"
+        aria-label="Slide navigation"
+        className="flex-shrink-0 flex items-center justify-start sm:justify-center gap-1 py-1 px-2 border-t border-white/5 overflow-x-auto custom-scrollbar"
+      >
         {SLIDES.map((s, i) => (
           <button
             key={s.id}
+            type="button"
+            role="tab"
             onClick={() => goTo(i)}
-            className={`h-1 transition-all duration-300 ${
-              i === current ? 'w-6 bg-[#39FF14]' : i < current ? 'w-1.5 bg-[#39FF14]/30' : 'w-1.5 bg-white/10'
-            }`}
-          />
+            aria-label={`Go to slide ${i + 1}: ${s.label}`}
+            aria-selected={i === current}
+            className="group relative inline-flex items-center justify-center min-w-[24px] h-6 focus-ring"
+          >
+            <span
+              aria-hidden="true"
+              className={`block h-1 transition-all duration-300 ${
+                i === current ? 'w-6 bg-acid-green' : i < current ? 'w-1.5 bg-acid-green/30' : 'w-1.5 bg-white/10 group-hover:bg-white/30'
+              }`}
+            />
+          </button>
         ))}
       </div>
     </div>
+    </MotionConfig>
   );
 }

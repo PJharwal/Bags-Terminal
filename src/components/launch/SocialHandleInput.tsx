@@ -1,6 +1,8 @@
 'use client';
 
 import type { SocialProvider } from '@/lib/bags-types';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
 
 interface SocialHandleInputProps {
   provider: SocialProvider;
@@ -19,18 +21,20 @@ const PROVIDERS: { value: SocialProvider; label: string }[] = [
 export function SocialHandleInput({ provider, username, onProviderChange, onUsernameChange }: SocialHandleInputProps) {
   return (
     <div className="flex flex-col gap-2">
-      {/* Provider */}
       <div className="flex flex-col gap-1">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Platform</label>
-        <div className="grid grid-cols-4 gap-1">
+        <span className="text-meta text-muted-high uppercase tracking-widest">Platform</span>
+        <div role="radiogroup" aria-label="Social platform" className="grid grid-cols-4 gap-1">
           {PROVIDERS.map((p) => (
             <button
               key={p.value}
+              type="button"
+              role="radio"
+              aria-checked={provider === p.value}
               onClick={() => onProviderChange(p.value)}
-              className={`py-1.5 text-[9px] font-bold uppercase border transition-colors ${
+              className={`py-1.5 text-meta font-bold uppercase border transition-colors active:scale-95 focus-ring ${
                 provider === p.value
-                  ? 'border-[#39FF14] text-[#39FF14] bg-[#39FF14]/10'
-                  : 'border-[#333] text-[#888] hover:border-[#666]'
+                  ? 'border-acid-green text-acid-green bg-acid-green/10'
+                  : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
               }`}
             >
               {p.label}
@@ -39,20 +43,15 @@ export function SocialHandleInput({ provider, username, onProviderChange, onUser
         </div>
       </div>
 
-      {/* Username */}
-      <div className="flex flex-col gap-1">
-        <label className="text-[9px] text-[#666] uppercase tracking-widest">Username</label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">@</span>
-          <input
-            type="text"
-            value={username}
-            onChange={(e) => onUsernameChange(e.target.value.replace(/^@/, ''))}
-            className="w-full bg-[#1A1A1A] border border-[#333] pl-7 pr-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-            placeholder="username"
-          />
-        </div>
-      </div>
+      <Field label="Username">
+        <Input
+          type="text"
+          value={username}
+          onChange={(e) => onUsernameChange(e.target.value.replace(/^@/, ''))}
+          placeholder="username"
+          prefix="@"
+        />
+      </Field>
     </div>
   );
 }

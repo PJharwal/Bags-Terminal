@@ -68,8 +68,8 @@ export default function TerminalPage() {
         return (
             <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 size={32} className="text-[#39FF14] animate-spin" />
-                    <span className="text-[#666] text-xs font-mono uppercase tracking-widest">
+                    <Loader2 size={32} className="text-acid-green animate-spin" />
+                    <span className="text-muted-high text-xs font-mono uppercase tracking-widest">
                         LOADING_TERMINAL...
                     </span>
                 </div>
@@ -82,9 +82,9 @@ export default function TerminalPage() {
         return (
             <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
-                    <div className="text-[#FF003C] text-lg font-bold">Failed to load token</div>
-                    <div className="text-[#666] text-sm font-mono">{error}</div>
-                    <div className="text-[#555] text-xs mt-1">
+                    <div className="text-error text-lg font-bold">Failed to load token</div>
+                    <div className="text-muted-high text-sm font-mono">{error}</div>
+                    <div className="text-muted-mid text-xs mt-1">
                         Check the token address and try again
                     </div>
                     <div className="flex items-center gap-3 mt-4">
@@ -112,8 +112,8 @@ export default function TerminalPage() {
         return (
             <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4">
-                    <Loader2 size={32} className="text-[#39FF14] animate-spin" />
-                    <span className="text-[#666] text-xs font-mono uppercase tracking-widest">
+                    <Loader2 size={32} className="text-acid-green animate-spin" />
+                    <span className="text-muted-high text-xs font-mono uppercase tracking-widest">
                         INITIALIZING...
                     </span>
                 </div>
@@ -122,12 +122,12 @@ export default function TerminalPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
+        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-fg overflow-hidden font-mono">
             {/* Back Button */}
             <div className="absolute top-[70px] left-4 z-20">
                 <button
                     onClick={() => router.back()}
-                    className="btn-ghost flex items-center gap-2 text-[10px] font-mono"
+                    className="btn-ghost flex items-center gap-2 text-meta font-mono"
                 >
                     <ArrowLeft size={12} />
                     BACK
@@ -136,8 +136,8 @@ export default function TerminalPage() {
 
             {/* Connection Status */}
             <div className="absolute top-[70px] right-4 z-20">
-                <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2 text-[10px] font-mono`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14] animate-pulse' : 'bg-[#FF003C]'}`} />
+                <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2 text-meta font-mono`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-acid-green animate-pulse' : 'bg-[#FF003C]'}`} />
                     {isConnected ? 'LIVE' : 'OFFLINE'}
                 </div>
             </div>
@@ -196,7 +196,7 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
         <div className="p-2 border-t border-white/5">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-[#888] hover:text-[#39FF14] transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-meta font-mono uppercase tracking-widest text-fg-soft hover:text-acid-green transition-colors"
             >
                 <span className="flex items-center gap-2">
                     <Share2 size={12} />
@@ -210,20 +210,20 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
                     <div className="flex gap-1">
                         <button
                             onClick={() => setActiveCard('snapshot')}
-                            className={`flex-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest border transition-colors ${
+                            className={`flex-1 px-2 py-1 text-meta font-mono uppercase tracking-widest border transition-colors ${
                                 activeCard === 'snapshot'
-                                    ? 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5'
-                                    : 'border-white/10 text-[#666]'
+                                    ? 'border-[#39FF14]/30 text-acid-green bg-acid-green/5'
+                                    : 'border-white/10 text-muted-high'
                             }`}
                         >
                             Snapshot
                         </button>
                         <button
                             onClick={() => setActiveCard('pnl')}
-                            className={`flex-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest border transition-colors ${
+                            className={`flex-1 px-2 py-1 text-meta font-mono uppercase tracking-widest border transition-colors ${
                                 activeCard === 'pnl'
-                                    ? 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5'
-                                    : 'border-white/10 text-[#666]'
+                                    ? 'border-[#39FF14]/30 text-acid-green bg-acid-green/5'
+                                    : 'border-white/10 text-muted-high'
                             }`}
                         >
                             PnL

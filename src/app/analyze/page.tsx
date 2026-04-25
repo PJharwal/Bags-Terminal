@@ -8,6 +8,8 @@ import { TokenStatsData, HolderData, TraderData } from "@/types/token";
 import { useSocketStore } from "@/store/socket.store";
 import { gmgnService, GMGNHolder, GMGNTrader } from "@/services/gmgn.service";
 import { Search, Loader2, AlertCircle } from "lucide-react";
+import { AddressInput } from "@/components/ui/AddressInput";
+import { Button } from "@/components/ui/Button";
 
 export default function AnalyzePage() {
   const isConnected = useSocketStore((state) => state.isConnected);
@@ -124,56 +126,49 @@ export default function AnalyzePage() {
   };
 
   return (
-    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] font-mono p-6 space-y-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-display font-bold text-[#EDEDED] tracking-tight">
-          ANALYZE<span className="text-[#39FF14]">_</span>MODULE
+    <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-fg font-mono p-6 space-y-6 max-w-7xl mx-auto">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-display font-bold text-fg tracking-tight">
+          ANALYZE<span className="text-acid-green">_</span>MODULE
         </h1>
-        <div className={`${isConnected ? 'badge-green' : 'badge-red'} font-mono text-sm`}>
+        <div className={`${isConnected ? 'badge-green' : 'badge-red'} font-mono text-sm px-2 py-1`}>
           STATUS: {isConnected ? "CONNECTED" : "DISCONNECTED"}
-          {isConnected && <span className="ml-2 text-xs">({latestTokens.length} TOKENS)</span>}
+          {isConnected && <span className="ml-2 text-xs num">({latestTokens.length} TOKENS)</span>}
         </div>
       </div>
 
       {/* Token Address Input */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <input
-              type="text"
+        <div className="flex gap-3 items-stretch">
+          <div className="flex-1">
+            <AddressInput
               value={tokenAddress}
               onChange={(e) => setTokenAddress(e.target.value)}
               placeholder="Enter Solana token mint address..."
-              className="input w-full pl-12"
+              aria-label="Solana token mint address"
             />
-            <Search className="absolute left-4 top-4.5 text-[#666]" size={18} />
           </div>
-          <button
+          <Button
             type="submit"
+            variant="primary"
+            size="md"
+            loading={isLoading}
             disabled={isLoading}
-            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Analyzing...
-              </>
-            ) : (
-              "Analyze"
-            )}
-          </button>
+            {isLoading ? "Analyzing..." : "Analyze"}
+          </Button>
         </div>
 
         {/* Quick select from recent tokens */}
         {latestTokens.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-[10px] text-[#666] uppercase">Quick select:</span>
+            <span className="text-meta text-muted-high uppercase">Quick select:</span>
             {latestTokens.slice(0, 5).map((token) => (
               <button
                 key={token.mint}
                 type="button"
                 onClick={() => handleQuickSelect(token.mint, token.symbol)}
-                className="btn-ghost px-2 py-1 text-[10px]"
+                className="btn-ghost px-2 py-1 text-meta"
               >
                 ${token.symbol}
               </button>
@@ -194,8 +189,8 @@ export default function AnalyzePage() {
       {stats && (
         <div className="space-y-6">
           {tokenSymbol && (
-            <div className="text-lg font-bold text-[#EDEDED]">
-              Results for <span className="text-[#39FF14]">${tokenSymbol}</span>
+            <div className="text-lg font-bold text-fg">
+              Results for <span className="text-acid-green">${tokenSymbol}</span>
             </div>
           )}
 
@@ -212,7 +207,7 @@ export default function AnalyzePage() {
 
       {/* Empty State */}
       {!stats && !isLoading && !error && (
-        <div className="flex-1 flex flex-col items-center justify-center text-[#666] py-12">
+        <div className="flex-1 flex flex-col items-center justify-center text-muted-high py-12">
           <Search size={32} className="mb-4 opacity-30" />
           <p className="text-sm font-mono">Enter a token address to analyze</p>
         </div>

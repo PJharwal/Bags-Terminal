@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Exclude repo-root markdown from Tailwind's source scan — they contain literal
+   class-name examples like `text-[var(--color-...)]` that would otherwise generate
+   invalid CSS rules (Unexpected token Delim('.')). */
+@source not "../../*.md";
+
 /* BAGS Terminal: Premium Brutalist Theme */
 
 @theme {
@@ -14,19 +19,64 @@
   --color-text-primary: #EDEDED;
   --color-text-secondary: #888888;
   --color-text-muted: #444444;
+  --color-text-muted-high: #666666;
+  --color-text-muted-mid: #555555;
+  --color-bg-elevated: #1A1A1A;
 
-  /* Radical Accents */
-  --color-acid-green: #39FF14;
-  --color-signal-red: #FF003C;
-  --color-electric-blue: #00F0FF;
-  --color-neon-yellow: #FAFF00;
-  --color-gold: #FFD700;
+  /* Short-name aliases — Tailwind v4 generates utilities from --color-* */
+  /* These let codemod produce clean class names: text-fg, text-muted-high, bg-elevated, etc. */
+  --color-fg: #EDEDED;            /* alias for text-primary → text-fg */
+  --color-fg-soft: #888888;       /* alias for text-secondary → text-fg-soft */
+  --color-muted: #444444;         /* alias for text-muted */
+  --color-muted-high: #666666;    /* alias → text-muted-high */
+  --color-muted-mid: #555555;     /* alias → text-muted-mid */
+  --color-elevated: #1A1A1A;      /* alias → bg-elevated */
+  --color-surface: #0A0A0A;       /* alias for bg-secondary → bg-surface */
+  --color-base: #050505;          /* alias for bg-primary → bg-base */
 
-  /* Fonts */
-  --font-display: 'Syncopate', sans-serif;
-  --font-mono: 'Space Mono', monospace;
-  --font-sans: 'Inter', sans-serif;
-  --font-serif: var(--font-playfair), ui-serif, Georgia, serif;
+  /* Form-surface tokens (unify input bg, placeholder, borders, error) */
+  --color-input-bg: #1A1A1A;
+  --color-placeholder: #444444;
+  --color-border-default: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-line: #333333;          /* hairline border on inputs/panels (replaces border-line) */
+  --color-error: #FF003C;
+
+  /* Spacing scale for form rhythm */
+  --space-field-gap: 0.5rem;
+  --space-field-block: 1rem;
+
+  /* Standard textarea heights */
+  --h-textarea-sm: 5rem;
+  --h-textarea-md: 6rem;
+  --h-textarea-lg: 8rem;
+
+  /* Disciplined type scale — collapses 514 ad-hoc text-[8px..12px] usages.
+     Below 11px in a UI mono is illegible. Use these instead of arbitrary px. */
+  --text-meta:      0.6875rem;   /* 11px — table-cell footnote, label */
+  --text-data:      0.8125rem;   /* 13px — body data, table cell, input */
+  --text-stat:      1rem;         /* 16px — primary stats */
+  --text-hero-stat: 1.5rem;       /* 24px — active token price */
+
+  /* Stacking scale */
+  --z-sticky: 20;
+  --z-popover: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+
+  /* Radical Accents — refined palette */
+  --color-acid-green:    #39FF14;
+  --color-signal-red:    #FF003C;
+  --color-electric-blue: #3FB8C7;   /* desaturated from #00F0FF so it doesn't compete with green */
+  --color-neon-yellow:   #FAFF00;
+  --color-warn:          #FAFF00;   /* alias for neon-yellow → text-warn / bg-warn */
+  --color-gold:          #E5C200;   /* refined from #FFD700 — vault gold, not default-yellow */
+
+  /* Fonts — three roles, no overlap */
+  --font-display: 'Syncopate', sans-serif;                          /* hero / marketing only */
+  --font-mono:    'JetBrains Mono', 'SF Mono', 'Menlo', monospace;  /* data / addresses / code */
+  --font-sans:    'Geist', system-ui, sans-serif;                   /* body / UI chrome */
+  --font-serif:   var(--font-playfair), ui-serif, Georgia, serif;
 
   /* Animations */
   --animate-glitch: glitch 1s linear infinite;
@@ -43,11 +93,18 @@
   animation: var(--animate-marquee);
 }
 
-/* Typography Imports */
-@import "@fontsource/syncopate/400.css";
+/* Typography Imports
+ * - Syncopate: hero & marketing display only
+ * - JetBrains Mono: ALL data, addresses, tickers, code (slashed zero by default)
+ * - Geist Sans: body, UI chrome, helper text, modal copy
+ * Space Mono kept available but no longer the default mono. */
 @import "@fontsource/syncopate/700.css";
-@import "@fontsource/space-mono/400.css";
-@import "@fontsource/space-mono/700.css";
+@import "@fontsource/jetbrains-mono/400.css";
+@import "@fontsource/jetbrains-mono/500.css";
+@import "@fontsource/jetbrains-mono/700.css";
+@import "@fontsource/geist-sans/400.css";
+@import "@fontsource/geist-sans/500.css";
+@import "@fontsource/geist-sans/700.css";
 
 :root {
   --background: #050505;
@@ -57,9 +114,17 @@
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-primary);
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01";              /* slashed zero — critical for base58 */
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+/* Reserve mono explicitly for data/code surfaces */
+.font-mono, code, kbd, samp, pre,
+.num, .label, .ticker, .address, [data-numeric] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums slashed-zero;
 }
 
 /* Custom Scrollbar - Minimal & Sharp */
@@ -139,37 +204,89 @@ body {
 /* -------------------------------------------------------------------------- */
 /* PREMIUM INPUT SYSTEM                                                        */
 /* -------------------------------------------------------------------------- */
+/* `@layer components` keeps these below Tailwind utilities in cascade order — */
+/* so callers can still override with `pr-12`, `py-1.5`, `text-xs`, etc.       */
 
-.input {
-  background: #111;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  color: #EDEDED;
-  font-family: var(--font-mono);
-  transition: all 0.15s ease;
-  outline: none;
-}
-.input:focus-visible {
-  outline: 2px solid var(--accent, #39FF14);
-  outline-offset: -2px;
+@layer components {
+  .input {
+    background: #111;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: #EDEDED;
+    font-family: var(--font-mono);
+    transition: all 0.15s ease;
+    outline: none;
+    /* Sane sizing defaults so callers don't have to remember padding.
+       Override per-call with Tailwind utilities (e.g. `py-1.5 text-xs`). */
+    padding: 0.5rem 0.75rem;       /* 8px 12px */
+    font-size: 0.8125rem;          /* 13px */
+    line-height: 1.25rem;          /* 20px → total height ~36px */
+    min-height: 36px;
+    display: block;
+    width: 100%;
+  }
+  .input:focus-visible {
+    outline: 2px solid var(--accent, #39FF14);
+    outline-offset: -2px;
+  }
+
+  .input::placeholder {
+    color: var(--color-placeholder);
+  }
+
+  .input:focus {
+    border-color: rgba(57, 255, 20, 0.4);
+    box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.06);
+  }
+
+  .input:hover:not(:focus):not(:disabled) {
+    border-color: var(--color-border-strong);
+  }
+
+  .input:disabled,
+  .textarea:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .input[aria-invalid="true"],
+  .textarea[aria-invalid="true"] {
+    border-color: rgba(255, 0, 60, 0.5);
+  }
+
+  .input[aria-invalid="true"]:focus,
+  .textarea[aria-invalid="true"]:focus {
+    border-color: var(--color-error);
+    box-shadow: 0 0 0 3px rgba(255, 0, 60, 0.08);
+  }
 }
 
-.input::placeholder {
-  color: #333;
+/* Kill Chrome yellow autofill on dark theme */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+select:-webkit-autofill {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 1000px var(--color-input-bg) inset;
+  caret-color: var(--color-text-primary);
+  transition: background-color 5000s ease-in-out 0s;
 }
 
-.input:focus {
-  border-color: rgba(57, 255, 20, 0.4);
-  box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.06);
+/* Strip native number-spinners (consistent across browsers) */
+input.input[type="number"]::-webkit-outer-spin-button,
+input.input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
-
-.input:hover:not(:focus) {
-  border-color: rgba(255, 255, 255, 0.15);
+input.input[type="number"] {
+  -moz-appearance: textfield;
 }
 
 /* -------------------------------------------------------------------------- */
 /* PREMIUM BUTTON SYSTEM                                                       */
 /* -------------------------------------------------------------------------- */
 
+@layer components {
 /* Primary - Green CTA */
 .btn-primary {
   background: #39FF14;
@@ -181,6 +298,16 @@ body {
   transition: all 0.15s cubic-bezier(0.22, 1, 0.36, 1);
   position: relative;
   overflow: hidden;
+  /* Sane sizing defaults — was unset, callers had to remember every dimension. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.625rem 1rem;        /* 10px 16px */
+  font-size: 0.75rem;            /* 12px */
+  line-height: 1rem;
+  min-height: 36px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .btn-primary::before {
@@ -217,6 +344,16 @@ body {
   color: #888;
   font-family: var(--font-mono);
   transition: all 0.15s ease;
+  /* Sane sizing defaults — was unset. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;       /* 8px 12px */
+  font-size: 0.75rem;            /* 12px */
+  line-height: 1rem;
+  min-height: 32px;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
 .btn-ghost:hover {
@@ -228,6 +365,7 @@ body {
 .btn-ghost:active {
   transform: scale(0.97);
 }
+} /* end @layer components for buttons */
 
 /* -------------------------------------------------------------------------- */
 /* PREMIUM TABLE SYSTEM                                                        */
@@ -491,6 +629,22 @@ body {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+/* Price-flash signature — the trading-terminal moment.
+   Apply via the `usePriceFlash` hook on numeric values that update live. */
+@keyframes price-flash-up {
+  0%   { background-color: rgba(57, 255, 20, 0.20); }
+  100% { background-color: transparent; }
+}
+@keyframes price-flash-down {
+  0%   { background-color: rgba(255, 0, 60, 0.20); }
+  100% { background-color: transparent; }
+}
+.flash-up   { animation: price-flash-up   320ms ease-out; }
+.flash-down { animation: price-flash-down 320ms ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  .flash-up, .flash-down { animation: none; }
+}
+
 /* Progress bar fill */
 @keyframes progress-fill {
   0% { transform: scaleX(0); }
@@ -583,9 +737,11 @@ body {
 }
 
 .section-header h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-sans);                /* was --font-display — too loud everywhere */
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  font-size: 0.8125rem;                          /* 13px — UI chrome, not display */
 }
 
 .section-header .count {
@@ -678,6 +834,79 @@ body {
   text-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
 }
 
+/* -------------------------------------------------------------------------- */
+/* NUMERIC UTILITY                                                             */
+/* -------------------------------------------------------------------------- */
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* -------------------------------------------------------------------------- */
+/* DIALOG / POPOVER (Radix) — brutalist terminal theme                         */
+/* -------------------------------------------------------------------------- */
+
+@keyframes overlay-in {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@keyframes overlay-out {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes content-in {
+  0% { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+  100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes content-out {
+  0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -48%) scale(0.98); }
+}
+
+.dialog-overlay {
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.dialog-overlay[data-state="open"] {
+  animation: overlay-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-overlay[data-state="closed"] {
+  animation: overlay-out 0.1s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-content {
+  background: #0A0A0A;
+  border: 1px solid rgba(57, 255, 20, 0.15);
+  box-shadow:
+    0 0 0 1px rgba(57, 255, 20, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.dialog-content[data-state="open"] {
+  animation: content-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-content[data-state="closed"] {
+  animation: content-out 0.12s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.popover-content {
+  background: #0A0A0A;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.popover-content[data-state="open"] {
+  animation: dropdown-in 0.15s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -687,4 +916,131 @@ body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* -------------------------------------------------------------------------- */
+/* SOLANA WALLET-ADAPTER MODAL — RESKIN ONLY (no behavior change)             */
+/* -------------------------------------------------------------------------- */
+/* The wallet-adapter ships its own rounded blue modal. We override the
+ * `wallet-adapter-*` class hooks to match the brutalist terminal theme.
+ * `!important` is used because wallet-adapter's stylesheet wins specificity. */
+
+.wallet-adapter-modal-overlay {
+  background: rgba(0, 0, 0, 0.75) !important;
+  backdrop-filter: blur(6px) !important;
+  -webkit-backdrop-filter: blur(6px) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  background: #0A0A0A !important;
+  border: 1px solid rgba(57, 255, 20, 0.15) !important;
+  border-radius: 0 !important;
+  box-shadow:
+    0 0 0 1px rgba(57, 255, 20, 0.05),
+    0 24px 64px rgba(0, 0, 0, 0.7),
+    inset 0 1px 0 rgba(255, 255, 255, 0.03) !important;
+  font-family: var(--font-sans) !important;
+}
+
+.wallet-adapter-modal-title {
+  color: #EDEDED !important;
+  font-family: var(--font-display) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: -0.01em !important;
+  font-size: 1rem !important;
+  padding: 24px 24px 8px !important;
+}
+
+.wallet-adapter-modal-list {
+  background: transparent !important;
+  margin: 0 !important;
+  padding: 8px !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  border-radius: 0 !important;
+  color: #EDEDED !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 500 !important;
+  font-size: 0.8125rem !important;
+  transition: all 0.15s ease !important;
+  padding: 12px 16px !important;
+  margin: 4px 0 !important;
+  height: auto !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:hover {
+  background: rgba(57, 255, 20, 0.05) !important;
+  border-color: rgba(57, 255, 20, 0.4) !important;
+  color: #39FF14 !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button:not([disabled]):focus-visible {
+  outline: 1px solid #39FF14 !important;
+  outline-offset: 2px !important;
+}
+
+.wallet-adapter-modal-list .wallet-adapter-button-end-icon,
+.wallet-adapter-modal-list .wallet-adapter-button-start-icon {
+  color: #666 !important;
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase !important;
+  font-size: 0.6875rem !important;
+  letter-spacing: 0.05em !important;
+}
+
+.wallet-adapter-modal-list-more {
+  color: #888 !important;
+  font-family: var(--font-mono) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 0.6875rem !important;
+  background: transparent !important;
+  padding: 12px !important;
+}
+
+.wallet-adapter-modal-list-more:hover {
+  color: #EDEDED !important;
+}
+
+.wallet-adapter-modal-button-close {
+  background: transparent !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0 !important;
+  color: #888 !important;
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  border-color: rgba(57, 255, 20, 0.4) !important;
+  color: #EDEDED !important;
+  background: transparent !important;
+}
+
+.wallet-adapter-modal-button-close svg {
+  fill: currentColor !important;
+}
+
+/* "Connect a wallet on Solana to continue" copy block */
+.wallet-adapter-modal-middle {
+  padding: 12px 24px 16px !important;
+}
+
+.wallet-adapter-modal-middle-button {
+  background: #39FF14 !important;
+  color: #000 !important;
+  border-radius: 0 !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  height: auto !important;
+  padding: 10px 16px !important;
+}
+.wallet-adapter-modal-middle-button:hover {
+  filter: brightness(1.1) !important;
 }

@@ -5,8 +5,8 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import type { PulseItem, PulseState } from "@/lib/types";
 import { PulseCardCompact } from "./PulseCardCompact";
 import { useSelectionStore } from "@/store/selection.store";
-import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/Popover";
 
 interface PulseColumnProps {
     state: PulseState;
@@ -94,62 +94,47 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
         <div className="flex flex-col h-full flex-1 relative">
             {/* Sort bar */}
             <div className="flex items-center justify-between px-3 py-1.5 border-b border-white/5 bg-[#070707]">
-                <div className="relative">
-                    <button
-                        onClick={() => setDropdownOpen(!dropdownOpen)}
-                        className="flex items-center gap-1.5 px-2 py-1 text-[9px] font-mono font-bold uppercase tracking-wider text-[#666] hover:text-[#EDEDED] transition-colors"
-                    >
-                        {currentSortLabel}
-                        {sortDir === "desc" ? " ↓" : " ↑"}
-                        <ChevronDown
-                            size={9}
-                            className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
-                        />
-                    </button>
+                <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                    <PopoverTrigger asChild>
+                        <button
+                            type="button"
+                            className="inline-flex items-center gap-1.5 min-h-6 px-2 py-1 text-meta font-mono font-bold uppercase tracking-wider text-muted-high hover:text-fg transition-colors focus-ring"
+                            aria-label={`Sort: ${currentSortLabel} ${sortDir}`}
+                        >
+                            {currentSortLabel}
+                            {sortDir === "desc" ? " ↓" : " ↑"}
+                            <ChevronDown
+                                size={9}
+                                aria-hidden="true"
+                                className={`transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                            />
+                        </button>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" sideOffset={4} className="min-w-[120px] py-1">
+                        {SORT_OPTIONS.map((opt) => (
+                            <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => handleSort(opt.value)}
+                                aria-pressed={sortBy === opt.value}
+                                className={`w-full flex items-center justify-between px-3 py-1.5 text-meta font-mono font-bold uppercase transition-colors focus-ring ${
+                                    sortBy === opt.value
+                                        ? "bg-white/5 text-fg"
+                                        : "text-muted-high hover:bg-white/5 hover:text-fg"
+                                }`}
+                            >
+                                <span>{opt.label}</span>
+                                {sortBy === opt.value && (
+                                    <span aria-hidden="true" className="text-acid-green">
+                                        {sortDir === "desc" ? "↓" : "↑"}
+                                    </span>
+                                )}
+                            </button>
+                        ))}
+                    </PopoverContent>
+                </Popover>
 
-                    <AnimatePresence>
-                        {dropdownOpen && (
-                            <>
-                                <div
-                                    className="fixed inset-0 z-40"
-                                    onClick={() => setDropdownOpen(false)}
-                                />
-                                <motion.div
-                                    initial={{ opacity: 0, y: -4 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -4 }}
-                                    transition={{ duration: 0.1 }}
-                                    className="absolute top-full left-0 mt-1 z-50 min-w-[120px] bg-[#0A0A0A] border border-white/10 shadow-2xl"
-                                >
-                                    {SORT_OPTIONS.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            onClick={() =>
-                                                handleSort(opt.value)
-                                            }
-                                            className={`w-full flex items-center justify-between px-3 py-1.5 text-[9px] font-mono font-bold uppercase transition-colors ${
-                                                sortBy === opt.value
-                                                    ? "bg-white/5 text-[#EDEDED]"
-                                                    : "text-[#666] hover:bg-white/3 hover:text-[#EDEDED]"
-                                            }`}
-                                        >
-                                            <span>{opt.label}</span>
-                                            {sortBy === opt.value && (
-                                                <span className="text-[#39FF14]">
-                                                    {sortDir === "desc"
-                                                        ? "↓"
-                                                        : "↑"}
-                                                </span>
-                                            )}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                <span className="text-[9px] font-mono text-[#444]">
+                <span className="text-meta font-mono text-muted num">
                     {processedItems.length} tokens
                 </span>
             </div>
@@ -192,7 +177,11 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                         })}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-[#333] font-mono text-[10px] uppercase tracking-widest">
+                    <div
+                        role="status"
+                        className="flex flex-col items-center justify-center h-full text-white/30 font-mono text-meta uppercase tracking-widest"
+                    >
+                        <span aria-hidden="true" className="text-2xl mb-2">∅</span>
                         NO SIGNAL
                     </div>
                 )}

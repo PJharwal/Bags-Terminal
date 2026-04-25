@@ -6,6 +6,9 @@ import { useBagsWallet } from '@/hooks/useWallet';
 import { ProviderIcon } from './ProviderIcon';
 import type { SocialProvider } from '@/lib/bags-types';
 import { Loader2, X } from 'lucide-react';
+import { Input } from '@/components/ui/Input';
+import { Field } from '@/components/ui/Field';
+import { Button } from '@/components/ui/Button';
 
 interface AddSocialLinkProps {
   onClose: () => void;
@@ -39,28 +42,36 @@ export function AddSocialLink({ onClose }: AddSocialLinkProps) {
   };
 
   return (
-    <div className="flex flex-col gap-3 p-3 bg-[#0A0A0A] border border-white/10">
+    <div role="region" aria-label="Link social account" className="flex flex-col gap-3 p-3 card">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-[#EDEDED] uppercase tracking-widest">Link Account</span>
-        <button onClick={onClose} className="text-[#666] hover:text-[#EDEDED]">
-          <X size={12} />
+        <span className="text-meta font-bold text-fg uppercase tracking-widest">Link Account</span>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Cancel linking account"
+          className="flex items-center justify-center w-6 h-6 text-muted-high hover:text-fg focus-ring"
+        >
+          <X size={12} aria-hidden="true" />
         </button>
       </div>
 
       {/* Provider Selection */}
-      <div className="grid grid-cols-4 gap-1">
+      <div role="radiogroup" aria-label="Social provider" className="grid grid-cols-4 gap-1">
         {PROVIDERS.map((p) => (
           <button
             key={p}
+            type="button"
+            role="radio"
+            aria-checked={provider === p}
             onClick={() => setProvider(p)}
-            className={`flex flex-col items-center gap-1 py-2 border transition-colors ${
+            className={`flex flex-col items-center gap-1 py-2 border transition-colors active:scale-95 focus-ring ${
               provider === p
-                ? 'border-[#39FF14] bg-[#39FF14]/10'
-                : 'border-[#333] hover:border-[#666]'
+                ? 'border-acid-green bg-acid-green/10'
+                : 'border-line hover:border-muted-high'
             }`}
           >
-            <ProviderIcon provider={p} size={14} className={provider === p ? 'text-[#39FF14]' : 'text-[#888]'} />
-            <span className={`text-[8px] font-bold uppercase ${provider === p ? 'text-[#39FF14]' : 'text-[#888]'}`}>
+            <ProviderIcon provider={p} size={14} className={provider === p ? 'text-acid-green' : 'text-fg-soft'} />
+            <span className={`text-meta font-bold uppercase ${provider === p ? 'text-acid-green' : 'text-fg-soft'}`}>
               {p}
             </span>
           </button>
@@ -68,29 +79,26 @@ export function AddSocialLink({ onClose }: AddSocialLinkProps) {
       </div>
 
       {/* Username */}
-      <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">@</span>
-        <input
+      <Field label="Username" error={error ?? undefined}>
+        <Input
           type="text"
           value={username}
           onChange={(e) => setUsername(e.target.value.replace(/^@/, ''))}
-          className="w-full bg-[#1A1A1A] border border-[#333] pl-7 pr-3 py-2 text-[11px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
           placeholder="username"
+          prefix="@"
         />
-      </div>
+      </Field>
 
-      {error && (
-        <span className="text-[9px] text-[#FF003C] font-mono">{error}</span>
-      )}
-
-      <button
+      <Button
+        variant="primary"
+        size="sm"
+        fullWidth
+        loading={isLinking}
+        disabled={!username.trim()}
         onClick={handleLink}
-        disabled={!username.trim() || isLinking}
-        className="flex items-center justify-center gap-1 py-2 text-[10px] font-bold uppercase tracking-wider bg-[#39FF14] text-black hover:brightness-110 transition-all disabled:opacity-50"
       >
-        {isLinking && <Loader2 size={10} className="animate-spin" />}
         {isLinking ? 'Linking...' : 'Link Account'}
-      </button>
+      </Button>
     </div>
   );
 }

@@ -19,7 +19,7 @@ type ViewMode = "all" | "bags" | "leaders";
 const FILTERS = ["All", "Migrated", "Near Migration", "Bonding", "High MC", "With Fees"];
 const STATE_FILTERS = ["all", "MIGRATED", "FINAL_STRETCH", "NEW", "high_mc", "with_fees"] as const;
 
-const AVATAR_COLORS = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
+const AVATAR_COLORS = ['bg-[#FF003C]', 'bg-acid-green', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
 
 // Check if a token could be a BAGS token (mint ends with 'bags')
 const isBagsToken = (mint: string): boolean => mint.toLowerCase().endsWith('bags');
@@ -60,47 +60,47 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors truncate">
+                            <span className="font-mono font-bold text-white group-hover:text-acid-green transition-colors truncate">
                                 {token.symbol}
                             </span>
                             {isPotentialBags && (
-                                <span className="text-[8px] bg-[#FFD700]/20 text-[#FFD700] px-1.5 py-0.5 rounded font-mono uppercase">
+                                <span className="text-meta bg-[#FFD700]/20 text-gold px-1.5 py-0.5 rounded font-mono uppercase">
                                     BAGS
                                 </span>
                             )}
                         </div>
-                        <div className="text-xs text-[#666] truncate">{token.name}</div>
+                        <div className="text-xs text-muted-high truncate">{token.name}</div>
                     </div>
                 </div>
 
                 {/* Core metrics */}
                 <div className="space-y-2">
                     <div className="flex justify-between items-center">
-                        <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                        <span className="text-xs text-fg-soft font-mono flex items-center gap-1">
                             <DollarSign size={10} /> Market Cap
                         </span>
                         <span className="text-sm font-mono text-white">{formatCurrency(token.marketCap)}</span>
                     </div>
 
                     <div className="flex justify-between items-center">
-                        <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                        <span className="text-xs text-fg-soft font-mono flex items-center gap-1">
                             <Percent size={10} /> Bonding
                         </span>
                         <div className="flex items-center gap-2">
                             <div className="progress-bar w-16 h-1.5">
                                 <div
-                                    className={`progress-bar-fill ${token.bondingProgress >= 85 ? 'bg-[#39FF14] glow' : 'bg-[#444]'}`}
+                                    className={`progress-bar-fill ${token.bondingProgress >= 85 ? 'bg-acid-green glow' : 'bg-[#444]'}`}
                                     style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
                                 />
                             </div>
-                            <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                                {token.bondingProgress}%
+                            <span className={`text-xs font-mono num ${token.bondingProgress >= 85 ? 'text-acid-green' : 'text-muted-high'}`}>
+                                {Math.round(token.bondingProgress)}%
                             </span>
                         </div>
                     </div>
 
                     <div className="flex justify-between items-center">
-                        <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                        <span className="text-xs text-fg-soft font-mono flex items-center gap-1">
                             <Users size={10} /> Holders
                         </span>
                         <span className="text-sm font-mono text-white">{token.holders || '—'}</span>
@@ -111,17 +111,17 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                 <div className="mt-3 pt-3 border-t border-white/5">
                     {isLoadingFees ? (
                         <div className="flex items-center justify-center gap-2 py-2">
-                            <Loader2 size={12} className="animate-spin text-[#FFD700]" />
-                            <span className="text-[10px] text-[#666] font-mono">Loading fee data...</span>
+                            <Loader2 size={12} className="animate-spin text-gold" />
+                            <span className="text-meta text-muted-high font-mono">Loading fee data...</span>
                         </div>
                     ) : hasFeeData ? (
                         <div className="space-y-2">
                             {/* Lifetime Earnings */}
                             <div className="flex justify-between items-center">
-                                <span className="text-xs text-[#FFD700] font-mono flex items-center gap-1">
+                                <span className="text-xs text-gold font-mono flex items-center gap-1">
                                     <Coins size={10} /> Total Earnings
                                 </span>
-                                <span className="text-sm font-mono text-[#FFD700] font-bold">
+                                <span className="text-sm font-mono text-gold font-bold">
                                     {feeData.lifetimeFees < 0.001
                                         ? feeData.lifetimeFees.toFixed(6)
                                         : feeData.lifetimeFees < 1
@@ -132,7 +132,7 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
                             {/* Fee Earners */}
                             <div className="flex justify-between items-center">
-                                <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                                <span className="text-xs text-fg-soft font-mono flex items-center gap-1">
                                     <Award size={10} /> Fee Earners
                                 </span>
                                 <span className="text-sm font-mono text-white">{feeData.creatorsCount}</span>
@@ -141,16 +141,16 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                             {/* Top Earner Share */}
                             {feeData.topEarnerShare > 0 && (
                                 <div className="flex justify-between items-center">
-                                    <span className="text-xs text-[#888] font-mono flex items-center gap-1">
+                                    <span className="text-xs text-fg-soft font-mono flex items-center gap-1">
                                         <Wallet size={10} /> Top Share
                                     </span>
-                                    <span className="text-sm font-mono text-[#39FF14]">{feeData.topEarnerShare.toFixed(1)}%</span>
+                                    <span className="text-sm font-mono text-acid-green">{feeData.topEarnerShare.toFixed(1)}%</span>
                                 </div>
                             )}
                         </div>
                     ) : (
                         <div className="text-center py-1">
-                            <span className="text-[10px] text-[#444] font-mono">
+                            <span className="text-meta text-[#444] font-mono">
                                 {feeError ? 'Not a fee-sharing token' : 'No fee data available'}
                             </span>
                         </div>
@@ -159,7 +159,7 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
 
                 {/* State badge */}
                 <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
-                    <span className={`text-[9px] px-2 py-0.5 rounded ${
+                    <span className={`text-meta px-2 py-0.5 rounded ${
                         token.state === 'MIGRATED' ? 'badge badge-green' :
                         token.state === 'FINAL_STRETCH' ? 'badge badge-yellow' :
                         'badge badge-muted'
@@ -169,7 +169,7 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                          'Bonding'}
                     </span>
                     {hasFeeData && (
-                        <span className="text-[9px] px-2 py-0.5 rounded badge badge-gold">
+                        <span className="text-meta px-2 py-0.5 rounded badge badge-gold">
                             Fee Sharing
                         </span>
                     )}
@@ -193,7 +193,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
         <tr className={`table-row cursor-pointer ${
             hasFeeData ? 'table-row-gold' : ''
         }`}>
-            <td className="p-4 text-[#666] font-mono text-sm">{index + 1}</td>
+            <td className="p-4 text-muted-high font-mono text-sm">{index + 1}</td>
             <td className="p-4">
                 <Link href={`/terminal/${token.tokenId}`} className="flex items-center gap-3">
                     <div className="relative">
@@ -214,12 +214,12 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
                         <div className="flex items-center gap-2">
                             <span className="font-mono font-bold text-white">{token.symbol}</span>
                             {isPotentialBags && (
-                                <span className="text-[7px] bg-[#FFD700]/20 text-[#FFD700] px-1 py-0.5 rounded font-mono uppercase">
+                                <span className="text-[7px] bg-[#FFD700]/20 text-gold px-1 py-0.5 rounded font-mono uppercase">
                                     BAGS
                                 </span>
                             )}
                         </div>
-                        <div className="text-[10px] text-[#666]">{token.name}</div>
+                        <div className="text-meta text-muted-high">{token.name}</div>
                     </div>
                 </Link>
             </td>
@@ -228,21 +228,21 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
                 <div className="flex items-center justify-end gap-2">
                     <div className="progress-bar w-12 h-1">
                         <div
-                            className={`h-full ${token.bondingProgress >= 85 ? 'bg-[#39FF14]' : 'bg-[#444]'}`}
+                            className={`h-full ${token.bondingProgress >= 85 ? 'bg-acid-green' : 'bg-[#444]'}`}
                             style={{ width: `${Math.min(token.bondingProgress, 100)}%` }}
                         />
                     </div>
-                    <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                        {token.bondingProgress}%
+                    <span className={`text-xs font-mono num ${token.bondingProgress >= 85 ? 'text-acid-green' : 'text-muted-high'}`}>
+                        {Math.round(token.bondingProgress)}%
                     </span>
                 </div>
             </td>
             <td className="p-4 text-right font-mono text-white">{token.holders || '—'}</td>
             <td className="p-4 text-right">
                 {isLoadingFees ? (
-                    <Loader2 size={12} className="animate-spin text-[#FFD700] ml-auto" />
+                    <Loader2 size={12} className="animate-spin text-gold ml-auto" />
                 ) : feeData && feeData.lifetimeFees > 0 ? (
-                    <span className="font-mono text-[#FFD700] font-bold">
+                    <span className="font-mono text-gold font-bold">
                         {feeData.lifetimeFees < 0.001
                             ? feeData.lifetimeFees.toFixed(6)
                             : feeData.lifetimeFees < 1
@@ -255,7 +255,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
             </td>
             <td className="p-4 text-right">
                 {isLoadingFees ? (
-                    <Loader2 size={12} className="animate-spin text-[#666] ml-auto" />
+                    <Loader2 size={12} className="animate-spin text-muted-high ml-auto" />
                 ) : feeData && feeData.creatorsCount > 0 ? (
                     <span className="font-mono text-white">{feeData.creatorsCount}</span>
                 ) : (
@@ -264,16 +264,16 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
             </td>
             <td className="p-4 text-right">
                 {isLoadingFees ? (
-                    <Loader2 size={12} className="animate-spin text-[#666] ml-auto" />
+                    <Loader2 size={12} className="animate-spin text-muted-high ml-auto" />
                 ) : feeData && feeData.topEarnerShare > 0 ? (
-                    <span className="font-mono text-[#39FF14]">{feeData.topEarnerShare.toFixed(1)}%</span>
+                    <span className="font-mono text-acid-green">{feeData.topEarnerShare.toFixed(1)}%</span>
                 ) : (
                     <span className="text-[#444]">—</span>
                 )}
             </td>
             <td className="p-4 text-right">
                 <div className="flex items-center justify-end gap-1">
-                    <span className={`text-[9px] px-2 py-0.5 rounded ${
+                    <span className={`text-meta px-2 py-0.5 rounded ${
                         token.state === 'MIGRATED' ? 'badge badge-green' :
                         token.state === 'FINAL_STRETCH' ? 'badge badge-yellow' :
                         'badge badge-muted'
@@ -283,7 +283,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
                          'Bonding'}
                     </span>
                     {hasFeeData && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded badge badge-gold">
+                        <span className="text-meta px-1.5 py-0.5 rounded badge badge-gold">
                             FEE
                         </span>
                     )}
@@ -345,22 +345,22 @@ export default function TrendingPage() {
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
 
     return (
-        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
+        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-fg p-6 font-mono">
             {/* Header */}
             <div className="max-w-7xl mx-auto mb-8">
                 <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <TrendingUp className="text-[#39FF14]" size={24} />
+                            <TrendingUp className="text-acid-green" size={24} />
                             <h1 className="text-3xl font-bold tracking-tight">Trending</h1>
-                            <span className={`ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] uppercase tracking-widest border ${
-                                isConnected ? 'border-[#39FF14] text-[#39FF14]' : 'border-[#FF003C] text-[#FF003C]'
+                            <span className={`ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 text-meta uppercase tracking-widest border ${
+                                isConnected ? 'border-[#39FF14] text-acid-green' : 'border-[#FF003C] text-error'
                             }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14]' : 'bg-[#FF003C]'} animate-pulse`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-acid-green' : 'bg-[#FF003C]'} animate-pulse`} />
                                 {isConnected ? 'Live' : 'Connecting'}
                             </span>
                         </div>
-                        <p className="text-sm text-[#888]">
+                        <p className="text-sm text-fg-soft">
                             {viewMode === "all"
                                 ? `Real-time tokens with fee sharing data ${allBagsTokens.length > 0 ? `(${allBagsTokens.length} tokens)` : ''}`
                                 : viewMode === "leaders"
@@ -376,8 +376,8 @@ export default function TrendingPage() {
                             onClick={() => setViewMode("all")}
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded ${
                                 viewMode === "all"
-                                    ? "bg-[#39FF14] text-black font-bold"
-                                    : "text-[#888] hover:text-white"
+                                    ? "bg-acid-green text-black font-bold"
+                                    : "text-fg-soft hover:text-white"
                             }`}
                         >
                             All Tokens
@@ -387,7 +387,7 @@ export default function TrendingPage() {
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
                                 viewMode === "leaders"
                                     ? "bg-[#FFD700] text-black font-bold"
-                                    : "text-[#888] hover:text-white"
+                                    : "text-fg-soft hover:text-white"
                             }`}
                         >
                             <Trophy size={14} />
@@ -398,7 +398,7 @@ export default function TrendingPage() {
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded flex items-center gap-2 ${
                                 viewMode === "bags"
                                     ? "bg-[#FFD700] text-black font-bold"
-                                    : "text-[#888] hover:text-white"
+                                    : "text-fg-soft hover:text-white"
                             }`}
                         >
                             <Coins size={14} />
@@ -431,7 +431,7 @@ export default function TrendingPage() {
                                     key={filter}
                                     onClick={() => setActiveFilter(i)}
                                     className={`btn-ghost px-3 py-1.5 text-xs uppercase tracking-wider ${activeFilter === i
-                                        ? "!border-[#39FF14] !text-[#39FF14] bg-[#39FF14]/10"
+                                        ? "!border-[#39FF14] !text-acid-green bg-acid-green/10"
                                         : ""
                                     }`}
                                 >
@@ -439,20 +439,28 @@ export default function TrendingPage() {
                                 </button>
                             ))}
                         </div>
-                        <div className="flex gap-1">
+                        <div role="group" aria-label="View mode" className="flex gap-1">
                             <button
+                                type="button"
                                 onClick={() => setView("grid")}
-                                className={`btn-ghost p-2 ${view === "grid" ? "!border-[#39FF14] !text-[#39FF14]" : ""}`}
+                                aria-label="Grid view"
+                                aria-pressed={view === "grid"}
+                                title="Grid view"
+                                className={`btn-ghost p-2 focus-ring ${view === "grid" ? "!border-acid-green !text-acid-green" : ""}`}
                             >
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <svg aria-hidden="true" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M1 2.5A1.5 1.5 0 0 1 2.5 1h3A1.5 1.5 0 0 1 7 2.5v3A1.5 1.5 0 0 1 5.5 7h-3A1.5 1.5 0 0 1 1 5.5v-3zm8 0A1.5 1.5 0 0 1 10.5 1h3A1.5 1.5 0 0 1 15 2.5v3A1.5 1.5 0 0 1 13.5 7h-3A1.5 1.5 0 0 1 9 5.5v-3zm-8 8A1.5 1.5 0 0 1 2.5 9h3A1.5 1.5 0 0 1 7 10.5v3A1.5 1.5 0 0 1 5.5 15h-3A1.5 1.5 0 0 1 1 13.5v-3zm8 0A1.5 1.5 0 0 1 10.5 9h3a1.5 1.5 0 0 1 1.5 1.5v3a1.5 1.5 0 0 1-1.5 1.5h-3A1.5 1.5 0 0 1 9 13.5v-3z" />
                                 </svg>
                             </button>
                             <button
+                                type="button"
                                 onClick={() => setView("table")}
-                                className={`btn-ghost p-2 ${view === "table" ? "!border-[#39FF14] !text-[#39FF14]" : ""}`}
+                                aria-label="Table view"
+                                aria-pressed={view === "table"}
+                                title="Table view"
+                                className={`btn-ghost p-2 focus-ring ${view === "table" ? "!border-acid-green !text-acid-green" : ""}`}
                             >
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
+                                <svg aria-hidden="true" width="14" height="14" fill="currentColor" viewBox="0 0 16 16">
                                     <path d="M0 2a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V2zm15 2h-4v3h4V4zm0 4h-4v3h4V8zm0 4h-4v3h3a1 1 0 0 0 1-1v-2zm-5 3v-3H6v3h4zm-5 0v-3H1v2a1 1 0 0 0 1 1h3zm-4-4h4V8H1v3zm0-4h4V4H1v3zm5-3v3h4V4H6zm4 4H6v3h4V8z" />
                                 </svg>
                             </button>
@@ -467,9 +475,9 @@ export default function TrendingPage() {
                 </div>
                 <div className="stat-card p-4">
                     <div className="label mb-1 flex items-center gap-1">
-                        <Zap size={10} className="text-[#39FF14]" /> LP Live
+                        <Zap size={10} className="text-acid-green" /> LP Live
                     </div>
-                    <div className="text-2xl font-bold text-[#39FF14]">{items.MIGRATED.length}</div>
+                    <div className="text-2xl font-bold text-acid-green">{items.MIGRATED.length}</div>
                 </div>
                 <div className="stat-card p-4">
                     <div className="label mb-1">Near Migration</div>
@@ -483,11 +491,11 @@ export default function TrendingPage() {
                     <div className="label label-gold mb-1 flex items-center gap-1">
                         <Coins size={10} /> Fee Sharing
                     </div>
-                    <div className="text-2xl font-bold text-[#FFD700]">
+                    <div className="text-2xl font-bold text-gold">
                         {tokensWithFeesCount > 0 ? tokensWithFeesCount : potentialBagsCount}
                     </div>
                     {potentialBagsCount > 0 && tokensWithFeesCount === 0 && (
-                        <div className="text-[9px] text-[#666] mt-1">potential BAGS tokens</div>
+                        <div className="text-meta text-muted-high mt-1">potential BAGS tokens</div>
                     )}
                 </div>
             </div>
@@ -495,7 +503,7 @@ export default function TrendingPage() {
             {/* Loading State */}
             {isLoading && (
                 <div className="max-w-7xl mx-auto flex items-center justify-center py-20">
-                    <div className="flex items-center gap-3 text-[#666]">
+                    <div className="flex items-center gap-3 text-muted-high">
                         <Loader2 size={16} className="animate-spin" />
                         <span className="text-sm font-mono">LOADING_DATA...</span>
                     </div>
@@ -504,7 +512,7 @@ export default function TrendingPage() {
 
             {/* Empty State */}
             {!isLoading && filteredTokens.length === 0 && (
-                <div className="max-w-7xl mx-auto flex flex-col items-center justify-center text-[#666] py-12">
+                <div className="max-w-7xl mx-auto flex flex-col items-center justify-center text-muted-high py-12">
                     <TrendingUp size={32} className="mb-4 opacity-30" />
                     <p className="text-sm font-mono">
                         {allBagsTokens.length === 0
@@ -528,7 +536,7 @@ export default function TrendingPage() {
                 <div className="max-w-7xl mx-auto card overflow-x-auto">
                     <table className="w-full text-sm">
                         <thead>
-                            <tr className="table-header text-[#888] text-[10px] uppercase tracking-widest">
+                            <tr className="table-header text-fg-soft text-meta uppercase tracking-widest">
                                 <th className="text-left p-4 w-12">#</th>
                                 <th className="text-left p-4">Token</th>
                                 <th className="text-right p-4">Market Cap</th>
@@ -536,7 +544,7 @@ export default function TrendingPage() {
                                 <th className="text-right p-4">Holders</th>
                                 <th className="text-right p-4">
                                     <span className="flex items-center justify-end gap-1">
-                                        <Coins size={10} className="text-[#FFD700]" /> Earnings
+                                        <Coins size={10} className="text-gold" /> Earnings
                                     </span>
                                 </th>
                                 <th className="text-right p-4">

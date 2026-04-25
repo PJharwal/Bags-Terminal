@@ -8,7 +8,7 @@ interface ReputationBarProps {
 
 export function ReputationBar({ value, label, size = "md" }: ReputationBarProps) {
     const getColor = () => {
-        if (value >= 75) return "bg-[#39FF14]";
+        if (value >= 75) return "bg-acid-green";
         if (value >= 50) return "bg-[#FAFF00]";
         if (value >= 25) return "bg-[#FF6B35]";
         return "bg-[#FF003C]";
@@ -26,7 +26,7 @@ export function ReputationBar({ value, label, size = "md" }: ReputationBarProps)
             {label && (
                 <div className="flex items-center justify-between">
                     <span className="label">{label}</span>
-                    <span className="text-xs font-mono text-[#EDEDED]">{value}%</span>
+                    <span className="text-xs font-mono text-fg">{value}%</span>
                 </div>
             )}
             <div className={`progress-bar w-full ${height}`}>

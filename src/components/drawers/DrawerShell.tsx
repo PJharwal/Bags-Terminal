@@ -57,10 +57,10 @@ export function DrawerShell({ children, title, width = "md" }: DrawerShellProps)
                         {/* Header */}
                         {title && (
                             <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] gradient-border relative">
-                                <h3 className="text-sm font-bold uppercase tracking-widest text-[#EDEDED]">{title}</h3>
+                                <h3 className="text-sm font-bold uppercase tracking-widest text-fg">{title}</h3>
                                 <button
                                     onClick={closeDrawer}
-                                    className="btn-ghost p-1.5 text-[#666] hover:text-[#EDEDED]"
+                                    className="btn-ghost p-1.5 text-muted-high hover:text-fg"
                                 >
                                     <X size={16} />
                                 </button>

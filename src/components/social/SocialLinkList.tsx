@@ -18,14 +18,14 @@ export function SocialLinkList() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-4">
-        <Loader2 size={14} className="text-[#39FF14] animate-spin" />
+        <Loader2 size={14} className="text-acid-green animate-spin" />
       </div>
     );
   }
 
   if (linkedAccounts.length === 0) {
     return (
-      <p className="text-[10px] text-[#666] font-mono py-4 text-center">
+      <p className="text-meta text-muted-high font-mono py-4 text-center">
         No social accounts linked yet.
       </p>
     );
@@ -36,25 +36,25 @@ export function SocialLinkList() {
       {linkedAccounts.map((link) => (
         <div
           key={link.id}
-          className="flex items-center justify-between p-2 bg-[#1A1A1A] border border-white/10"
+          className="flex items-center justify-between p-2 bg-elevated border border-white/10"
         >
           <div className="flex items-center gap-2">
             <div style={{ color: PROVIDER_COLORS[link.provider] }}>
               <ProviderIcon provider={link.provider} size={14} />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-mono text-[#EDEDED]">@{link.username}</span>
+              <span className="text-meta font-mono text-fg">@{link.username}</span>
               <div className="flex items-center gap-1">
                 {link.verified && (
-                  <CheckCircle2 size={8} className="text-[#39FF14]" />
+                  <CheckCircle2 size={8} className="text-acid-green" />
                 )}
-                <span className="text-[8px] text-[#666] capitalize">{link.provider}</span>
+                <span className="text-meta text-muted-high capitalize">{link.provider}</span>
               </div>
             </div>
           </div>
           <button
             onClick={() => handleUnlink(link)}
-            className="p-1 text-[#666] hover:text-[#FF003C] transition-colors"
+            className="p-1 text-muted-high hover:text-error transition-colors"
           >
             <Trash2 size={12} />
           </button>

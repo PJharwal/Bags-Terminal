@@ -11,6 +11,10 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { config } from "@/config/env";
+import { Input } from "@/components/ui/Input";
+import { Button } from "@/components/ui/Button";
+import { LiveDot } from "@/components/ui/LiveDot";
+import { NumberInput } from "@/components/ui/NumberInput";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -100,9 +104,11 @@ export function TerminalTradePanel() {
     // Fetch GMGN token info for pool hints
     useEffect(() => {
         if (!activeToken?.tokenId) return;
+        /* eslint-disable react-hooks/set-state-in-effect -- intentional: reset all per-token state when the active token changes (sync to external selection). */
         setExchange(null); setPoolAddress(null); setQuoteAddress(null);
         setCreatorAddress(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
         setTokenStandard("spl"); setTxStatus("idle"); setTxResult(null); resetPrepare();
+        /* eslint-enable react-hooks/set-state-in-effect */
 
         const fetchGMGNInfo = async () => {
             try {
@@ -123,6 +129,7 @@ export function TerminalTradePanel() {
 
     // Fetch token balance
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset balance to 0 when prerequisites missing.
         if (!activeToken?.tokenId || !turnkeyAddress || !isAuthenticated) { setTokenBalance(0); return; }
         const fetchBalance = async () => {
             const mintPubkey = new PublicKey(activeToken.tokenId);
@@ -217,11 +224,13 @@ export function TerminalTradePanel() {
         confirmTx();
     }, [lastSignature]);
 
-    // Handle errors
+    // Handle errors — sync local result state to socket-emitted error stream.
     useEffect(() => {
         if (lastError) {
+            /* eslint-disable react-hooks/set-state-in-effect -- intentional: react to async error from socket, then clear it. */
             setTxResult({ error: lastError });
             setTxStatus("error");
+            /* eslint-enable react-hooks/set-state-in-effect */
             clearError();
         }
     }, [lastError, clearError]);
@@ -277,74 +286,76 @@ export function TerminalTradePanel() {
             <div className="flex border-b border-white/10">
                 <button
                     onClick={() => { setAction("buy"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isBuy ? "bg-[#39FF14]/20 text-[#39FF14] border-b-2 border-[#39FF14]" : "text-[#666] hover:text-[#EDEDED]"}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isBuy ? "bg-acid-green/20 text-acid-green border-b-2 border-[#39FF14]" : "text-muted-high hover:text-fg"}`}
                 >Buy</button>
                 <button
                     onClick={() => { setAction("sell"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${!isBuy ? "bg-[#FF003C]/20 text-[#FF003C] border-b-2 border-[#FF003C]" : "text-[#666] hover:text-[#EDEDED]"}`}
+                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${!isBuy ? "bg-[#FF003C]/20 text-error border-b-2 border-[#FF003C]" : "text-muted-high hover:text-fg"}`}
                 >Sell</button>
             </div>
 
             <div className="flex-1 p-4 flex flex-col gap-3 overflow-y-auto">
                 {/* Connection Status */}
                 {!socketConnected && isAuthenticated && (
-                    <div className="p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 text-[10px] text-[#FF003C] font-mono text-center">
-                        Trade server disconnected
+                    <div className="p-2 bg-error/10 border border-error/30 flex items-center justify-center">
+                        <LiveDot status="down" size="xs" label="Trade server disconnected" />
                     </div>
                 )}
 
                 {/* Amount Input */}
                 {isBuy ? (
                     <div className="flex flex-col gap-2">
-                        <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount (SOL)</span>
-                        <div className="grid grid-cols-4 gap-2">
-                            {BUY_PRESETS.map((amt) => (
-                                <button key={amt} onClick={() => setSolAmount(String(amt))}
-                                    className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
-                                    style={{ borderColor: solAmount === String(amt) ? accentColor : undefined, color: solAmount === String(amt) ? accentColor : undefined }}
-                                >{amt}</button>
-                            ))}
-                        </div>
-                        <div className="relative">
-                            <input type="number" value={solAmount} onChange={(e) => setSolAmount(e.target.value)}
-                                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
-                                placeholder="0.00" step="0.1" min="0" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">SOL</span>
-                        </div>
+                        <label htmlFor="trade-buy-amount" className="text-meta text-muted-high uppercase tracking-widest">Amount (SOL)</label>
+                        <NumberInput
+                            id="trade-buy-amount"
+                            presets={BUY_PRESETS}
+                            value={solAmount}
+                            onChange={(e) => setSolAmount(e.target.value)}
+                            placeholder="0.00"
+                            min={0}
+                            decimals={3}
+                            suffix="SOL"
+                            aria-label="SOL amount to buy"
+                        />
                     </div>
                 ) : (
                     <div className="flex flex-col gap-2">
-                        <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount ({activeToken?.symbol || "Tokens"})</span>
-                        <div className="grid grid-cols-4 gap-2">
+                        <label htmlFor="trade-sell-amount" className="text-meta text-muted-high uppercase tracking-widest">Amount ({activeToken?.symbol || "Tokens"})</label>
+                        <div role="group" aria-label="Sell percentage" className="grid grid-cols-4 gap-2">
                             {SELL_PRESETS.map((pct) => (
-                                <button key={pct} onClick={() => handleSellPreset(pct)}
-                                    className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                <button key={pct} type="button" onClick={() => handleSellPreset(pct)}
+                                    aria-pressed={sellPreset === pct}
+                                    className="min-h-6 px-2 py-1 text-meta font-mono font-bold border transition-colors border-line text-fg-soft hover:border-muted-high hover:text-fg active:scale-[0.97] focus-ring"
                                     style={{ borderColor: sellPreset === pct ? accentColor : undefined, color: sellPreset === pct ? accentColor : undefined }}
                                 >{pct}%</button>
                             ))}
                         </div>
-                        <div className="relative">
-                            <input type="number" value={sellAmount} onChange={(e) => { setSellAmount(e.target.value); setSellPreset(null); }}
-                                className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#FF003C] focus:outline-none"
-                                placeholder="0.00" step="0.1" min="0" />
-                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">{activeToken?.symbol || "Tokens"}</span>
-                        </div>
-                        <span className="text-[9px] text-[#666] font-mono">Holdings: {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {activeToken?.symbol || ""}</span>
+                        <NumberInput
+                            id="trade-sell-amount"
+                            value={sellAmount}
+                            onChange={(e) => { setSellAmount(e.target.value); setSellPreset(null); }}
+                            placeholder="0.00"
+                            min={0}
+                            decimals={6}
+                            suffix={activeToken?.symbol || "Tokens"}
+                            aria-label={`${activeToken?.symbol || "Token"} amount to sell`}
+                        />
+                        <span className="text-meta text-muted-high font-mono num">Holdings: {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {activeToken?.symbol || ""}</span>
                     </div>
                 )}
 
                 {/* Quote Display */}
                 {activeToken && (isBuy ? solAmount : sellAmount) && (
-                    <div className="flex flex-col gap-1.5 p-3 bg-[#1A1A1A] border border-white/10">
-                        <div className="flex justify-between text-[10px]">
-                            <span className="text-[#666]">You {isBuy ? "pay" : "sell"}</span>
-                            <span className="text-[#EDEDED] font-mono">{isBuy ? `${solAmount} SOL` : `${sellAmount} ${activeToken.symbol}`}</span>
+                    <div className="flex flex-col gap-1.5 p-3 bg-elevated border border-white/10">
+                        <div className="flex justify-between text-meta">
+                            <span className="text-muted-high">You {isBuy ? "pay" : "sell"}</span>
+                            <span className="text-fg font-mono num">{isBuy ? `${solAmount} SOL` : `${sellAmount} ${activeToken.symbol}`}</span>
                         </div>
-                        <div className="flex justify-between text-[10px]">
-                            <span className="text-[#666]">You receive</span>
-                            <span className="text-[#EDEDED] font-mono">
+                        <div className="flex justify-between text-meta">
+                            <span className="text-muted-high">You receive</span>
+                            <span className="text-fg font-mono num">
                                 {isPreparing ? (
-                                    <span className="text-[#666] animate-pulse">Calculating...</span>
+                                    <span className="text-muted-high animate-pulse">Calculating...</span>
                                 ) : socketReady && isBuy && estimatedDisplay ? (
                                     `~${estimatedDisplay.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${activeToken.symbol}`
                                 ) : socketReady && !isBuy && estimatedSolDisplay ? (
@@ -353,27 +364,27 @@ export function TerminalTradePanel() {
                             </span>
                         </div>
                         {(pricePerToken || sellPricePerToken) && (
-                            <div className="flex justify-between text-[10px]">
-                                <span className="text-[#666]">Price per token</span>
-                                <span className="text-[#888] font-mono">{((pricePerToken || sellPricePerToken)!).toFixed(9)} SOL</span>
+                            <div className="flex justify-between text-meta">
+                                <span className="text-muted-high">Price per token</span>
+                                <span className="text-fg-soft font-mono num">{((pricePerToken || sellPricePerToken)!).toFixed(9)} SOL</span>
                             </div>
                         )}
                     </div>
                 )}
 
                 {/* Wallet Balance */}
-                <div className="flex flex-col gap-1 p-3 bg-[#1A1A1A] border border-white/10">
+                <div className="flex flex-col gap-1 p-3 bg-elevated border border-white/10">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <Zap size={14} className="text-[#39FF14]" />
-                            <span className="text-[10px] text-[#666] uppercase">Trading Wallet</span>
+                            <Zap size={14} aria-hidden="true" className="text-acid-green" />
+                            <span className="text-meta text-muted-high uppercase">Trading Wallet</span>
                         </div>
-                        <span className="text-xs font-mono text-[#EDEDED]">
+                        <span className="text-xs font-mono text-fg num">
                             {turnkeyBalance !== null ? `${turnkeyBalance.toFixed(4)} SOL` : "-- SOL"}
                         </span>
                     </div>
                     {turnkeyAddress && (
-                        <span className="text-[9px] text-[#444] font-mono pl-6">{turnkeyAddress.slice(0, 4)}...{turnkeyAddress.slice(-4)}</span>
+                        <span className="text-meta text-muted font-mono num pl-6">{turnkeyAddress.slice(0, 4)}...{turnkeyAddress.slice(-4)}</span>
                     )}
                 </div>
 
@@ -382,7 +393,7 @@ export function TerminalTradePanel() {
 
                 {/* TX Result */}
                 {txResult && (
-                    <div className={`p-3 border text-[10px] font-mono ${txResult.error ? "bg-[#FF003C]/10 border-[#FF003C]/30 text-[#FF003C]" : "bg-[#39FF14]/10 border-[#39FF14]/30 text-[#39FF14]"}`}>
+                    <div className={`p-3 border text-meta font-mono ${txResult.error ? "bg-[#FF003C]/10 border-[#FF003C]/30 text-error" : "bg-acid-green/10 border-[#39FF14]/30 text-acid-green"}`}>
                         {txResult.error ? (
                             <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
@@ -404,7 +415,7 @@ export function TerminalTradePanel() {
                                 </a>
                             </div>
                         ) : null}
-                        <button onClick={handleDismiss} className="mt-2 text-[9px] opacity-60 hover:opacity-100">Dismiss</button>
+                        <button onClick={handleDismiss} className="mt-2 text-meta opacity-60 hover:opacity-100">Dismiss</button>
                     </div>
                 )}
             </div>
@@ -412,23 +423,30 @@ export function TerminalTradePanel() {
             {/* Action Button */}
             <div className="p-4 border-t border-white/10">
                 {!connected ? (
-                    <button onClick={() => setVisible(true)}
-                        className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#888] bg-[#1A1A1A] border border-white/10 hover:border-[#39FF14] hover:text-[#39FF14] transition-all">
-                        <span className="flex items-center justify-center gap-2"><Wallet size={14} /> Connect Wallet</span>
-                    </button>
+                    <Button
+                        variant="ghost"
+                        size="md"
+                        fullWidth
+                        iconLeft={<Wallet size={14} />}
+                        onClick={() => setVisible(true)}
+                    >
+                        Connect Wallet
+                    </Button>
                 ) : !isAuthenticated ? (
-                    <button disabled className="w-full py-3 text-sm font-bold uppercase tracking-wider text-[#666] bg-[#1A1A1A] border border-white/10">
-                        <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Creating Wallet...</span>
-                    </button>
+                    <Button variant="ghost" size="md" fullWidth disabled loading>
+                        Creating Wallet...
+                    </Button>
                 ) : (
-                    <button onClick={handleTrade} disabled={isProcessing || !activeToken || (isBuy ? !solAmount : !sellAmount)}
-                        className={`w-full py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${socketReady ? "bg-[#FFD700]" : isBuy ? "bg-[#39FF14]" : "bg-[#FF003C]"}`}>
-                        {isProcessing ? (
-                            <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> {getButtonText()}</span>
-                        ) : (
-                            getButtonText()
-                        )}
-                    </button>
+                    <Button
+                        variant={socketReady ? "gold" : isBuy ? "primary" : "destructive"}
+                        size="md"
+                        fullWidth
+                        loading={isProcessing}
+                        onClick={handleTrade}
+                        disabled={isProcessing || !activeToken || (isBuy ? !solAmount : !sellAmount)}
+                    >
+                        {getButtonText()}
+                    </Button>
                 )}
             </div>
         </div>

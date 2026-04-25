@@ -80,14 +80,14 @@ export function ShareCardWrapper({ children, tweetText, filename = 'bags-termina
         <button
           onClick={() => captureCard(cardRef, filename)}
           disabled={isCapturing}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/10 text-[#888] hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-meta font-mono uppercase tracking-widest border border-white/10 text-fg-soft hover:text-white hover:border-white/20 transition-colors disabled:opacity-50"
         >
           {isCapturing ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
           {isCapturing ? 'Capturing...' : 'Save Image'}
         </button>
         <button
           onClick={() => shareToTwitter(tweetText)}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono uppercase tracking-widest bg-[#39FF14]/10 border border-[#39FF14]/20 text-[#39FF14] hover:bg-[#39FF14]/20 transition-colors"
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-meta font-mono uppercase tracking-widest bg-acid-green/10 border border-[#39FF14]/20 text-acid-green hover:bg-acid-green/20 transition-colors"
         >
           <Share2 size={12} />
           Share on X
