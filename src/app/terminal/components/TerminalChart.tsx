@@ -23,14 +23,14 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
 
     if (!tokenMint) {
         return (
-            <div className="relative w-full h-full bg-black min-h-[300px] flex items-center justify-center">
+            <div className="relative flex h-full min-h-[420px] w-full items-center justify-center bg-black sm:min-h-[520px] lg:min-h-[640px] xl:min-h-[760px]">
                 <span className="text-muted-high text-xs font-mono">NO_TOKEN_SELECTED</span>
             </div>
         );
     }
 
     return (
-        <div className="relative w-full h-full bg-black min-h-[300px]">
+        <div className="relative h-full min-h-[420px] w-full bg-black sm:min-h-[520px] lg:min-h-[640px] xl:min-h-[760px]">
             {/* Loading skeleton */}
             {!isLoaded && (
                 <div className="absolute inset-0 bg-[#0A0A0A] flex items-center justify-center z-10">

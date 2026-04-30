@@ -61,15 +61,14 @@ export default function TerminalPage() {
                 addTrade(trade);
             }
         }
-    }, [latestTrades, tokenId, addTrade]);
+    }, [latestTrades, tokenId, addTrade, solPrice]);
 
-    // Loading state
     if (isLoading) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 size={32} className="text-acid-green animate-spin" />
-                    <span className="text-muted-high text-xs font-mono uppercase tracking-widest">
+            <div className="flex h-[calc(100vh-56px)] items-center justify-center bg-background text-fg">
+                <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8 shadow-soft">
+                    <Loader2 size={28} className="text-acid-green animate-spin" />
+                    <span className="text-xs uppercase tracking-[0.24em] text-muted-high">
                         LOADING_TERMINAL...
                     </span>
                 </div>
@@ -77,20 +76,19 @@ export default function TerminalPage() {
         );
     }
 
-    // Error state
     if (error) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
-                <div className="flex flex-col items-center gap-4 text-center max-w-md">
-                    <div className="text-error text-lg font-bold">Failed to load token</div>
-                    <div className="text-muted-high text-sm font-mono">{error}</div>
-                    <div className="text-muted-mid text-xs mt-1">
-                        Check the token address and try again
+            <div className="flex h-[calc(100vh-56px)] items-center justify-center bg-background px-4 text-fg">
+                <div className="flex max-w-md flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8 text-center shadow-soft">
+                    <div className="text-lg font-semibold text-fg">Failed to load token</div>
+                    <div className="text-sm text-muted-high">{error}</div>
+                    <div className="text-xs text-muted-mid">
+                        Check the token address and try again.
                     </div>
-                    <div className="flex items-center gap-3 mt-4">
+                    <div className="mt-2 flex items-center gap-3">
                         <button
                             onClick={() => router.back()}
-                            className="btn-ghost flex items-center gap-2 text-sm font-mono"
+                            className="btn-ghost flex items-center gap-2 text-sm"
                         >
                             <ArrowLeft size={14} />
                             Go Back
@@ -107,13 +105,12 @@ export default function TerminalPage() {
         );
     }
 
-    // No token loaded yet
     if (!activeToken) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 size={32} className="text-acid-green animate-spin" />
-                    <span className="text-muted-high text-xs font-mono uppercase tracking-widest">
+            <div className="flex h-[calc(100vh-56px)] items-center justify-center bg-background text-fg">
+                <div className="flex flex-col items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-6 py-8 shadow-soft">
+                    <Loader2 size={28} className="text-acid-green animate-spin" />
+                    <span className="text-xs uppercase tracking-[0.24em] text-muted-high">
                         INITIALIZING...
                     </span>
                 </div>
@@ -122,65 +119,65 @@ export default function TerminalPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-fg overflow-hidden font-mono">
-            {/* Back Button */}
-            <div className="absolute top-[70px] left-4 z-20">
-                <button
-                    onClick={() => router.back()}
-                    className="btn-ghost flex items-center gap-2 text-meta font-mono"
-                >
-                    <ArrowLeft size={12} />
-                    BACK
-                </button>
-            </div>
-
-            {/* Connection Status */}
-            <div className="absolute top-[70px] right-4 z-20">
-                <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2 text-meta font-mono`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-acid-green animate-pulse' : 'bg-[#FF003C]'}`} />
-                    {isConnected ? 'LIVE' : 'OFFLINE'}
-                </div>
-            </div>
-
-            {/* Terminal Header */}
-            <TerminalHeader token={activeToken} />
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Left Toolbar */}
-                <TerminalToolbar />
-
-                {/* Center: Chart */}
-                <div className="flex-1 flex flex-col min-w-0">
-                    {/* Chart Area */}
-                    <div className="flex-1 min-h-0">
-                        <TerminalChart tokenMint={tokenId} />
-                    </div>
-
-                    {/* Bottom Tabs */}
-                    <div className="h-[200px] min-h-[200px]">
-                        <TerminalBottomTabs />
-                    </div>
-                </div>
-
-                {/* Right: Trade Panel + Credibility + Fee Earners */}
-                <div className="w-[300px] min-w-[300px] flex flex-col overflow-y-auto custom-scrollbar">
-                    <TerminalTradePanel />
-                    <div className="p-2">
-                        <LaunchConfigPanel token={activeToken} />
-                    </div>
-                    <CredibilityMatrix tokenId={tokenId} layout="terminal" />
-                    {activeToken.hasBagsFees && (
-                        <div className="p-2">
-                            <FeeEarnersPanel
-                                feeEarners={activeToken.feeEarners}
-                                lifetimeFees={activeToken.lifetimeFees}
-                            />
+        <div className="flex min-h-[calc(100vh-56px)] flex-col bg-background text-fg overflow-y-auto">
+            <div className="mx-auto flex min-h-full w-full max-w-[1820px] flex-col gap-4 px-3 py-3 sm:px-4 sm:py-4">
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3 shadow-soft">
+                    <button
+                        onClick={() => router.back()}
+                        className="btn-ghost flex items-center gap-2 text-sm"
+                    >
+                        <ArrowLeft size={14} />
+                        Back
+                    </button>
+                    <div className="hidden text-center sm:block">
+                        <div className="text-[11px] uppercase tracking-[0.24em] text-muted-high">
+                            Terminal view
                         </div>
-                    )}
+                        <div className="text-sm text-fg-soft">
+                            Simple trading surface with live updates
+                        </div>
+                    </div>
+                    <div className={`${isConnected ? "badge-green" : "badge-red"} badge`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-acid-green animate-pulse" : "bg-[#FF003C]"}`} />
+                        {isConnected ? "Live" : "Offline"}
+                    </div>
+                </div>
 
-                    {/* Share Cards */}
-                    <ShareSection token={activeToken} />
+                <TerminalHeader token={activeToken} />
+
+                <div className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[68px_minmax(0,1fr)_360px]">
+                    <div className="hidden xl:flex">
+                        <TerminalToolbar />
+                    </div>
+
+                    <div className="grid min-h-0 min-w-0 gap-4 lg:grid-rows-[minmax(520px,1fr)_260px] xl:grid-rows-[minmax(700px,1fr)_280px]">
+                        <div className="card min-h-[420px] overflow-hidden lg:min-h-[520px] xl:min-h-[700px]">
+                            <TerminalChart tokenMint={tokenId} />
+                        </div>
+                        <div className="card min-h-[240px] overflow-hidden">
+                            <TerminalBottomTabs />
+                        </div>
+                    </div>
+
+                    <aside className="min-h-0 space-y-3 overflow-y-auto pr-1 custom-scrollbar xl:col-span-1">
+                        <TerminalTradePanel />
+                        <div className="card p-3">
+                            <LaunchConfigPanel token={activeToken} />
+                        </div>
+                        <div className="card p-3">
+                            <CredibilityMatrix tokenId={tokenId} layout="terminal" />
+                        </div>
+                        {activeToken.hasBagsFees && (
+                            <div className="card p-3">
+                                <FeeEarnersPanel
+                                    feeEarners={activeToken.feeEarners}
+                                    lifetimeFees={activeToken.lifetimeFees}
+                                />
+                            </div>
+                        )}
+
+                        <ShareSection token={activeToken} />
+                    </aside>
                 </div>
             </div>
         </div>
@@ -193,10 +190,10 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
     const [activeCard, setActiveCard] = useState<'pnl' | 'snapshot'>('snapshot');
 
     return (
-        <div className="p-2 border-t border-white/5">
+        <div className="card p-3">
             <button
                 onClick={() => setOpen(!open)}
-                className="w-full flex items-center justify-between px-3 py-2 text-meta font-mono uppercase tracking-widest text-fg-soft hover:text-acid-green transition-colors"
+                className="flex w-full items-center justify-between rounded-xl px-2 py-1.5 text-left text-xs uppercase tracking-[0.2em] text-muted-high transition-colors hover:text-fg"
             >
                 <span className="flex items-center gap-2">
                     <Share2 size={12} />
@@ -206,24 +203,24 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
             </button>
 
             {open && (
-                <div className="mt-2 flex flex-col gap-2">
-                    <div className="flex gap-1">
+                <div className="mt-3 flex flex-col gap-2">
+                    <div className="grid grid-cols-2 gap-1">
                         <button
                             onClick={() => setActiveCard('snapshot')}
-                            className={`flex-1 px-2 py-1 text-meta font-mono uppercase tracking-widest border transition-colors ${
+                            className={`rounded-full border px-3 py-2 text-xs uppercase tracking-[0.18em] transition-colors ${
                                 activeCard === 'snapshot'
-                                    ? 'border-[#39FF14]/30 text-acid-green bg-acid-green/5'
-                                    : 'border-white/10 text-muted-high'
+                                    ? 'border-white/15 bg-white/[0.08] text-fg'
+                                    : 'border-white/10 text-muted-high hover:text-fg'
                             }`}
                         >
                             Snapshot
                         </button>
                         <button
                             onClick={() => setActiveCard('pnl')}
-                            className={`flex-1 px-2 py-1 text-meta font-mono uppercase tracking-widest border transition-colors ${
+                            className={`rounded-full border px-3 py-2 text-xs uppercase tracking-[0.18em] transition-colors ${
                                 activeCard === 'pnl'
-                                    ? 'border-[#39FF14]/30 text-acid-green bg-acid-green/5'
-                                    : 'border-white/10 text-muted-high'
+                                    ? 'border-white/15 bg-white/[0.08] text-fg'
+                                    : 'border-white/10 text-muted-high hover:text-fg'
                             }`}
                         >
                             PnL

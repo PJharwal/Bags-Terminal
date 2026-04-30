@@ -70,111 +70,141 @@ export default function TerminalIndexPage() {
     };
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-fg overflow-hidden font-mono">
-            {/* Header */}
-            <div className="glass gradient-border flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-3">
-                    <Terminal size={20} className="text-acid-green" />
-                    <h1 className="text-lg font-bold tracking-tight">TERMINAL</h1>
+        <div className="flex min-h-[calc(100vh-56px)] flex-col bg-background text-fg overflow-y-auto">
+            <div className="mx-auto flex min-h-full w-full max-w-[1820px] flex-col gap-4 px-3 py-3 sm:px-4 sm:py-4">
+                <div className="card grid gap-4 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center lg:px-5">
+                    <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/8 bg-white/[0.03] text-acid-green">
+                            <Terminal size={18} aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <h1 className="text-lg font-semibold tracking-tight text-fg">Terminal</h1>
+                                <span className="badge badge-muted">Live market surface</span>
+                            </div>
+                            <p className="mt-1 text-sm text-muted-high">
+                                Browse trending tokens or paste a mint address.
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                        <div className={`badge ${isConnected ? 'badge-green' : 'badge-red'}`}>
+                            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                            <span>{isConnected ? 'Live feed' : 'Connecting'}</span>
+                        </div>
+                        <span className="badge badge-muted">Select a token to continue</span>
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className={`flex items-center gap-2 text-meta ${isConnected ? 'text-acid-green' : 'text-error'}`}>
-                        {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
-                        <span>{isConnected ? 'LIVE' : 'CONNECTING...'}</span>
+
+                <div className="flex-1 min-h-0 overflow-auto pr-1 custom-scrollbar">
+                    <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_392px] 2xl:grid-cols-[minmax(0,1.2fr)_420px]">
+                        <div className="space-y-4">
+                            <section className="card p-4">
+                                <div className="mb-4 flex items-end justify-between gap-3">
+                                    <div className="flex items-center gap-2">
+                                        <TrendingUp size={14} className="text-acid-green" />
+                                        <div>
+                                            <h2 className="label">Trending tokens</h2>
+                                            <p className="mt-1 text-xs text-muted-high">Fast movers from the live feed.</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-high">
+                                        {isLoadingTrending && <Loader2 size={12} className="animate-spin text-muted-high" />}
+                                        <span>{trendingTokens.length} tokens</span>
+                                    </div>
+                                </div>
+                                {trendingTokens.length > 0 ? (
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+                                        {trendingTokens.map((token) => (
+                                            <TokenCard
+                                                key={token.address}
+                                                id={token.address}
+                                                symbol={token.symbol ? `$${token.symbol}` : '$???'}
+                                                name={token.name || 'Unknown'}
+                                                image={token.logo}
+                                                marketCap={token.market_cap}
+                                                volume={token.volume_24h}
+                                                priceChange={token.price_change_percent}
+                                                onClick={() => handleOpenTerminal(token.address)}
+                                            />
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="py-4 text-sm text-muted-high">
+                                        {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Try refreshing.'}
+                                    </div>
+                                )}
+                            </section>
+
+                            {recentTokens.length > 0 && (
+                                <section className="card p-4">
+                                    <div className="mb-4 flex items-end justify-between gap-2">
+                                        <div>
+                                            <h2 className="label">Recent from Live Feed</h2>
+                                            <p className="mt-1 text-xs text-muted-high">Fresh launches and state changes.</p>
+                                        </div>
+                                        <span className="text-xs text-muted-high">{recentTokens.length} tokens</span>
+                                    </div>
+                                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3">
+                                        {recentTokens.map((token) => (
+                                            <TokenCard
+                                                key={token.tokenId}
+                                                id={token.tokenId}
+                                                symbol={token.symbol}
+                                                name={token.name || token.symbol}
+                                                image={token.image || token.logoUrl}
+                                                marketCap={token.marketCap}
+                                                holders={token.holders}
+                                                bondingProgress={token.bondingProgress}
+                                                onClick={() => handleOpenTerminal(token.tokenId)}
+                                            />
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
+
+                            {recentTokens.length === 0 && trendingTokens.length === 0 && !isLoadingTrending && (
+                                <div className="card text-center py-12 text-muted-high">
+                                    <Terminal size={32} className="mx-auto mb-4 opacity-30" />
+                                    <p className="text-sm">
+                                        {isConnected
+                                            ? 'Waiting for BAGS tokens...'
+                                            : 'Connecting to live feed...'}
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-4 xl:sticky xl:top-0">
+                            <section className="card p-4">
+                                <h2 className="label mb-4">Open by address</h2>
+                                <div className="flex flex-col gap-3">
+                                    <input
+                                        ref={inputRef}
+                                        type="text"
+                                        placeholder="Paste Solana token mint address..."
+                                        className="input"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                const input = e.currentTarget.value.trim();
+                                                if (input) handleOpenTerminal(input);
+                                            }
+                                        }}
+                                    />
+                                    <button
+                                        className="btn-ghost border-acid-green/20 text-acid-green hover:border-acid-green/30 hover:bg-acid-green/10 w-full sm:w-auto"
+                                        onClick={() => {
+                                            const input = inputRef.current?.value.trim();
+                                            if (input) handleOpenTerminal(input);
+                                        }}
+                                    >
+                                        Open Terminal
+                                    </button>
+                                </div>
+                            </section>
+                        </div>
                     </div>
-                    <span className="text-meta text-muted-high font-mono">SELECT_TOKEN_TO_ANALYZE</span>
                 </div>
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 overflow-auto p-6">
-                {/* Trending Tokens from GMGN */}
-                <section className="mb-8">
-                    <div className="flex items-center gap-2 mb-4">
-                        <TrendingUp size={14} className="text-acid-green" />
-                        <h2 className="label">Trending Tokens (1h)</h2>
-                        {isLoadingTrending && <Loader2 size={12} className="animate-spin text-muted-high" />}
-                    </div>
-                    {trendingTokens.length > 0 ? (
-                        <div className="grid grid-cols-3 gap-4">
-                            {trendingTokens.map((token) => (
-                                <TokenCard
-                                    key={token.address}
-                                    id={token.address}
-                                    symbol={token.symbol ? `$${token.symbol}` : '$???'}
-                                    name={token.name || 'Unknown'}
-                                    marketCap={token.market_cap}
-                                    priceChange={token.price_change_percent}
-                                    onClick={() => handleOpenTerminal(token.address)}
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-muted-high text-sm py-4">
-                            {isLoadingTrending ? 'Loading trending tokens...' : 'Unable to load trending tokens. Try refreshing.'}
-                        </div>
-                    )}
-                </section>
-
-                {/* Recent from Pulse */}
-                {recentTokens.length > 0 && (
-                    <section className="mb-8">
-                        <h2 className="label mb-4">Recent from Live Feed</h2>
-                        <div className="grid grid-cols-4 gap-3">
-                            {recentTokens.map((token) => (
-                                <TokenCard
-                                    key={token.tokenId}
-                                    id={token.tokenId}
-                                    symbol={token.symbol}
-                                    name={token.name || token.symbol}
-                                    marketCap={token.marketCap}
-                                    bondingProgress={token.bondingProgress}
-                                    onClick={() => handleOpenTerminal(token.tokenId)}
-                                />
-                            ))}
-                        </div>
-                    </section>
-                )}
-
-                {/* Empty state when no tokens */}
-                {recentTokens.length === 0 && trendingTokens.length === 0 && !isLoadingTrending && (
-                    <div className="text-center py-12 text-muted-high">
-                        <Terminal size={32} className="mx-auto mb-4 opacity-30" />
-                        <p className="text-sm">
-                            {isConnected
-                                ? 'Waiting for BAGS tokens...'
-                                : 'Connecting to live feed...'}
-                        </p>
-                    </div>
-                )}
-
-                {/* Search / Paste Address */}
-                <section className="mt-8">
-                    <h2 className="label mb-4">Or Enter Token Address</h2>
-                    <div className="flex gap-4 max-w-xl">
-                        <input
-                            ref={inputRef}
-                            type="text"
-                            placeholder="Paste Solana token mint address..."
-                            className="input flex-1"
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                    const input = e.currentTarget.value.trim();
-                                    if (input) handleOpenTerminal(input);
-                                }
-                            }}
-                        />
-                        <button
-                            className="btn-primary"
-                            onClick={() => {
-                                const input = inputRef.current?.value.trim();
-                                if (input) handleOpenTerminal(input);
-                            }}
-                        >
-                            Open Terminal
-                        </button>
-                    </div>
-                </section>
             </div>
         </div>
     );
@@ -182,17 +212,23 @@ export default function TerminalIndexPage() {
 
 // Token Card Component
 function TokenCard({
+    image,
     symbol,
     name,
     marketCap,
+    volume,
+    holders,
     bondingProgress,
     priceChange,
     onClick,
 }: {
     id: string;
+    image?: string;
     symbol: string;
     name: string;
     marketCap?: number;
+    volume?: number;
+    holders?: number;
     bondingProgress?: number;
     priceChange?: number;
     onClick: () => void;
@@ -201,28 +237,60 @@ function TokenCard({
         <button
             type="button"
             onClick={onClick}
-            className="card group flex items-start justify-between gap-3 p-4 text-left"
+            className="card group flex w-full flex-col gap-4 overflow-hidden p-4 text-left transition-transform duration-200 hover:-translate-y-0.5 hover:border-white/10"
         >
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
-                <span className="text-sm font-bold text-fg truncate" title={symbol}>{symbol}</span>
-                <span className="text-meta text-muted-high truncate" title={name}>{name}</span>
+            <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-white/8 bg-white/[0.03]">
+                        {image ? (
+                            <img
+                                src={image}
+                                alt={symbol}
+                                className="h-full w-full object-cover"
+                            />
+                        ) : (
+                            <span className="text-sm font-semibold text-fg-soft">{symbol.replace("$", "").charAt(0) || "?"}</span>
+                        )}
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                        <div className="flex items-center gap-2 min-w-0">
+                            <span className="truncate text-sm font-semibold text-fg" title={symbol}>
+                                {symbol}
+                            </span>
+                            {priceChange !== undefined && (
+                                <span className={`badge ${priceChange >= 0 ? 'badge-green' : 'badge-red'} shrink-0`}>
+                                    {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
+                                </span>
+                            )}
+                        </div>
+                        <p className="truncate text-sm text-muted-high" title={name}>
+                            {name}
+                        </p>
+                    </div>
+                </div>
+                <ArrowRight
+                    size={14}
+                    aria-hidden="true"
+                    className="mt-0.5 shrink-0 text-muted-high transition-colors group-hover:text-acid-green"
+                />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                 {marketCap !== undefined && (
-                    <span className="text-meta text-fg-soft font-mono num">
-                        MC: {formatCurrency(marketCap)}
-                    </span>
+                    <span className="badge badge-muted justify-center">MC {formatCurrency(marketCap)}</span>
+                )}
+                {volume !== undefined && (
+                    <span className="badge badge-muted justify-center">VOL {formatCurrency(volume)}</span>
+                )}
+                {holders !== undefined && (
+                    <span className="badge badge-muted justify-center">{holders.toLocaleString()} holders</span>
                 )}
                 {bondingProgress !== undefined && (
-                    <span className={`text-meta font-mono num ${bondingProgress >= 100 ? 'text-acid-green' : 'text-muted-high'}`}>
+                    <span className={`badge justify-center ${bondingProgress >= 100 ? 'badge-green' : 'badge-muted'}`}>
                         {Math.round(bondingProgress)}% Bonded
                     </span>
                 )}
-                {priceChange !== undefined && (
-                    <span className={`text-meta font-mono num ${priceChange >= 0 ? 'text-acid-green' : 'text-error'}`}>
-                        {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(2)}%
-                    </span>
-                )}
             </div>
-            <ArrowRight size={14} aria-hidden="true" className="shrink-0 mt-0.5 text-muted-high group-hover:text-acid-green transition-colors" />
         </button>
     );
 }

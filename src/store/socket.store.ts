@@ -11,6 +11,7 @@ const isBagsToken = (mint: string): boolean => {
 
 // Store ping interval ID for cleanup
 let pingIntervalId: ReturnType<typeof setInterval> | null = null;
+let socketConnectInFlight = false;
 
 interface SocketState {
   socket: Socket | null;
@@ -38,7 +39,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   connect: () => {
     const { socket } = get();
-    if (socket) return;
+    if (socket || socketConnectInFlight) return;
+
+    socketConnectInFlight = true;
 
     const newSocket = io(config.baseServerUrl, {
       transports: ['websocket'],
@@ -49,6 +52,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     newSocket.on('connect', () => {
+      socketConnectInFlight = false;
       set({ isConnected: true });
 
       // Sync with pulse store
@@ -68,6 +72,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     });
 
     newSocket.on('connect_error', (error) => {
+      socketConnectInFlight = false;
       console.error('Socket connection error:', error.message);
     });
 
@@ -135,6 +140,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
   disconnect: () => {
     const { socket } = get();
+    socketConnectInFlight = false;
     if (pingIntervalId) {
       clearInterval(pingIntervalId);
       pingIntervalId = null;

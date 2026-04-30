@@ -40,21 +40,21 @@ export function SlippageSettings() {
           Slippage: {(slippageBps / 100).toFixed(1)}% · Priority: {PRIORITY_PRESETS.find(p => p.value === priorityFee)?.label || 'NONE'}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" sideOffset={8} className="w-72 p-3">
+      <PopoverContent align="end" sideOffset={8} className="w-72 max-w-[calc(100vw-1rem)] p-3">
         <div className="flex items-center justify-between mb-3">
           <span className="text-meta font-bold text-fg uppercase tracking-widest">Settings</span>
         </div>
 
         <div className="mb-3">
           <span className="text-meta text-muted-high uppercase tracking-widest">Slippage Tolerance</span>
-          <div className="grid grid-cols-4 gap-1 mt-1">
+          <div className="grid grid-cols-2 gap-1 mt-1 sm:grid-cols-4">
             {SLIPPAGE_PRESETS.map((bps) => (
               <button
                 key={bps}
                 type="button"
                 onClick={() => { setSlippage(bps); setCustomSlippage(''); }}
                 aria-pressed={slippageBps === bps}
-                className={`py-1.5 text-meta font-mono font-bold border transition-colors active:scale-95 focus-ring ${
+                className={`py-1.5 text-[10px] font-mono font-bold border transition-colors active:scale-95 focus-ring sm:text-meta ${
                   slippageBps === bps
                     ? 'border-acid-green text-acid-green bg-acid-green/10'
                     : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'
@@ -82,14 +82,14 @@ export function SlippageSettings() {
 
         <div>
           <span className="text-meta text-muted-high uppercase tracking-widest">Priority Fee</span>
-          <div className="grid grid-cols-4 gap-1 mt-1">
+          <div className="grid grid-cols-2 gap-1 mt-1 sm:grid-cols-4">
             {PRIORITY_PRESETS.map((preset) => (
               <button
                 key={preset.label}
                 type="button"
                 onClick={() => setPriorityFee(preset.value)}
                 aria-pressed={priorityFee === preset.value}
-                className={`py-1.5 text-meta font-bold uppercase border transition-colors active:scale-95 focus-ring ${
+                className={`py-1.5 text-[10px] font-bold uppercase border transition-colors active:scale-95 focus-ring sm:text-meta ${
                   priorityFee === preset.value
                     ? 'border-acid-green text-acid-green bg-acid-green/10'
                     : 'border-line text-fg-soft hover:border-muted-high hover:text-fg'

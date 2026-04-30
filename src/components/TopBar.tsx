@@ -33,62 +33,58 @@ export default function TopBar() {
 
     return (
         <header
-            className={`accent-line-top h-14 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-50 transition-all duration-300 border-b ${scrolled
-                    ? "glass-heavy border-white/20 shadow-[0_0_20px_rgba(0,0,0,0.5)]"
-                    : "bg-[#050505] border-white/10"
+            className={`accent-line-top fixed top-0 left-0 right-0 z-50 border-b transition-all duration-300 ${scrolled
+                    ? "glass-heavy border-white/15 shadow-[0_12px_32px_rgba(0,0,0,0.28)]"
+                : "bg-[#07090c]/95 border-white/10"
                 } font-mono`}
         >
-            {/* Logo & Nav */}
-            <div className="flex items-center gap-8">
-                <Link href="/" className="flex items-center gap-3 group focus-ring">
-                    <BagsLogo size={20} className="text-acid-green transition-transform duration-150 group-hover:scale-110" />
-                    <span className="text-sm font-display font-bold tracking-tighter group-hover:text-acid-green transition-colors">
-                        BAGS<span className="text-fg-soft">_</span>TERM
-                    </span>
-                </Link>
+            <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-4 md:px-6">
+                {/* Logo & Nav */}
+                <div className="flex items-center gap-6 min-w-0">
+                    <Link href="/" className="flex items-center gap-3 group focus-ring shrink-0">
+                        <BagsLogo size={20} className="transition-transform duration-150 group-hover:scale-105" />
+                        <span className="text-sm font-display font-bold tracking-tight text-white group-hover:text-fg-soft transition-colors">
+                            BAGS<span className="text-fg-soft">/</span>TERM
+                        </span>
+                    </Link>
 
-                <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                aria-current={isActive ? "page" : undefined}
-                                className={`px-4 py-1.5 text-meta font-bold tracking-widest transition-all relative group focus-ring ${isActive
-                                        ? "text-acid-green"
-                                        : "text-fg-soft hover:text-fg"
-                                    }`}
-                            >
-                                {item.label}
-                                <span aria-hidden="true" className={`absolute bottom-0 left-4 right-4 h-[1px] bg-acid-green transition-all duration-300 origin-left ${isActive
-                                        ? "scale-x-100"
-                                        : "scale-x-0 group-hover:scale-x-100"
-                                    }`} />
-                            </Link>
-                        );
-                    })}
-                </nav>
-            </div>
+                    <nav aria-label="Main navigation" className="hidden lg:flex items-center gap-1">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    aria-current={isActive ? "page" : undefined}
+                                    className={`rounded-full px-3 py-1.5 text-[10px] font-bold tracking-[0.18em] transition-colors relative group focus-ring ${isActive
+                                            ? "bg-white/5 text-white"
+                                            : "text-fg-soft hover:text-fg hover:bg-white/5"
+                                        }`}
+                                >
+                                    {item.label}
+                                    <span aria-hidden="true" className={`absolute bottom-0 left-3 right-3 h-[1px] rounded-full bg-white/30 transition-all duration-300 origin-left ${isActive
+                                            ? "scale-x-100"
+                                            : "scale-x-0 group-hover:scale-x-100"
+                                        }`} />
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                </div>
 
-            {/* Right side */}
-            <div className="flex items-center gap-6">
-                {/* Network Status */}
-                <LiveDot
-                    status="live"
-                    size="sm"
-                    label={<span className="font-bold tracking-widest">MAINNET<span aria-hidden="true" className="text-muted">_</span>ONLINE</span>}
-                    className="hidden sm:inline-flex"
-                />
-
-                {/* System Controls */}
-                <div className="flex items-center gap-2">
+                {/* Right side */}
+                <div className="flex items-center gap-3">
+                    <LiveDot
+                        status="live"
+                        size="sm"
+                        label={<span className="font-bold tracking-[0.18em]">MAINNET ONLINE</span>}
+                        className="hidden md:inline-flex text-[10px]"
+                    />
                     <WalletButton />
                 </div>
             </div>
 
-            {/* Top Scanning Line */}
-            <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-[#39FF14]/30 to-transparent opacity-50" />
+            <div className="absolute top-0 left-0 h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         </header>
     );
 }

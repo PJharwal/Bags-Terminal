@@ -22,7 +22,7 @@ const variantClasses: Record<ButtonVariant, string> = {
     "bg-acid-green text-black font-bold hover:brightness-110 active:scale-[0.97] " +
     "disabled:opacity-50 disabled:cursor-not-allowed disabled:brightness-100 disabled:active:scale-100",
   gold:
-    "bg-gold text-black font-bold hover:brightness-110 active:scale-[0.97] " +
+    "border border-gold/25 bg-gold/10 text-gold font-bold hover:border-gold/35 hover:bg-gold/15 active:scale-[0.97] " +
     "disabled:opacity-50 disabled:cursor-not-allowed",
   destructive:
     "bg-error text-white font-bold hover:brightness-110 active:scale-[0.97] " +

@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useTerminalStore } from "@/store/terminal.store";
 import { useTurnkey } from "@/components/turnkey/TurnkeyProvider";
 import { useTradeSocket } from "@/hooks/useTradeSocket";
 import { SlippageSettings } from "@/components/terminal/SlippageSettings";
-import { Wallet, Zap, Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import { Wallet, Zap, ExternalLink, AlertCircle } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { config } from "@/config/env";
-import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { LiveDot } from "@/components/ui/LiveDot";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { cn } from "@/lib/utils";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -47,7 +47,7 @@ export function TerminalTradePanel() {
         isConnected: socketConnected,
         isPreparing, isReady: socketReady, isExecuting: socketExecuting,
         estimatedTokens, estimatedDisplay, pricePerToken,
-        estimatedSol, estimatedSolDisplay, sellPricePerToken,
+        estimatedSolDisplay, sellPricePerToken,
         lastSignature, lastError,
         connect: socketConnect, disconnect: socketDisconnect,
         prepareBuy, executeBuy, prepareSell, executeSell,
@@ -73,6 +73,13 @@ export function TerminalTradePanel() {
     const [quoteVaultAddress, setQuoteVaultAddress] = useState<string | null>(null);
     const [tokenStandard, setTokenStandard] = useState("spl");
     const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+    const pendingTradeRef = useRef<{
+        action: TradeAction;
+        estimatedTokens: number;
+        sellAmount: string;
+        tokenDecimals: number;
+    } | null>(null);
+    const activeTokenId = activeToken?.tokenId;
 
     const isBuy = action === "buy";
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
@@ -103,16 +110,19 @@ export function TerminalTradePanel() {
 
     // Fetch GMGN token info for pool hints
     useEffect(() => {
-        if (!activeToken?.tokenId) return;
+        if (!activeTokenId) return;
         /* eslint-disable react-hooks/set-state-in-effect -- intentional: reset all per-token state when the active token changes (sync to external selection). */
+        setTokenDecimals(6);
+        setTokenBalance(0);
         setExchange(null); setPoolAddress(null); setQuoteAddress(null);
         setCreatorAddress(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
         setTokenStandard("spl"); setTxStatus("idle"); setTxResult(null); resetPrepare();
+        pendingTradeRef.current = null;
         /* eslint-enable react-hooks/set-state-in-effect */
 
         const fetchGMGNInfo = async () => {
             try {
-                const res = await fetch(`${config.baseGmgnUrl}/token/${activeToken.tokenId}/info`);
+                const res = await fetch(`${config.baseGmgnUrl}/token/${activeTokenId}/info`);
                 const data: GMGNTokenInfoResponse = await res.json();
                 if (data.code === 0 && data.data?.length > 0) {
                     const d = data.data[0];
@@ -125,14 +135,14 @@ export function TerminalTradePanel() {
             } catch { /* GMGN unavailable, backend will auto-detect */ }
         };
         fetchGMGNInfo();
-    }, [activeToken?.tokenId, resetPrepare]);
+    }, [activeTokenId, resetPrepare]);
 
     // Fetch token balance
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional: reset balance to 0 when prerequisites missing.
-        if (!activeToken?.tokenId || !turnkeyAddress || !isAuthenticated) { setTokenBalance(0); return; }
+        if (!activeTokenId || !turnkeyAddress || !isAuthenticated) { setTokenBalance(0); return; }
         const fetchBalance = async () => {
-            const mintPubkey = new PublicKey(activeToken.tokenId);
+            const mintPubkey = new PublicKey(activeTokenId);
             const userPubkey = new PublicKey(turnkeyAddress);
             const tryProgram = async (progId: typeof TOKEN_PROGRAM_ID) => {
                 const ata = await getAssociatedTokenAddress(mintPubkey, userPubkey, false, progId);
@@ -150,7 +160,7 @@ export function TerminalTradePanel() {
             }
         };
         fetchBalance();
-    }, [activeToken?.tokenId, turnkeyAddress, isAuthenticated, tokenDecimals, balanceRefreshTrigger, connection]);
+    }, [activeTokenId, turnkeyAddress, isAuthenticated, tokenDecimals, balanceRefreshTrigger, connection]);
 
     // Auto-prepare BUY when amount changes (debounced)
     useEffect(() => {
@@ -160,10 +170,10 @@ export function TerminalTradePanel() {
         const timer = setTimeout(() => {
             const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
             const poolHint = getPoolHint();
-            prepareBuy({ mint: activeToken!.tokenId, solAmount: val, slippageBps: slippageBpsVal, ...poolHint });
+            prepareBuy({ mint: activeTokenId!, solAmount: val, slippageBps: slippageBpsVal, ...poolHint });
         }, 300);
         return () => clearTimeout(timer);
-    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, slippageBps, exchange, prepareBuy, resetPrepare, getPoolHint]);
+    }, [solAmount, isAuthenticated, socketConnected, action, activeTokenId, slippageBps, exchange, prepareBuy, resetPrepare, getPoolHint]);
 
     // Auto-prepare SELL when amount changes (debounced)
     useEffect(() => {
@@ -173,14 +183,15 @@ export function TerminalTradePanel() {
         const timer = setTimeout(() => {
             const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
             const poolHint = getPoolHint();
-            prepareSell({ mint: activeToken!.tokenId, tokenAmount: val, tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+            prepareSell({ mint: activeTokenId!, tokenAmount: val, tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
         }, 300);
         return () => clearTimeout(timer);
-    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, slippageBps, exchange, prepareSell, resetPrepare, getPoolHint]);
+    }, [sellAmount, isAuthenticated, socketConnected, action, activeTokenId, tokenDecimals, slippageBps, exchange, prepareSell, resetPrepare, getPoolHint]);
 
     // Handle execute results — verify on-chain before showing success
     useEffect(() => {
         if (!lastSignature) return;
+        const tradeSnapshot = pendingTradeRef.current;
 
         const confirmTx = async () => {
             setTxResult({ signature: lastSignature });
@@ -201,10 +212,10 @@ export function TerminalTradePanel() {
                         }
                         if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
                             setTxStatus("success");
-                            if (action === "buy" && estimatedTokens) {
-                                setTokenBalance((prev) => prev + estimatedTokens / Math.pow(10, tokenDecimals));
-                            } else if (action === "sell" && sellAmount) {
-                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(sellAmount)));
+                            if (tradeSnapshot?.action === "buy" && tradeSnapshot.estimatedTokens) {
+                                setTokenBalance((prev) => prev + tradeSnapshot.estimatedTokens / Math.pow(10, tradeSnapshot.tokenDecimals));
+                            } else if (tradeSnapshot?.action === "sell" && tradeSnapshot.sellAmount) {
+                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(tradeSnapshot.sellAmount)));
                             }
                             setSolAmount(""); setSellAmount(""); setSellPreset(null);
                             setTimeout(() => { setBalanceRefreshTrigger((p) => p + 1); refreshTurnkeyBalance(); }, 3000);
@@ -222,7 +233,7 @@ export function TerminalTradePanel() {
         };
 
         confirmTx();
-    }, [lastSignature]);
+    }, [lastSignature, refreshTurnkeyBalance, connection]);
 
     // Handle errors — sync local result state to socket-emitted error stream.
     useEffect(() => {
@@ -250,6 +261,12 @@ export function TerminalTradePanel() {
 
         setTxStatus("sending");
         setTxResult(null);
+        pendingTradeRef.current = {
+            action,
+            estimatedTokens: estimatedTokens || 0,
+            sellAmount,
+            tokenDecimals,
+        };
 
         const poolHint = getPoolHint();
         const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
@@ -261,14 +278,19 @@ export function TerminalTradePanel() {
         } else {
             // Instant flow (prepare + execute in one step)
             if (action === "buy") {
-                instantBuy({ mint: activeToken!.tokenId, solAmount: parseFloat(solAmount), slippageBps: slippageBpsVal, ...poolHint });
+                instantBuy({ mint: activeTokenId!, solAmount: parseFloat(solAmount), slippageBps: slippageBpsVal, ...poolHint });
             } else {
-                instantSell({ mint: activeToken!.tokenId, tokenAmount: parseFloat(sellAmount), tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+                instantSell({ mint: activeTokenId!, tokenAmount: parseFloat(sellAmount), tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
             }
         }
     };
 
-    const handleDismiss = () => { setTxStatus("idle"); setTxResult(null); resetPrepare(); };
+    const handleDismiss = () => {
+        pendingTradeRef.current = null;
+        setTxStatus("idle");
+        setTxResult(null);
+        resetPrepare();
+    };
 
     const isProcessing = isPreparing || socketExecuting || txStatus === "sending";
 
@@ -281,31 +303,40 @@ export function TerminalTradePanel() {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0A0A0A] border-l border-white/10">
-            {/* Mode Tabs */}
-            <div className="flex border-b border-white/10">
-                <button
-                    onClick={() => { setAction("buy"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${isBuy ? "bg-acid-green/20 text-acid-green border-b-2 border-[#39FF14]" : "text-muted-high hover:text-fg"}`}
-                >Buy</button>
-                <button
-                    onClick={() => { setAction("sell"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
-                    className={`flex-1 py-3 text-xs font-bold uppercase tracking-wider transition-colors ${!isBuy ? "bg-[#FF003C]/20 text-error border-b-2 border-[#FF003C]" : "text-muted-high hover:text-fg"}`}
-                >Sell</button>
+        <div className="card flex h-full flex-col overflow-hidden">
+            <div className="p-3">
+                <div className="grid grid-cols-2 rounded-full border border-white/8 bg-black/20 p-1">
+                    <button
+                        onClick={() => { setAction("buy"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
+                        className={cn(
+                            "rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] transition-colors",
+                            isBuy ? "border border-acid-green/20 bg-acid-green/10 text-acid-green" : "text-muted-high hover:text-fg"
+                        )}
+                    >
+                        Buy
+                    </button>
+                    <button
+                        onClick={() => { setAction("sell"); setSolAmount(""); setSellAmount(""); resetPrepare(); setTxStatus("idle"); setTxResult(null); }}
+                        className={cn(
+                            "rounded-full px-3 py-2 text-xs font-medium uppercase tracking-[0.18em] transition-colors",
+                            !isBuy ? "border border-white/10 bg-white/[0.04] text-fg" : "text-muted-high hover:text-fg"
+                        )}
+                    >
+                        Sell
+                    </button>
+                </div>
             </div>
 
-            <div className="flex-1 p-4 flex flex-col gap-3 overflow-y-auto">
-                {/* Connection Status */}
+            <div className="flex-1 space-y-3 overflow-y-auto px-4 pb-4 custom-scrollbar">
                 {!socketConnected && isAuthenticated && (
-                    <div className="p-2 bg-error/10 border border-error/30 flex items-center justify-center">
+                    <div className="rounded-2xl border border-error/20 bg-error/[0.08] px-3 py-2">
                         <LiveDot status="down" size="xs" label="Trade server disconnected" />
                     </div>
                 )}
 
-                {/* Amount Input */}
                 {isBuy ? (
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="trade-buy-amount" className="text-meta text-muted-high uppercase tracking-widest">Amount (SOL)</label>
+                    <div className="space-y-2">
+                        <label htmlFor="trade-buy-amount" className="text-[11px] uppercase tracking-[0.2em] text-muted-high">Amount (SOL)</label>
                         <NumberInput
                             id="trade-buy-amount"
                             presets={BUY_PRESETS}
@@ -319,15 +350,20 @@ export function TerminalTradePanel() {
                         />
                     </div>
                 ) : (
-                    <div className="flex flex-col gap-2">
-                        <label htmlFor="trade-sell-amount" className="text-meta text-muted-high uppercase tracking-widest">Amount ({activeToken?.symbol || "Tokens"})</label>
+                    <div className="space-y-2">
+                        <label htmlFor="trade-sell-amount" className="text-[11px] uppercase tracking-[0.2em] text-muted-high">Amount ({activeToken?.symbol || "Tokens"})</label>
                         <div role="group" aria-label="Sell percentage" className="grid grid-cols-4 gap-2">
                             {SELL_PRESETS.map((pct) => (
-                                <button key={pct} type="button" onClick={() => handleSellPreset(pct)}
+                                <button
+                                    key={pct}
+                                    type="button"
+                                    onClick={() => handleSellPreset(pct)}
                                     aria-pressed={sellPreset === pct}
-                                    className="min-h-6 px-2 py-1 text-meta font-mono font-bold border transition-colors border-line text-fg-soft hover:border-muted-high hover:text-fg active:scale-[0.97] focus-ring"
-                                    style={{ borderColor: sellPreset === pct ? accentColor : undefined, color: sellPreset === pct ? accentColor : undefined }}
-                                >{pct}%</button>
+                                    className="rounded-xl border border-white/10 px-2 py-2 text-xs font-medium text-fg-soft transition-colors hover:border-white/20 hover:text-fg active:scale-[0.98]"
+                                    style={sellPreset === pct ? { borderColor: accentColor, color: accentColor, background: `${accentColor}14` } : undefined}
+                                >
+                                    {pct}%
+                                </button>
                             ))}
                         </div>
                         <NumberInput
@@ -340,22 +376,25 @@ export function TerminalTradePanel() {
                             suffix={activeToken?.symbol || "Tokens"}
                             aria-label={`${activeToken?.symbol || "Token"} amount to sell`}
                         />
-                        <span className="text-meta text-muted-high font-mono num">Holdings: {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {activeToken?.symbol || ""}</span>
+                        <span className="block text-xs text-muted-high font-mono num">
+                            Holdings: {tokenBalance.toLocaleString(undefined, { maximumFractionDigits: 4 })} {activeToken?.symbol || ""}
+                        </span>
                     </div>
                 )}
 
-                {/* Quote Display */}
                 {activeToken && (isBuy ? solAmount : sellAmount) && (
-                    <div className="flex flex-col gap-1.5 p-3 bg-elevated border border-white/10">
-                        <div className="flex justify-between text-meta">
+                    <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                        <div className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-muted-high">You {isBuy ? "pay" : "sell"}</span>
-                            <span className="text-fg font-mono num">{isBuy ? `${solAmount} SOL` : `${sellAmount} ${activeToken.symbol}`}</span>
+                            <span className="font-mono text-fg num">
+                                {isBuy ? `${solAmount} SOL` : `${sellAmount} ${activeToken.symbol}`}
+                            </span>
                         </div>
-                        <div className="flex justify-between text-meta">
+                        <div className="flex items-center justify-between gap-3 text-sm">
                             <span className="text-muted-high">You receive</span>
-                            <span className="text-fg font-mono num">
+                            <span className="font-mono text-fg num">
                                 {isPreparing ? (
-                                    <span className="text-muted-high animate-pulse">Calculating...</span>
+                                    <span className="animate-pulse text-muted-high">Calculating...</span>
                                 ) : socketReady && isBuy && estimatedDisplay ? (
                                     `~${estimatedDisplay.toLocaleString(undefined, { maximumFractionDigits: 4 })} ${activeToken.symbol}`
                                 ) : socketReady && !isBuy && estimatedSolDisplay ? (
@@ -364,64 +403,68 @@ export function TerminalTradePanel() {
                             </span>
                         </div>
                         {(pricePerToken || sellPricePerToken) && (
-                            <div className="flex justify-between text-meta">
+                            <div className="flex items-center justify-between gap-3 text-sm">
                                 <span className="text-muted-high">Price per token</span>
-                                <span className="text-fg-soft font-mono num">{((pricePerToken || sellPricePerToken)!).toFixed(9)} SOL</span>
+                                <span className="font-mono text-fg-soft num">{((pricePerToken || sellPricePerToken)!).toFixed(9)} SOL</span>
                             </div>
                         )}
                     </div>
                 )}
 
-                {/* Wallet Balance */}
-                <div className="flex flex-col gap-1 p-3 bg-elevated border border-white/10">
-                    <div className="flex items-center justify-between">
+                <div className="space-y-2 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2">
                             <Zap size={14} aria-hidden="true" className="text-acid-green" />
-                            <span className="text-meta text-muted-high uppercase">Trading Wallet</span>
+                            <span className="text-[11px] uppercase tracking-[0.2em] text-muted-high">Trading wallet</span>
                         </div>
-                        <span className="text-xs font-mono text-fg num">
+                        <span className="font-mono text-xs text-fg num">
                             {turnkeyBalance !== null ? `${turnkeyBalance.toFixed(4)} SOL` : "-- SOL"}
                         </span>
                     </div>
                     {turnkeyAddress && (
-                        <span className="text-meta text-muted font-mono num pl-6">{turnkeyAddress.slice(0, 4)}...{turnkeyAddress.slice(-4)}</span>
+                        <span className="block pl-6 text-xs font-mono text-muted-high num">
+                            {turnkeyAddress.slice(0, 4)}...{turnkeyAddress.slice(-4)}
+                        </span>
                     )}
                 </div>
 
-                {/* Slippage */}
-                <SlippageSettings />
+                <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
+                    <SlippageSettings />
+                </div>
 
-                {/* TX Result */}
                 {txResult && (
-                    <div className={`p-3 border text-meta font-mono ${txResult.error ? "bg-[#FF003C]/10 border-[#FF003C]/30 text-error" : "bg-acid-green/10 border-[#39FF14]/30 text-acid-green"}`}>
+                    <div className={cn(
+                        "rounded-2xl border p-3 text-sm font-mono",
+                        txResult.error ? "border-error/20 bg-error/[0.08] text-error" : "border-[#39FF14]/20 bg-acid-green/[0.08] text-acid-green"
+                    )}>
                         {txResult.error ? (
-                            <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                    <AlertCircle size={12} /> {txResult.error}
+                            <div className="space-y-2">
+                                <div className="flex items-start gap-2">
+                                    <AlertCircle size={12} className="mt-0.5" />
+                                    <span>{txResult.error}</span>
                                 </div>
                                 {txResult.signature && (
-                                    <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer"
-                                        className="flex items-center gap-1 underline opacity-70">
+                                    <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs underline opacity-80">
                                         View failed TX <ExternalLink size={10} />
                                     </a>
                                 )}
                             </div>
                         ) : txResult.signature ? (
-                            <div className="flex flex-col gap-1">
-                                <span>Transaction confirmed!</span>
-                                <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer"
-                                    className="flex items-center gap-1 underline">
+                            <div className="space-y-2">
+                                <div>Transaction confirmed.</div>
+                                <a href={`https://solscan.io/tx/${txResult.signature}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs underline">
                                     View on Solscan <ExternalLink size={10} />
                                 </a>
                             </div>
                         ) : null}
-                        <button onClick={handleDismiss} className="mt-2 text-meta opacity-60 hover:opacity-100">Dismiss</button>
+                        <button onClick={handleDismiss} className="mt-2 text-xs text-muted-high hover:text-fg">
+                            Dismiss
+                        </button>
                     </div>
                 )}
             </div>
 
-            {/* Action Button */}
-            <div className="p-4 border-t border-white/10">
+            <div className="border-t border-white/5 p-4">
                 {!connected ? (
                     <Button
                         variant="ghost"

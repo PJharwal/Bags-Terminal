@@ -7,6 +7,7 @@ import type { TerminalBottomTab, TradeRow, WalletRow } from "@/lib/types";
 import type { BagsTokenClaimEvent } from "@/lib/bags-types";
 import { ArrowDownRight, ArrowUpRight, Users, TrendingUp, Code, Coins, ExternalLink } from "lucide-react";
 import { BagsLogo } from "@/components/ui/BagsLogo";
+import { cn } from "@/lib/utils";
 
 const TABS: { id: TerminalBottomTab; label: string; icon: React.ReactNode }[] = [
     { id: 'trades', label: 'Trades', icon: <ArrowUpRight size={12} /> },
@@ -64,35 +65,37 @@ export function TerminalBottomTabs() {
     );
 
     return (
-        <div className="flex flex-col h-full border-t border-white/10 bg-[#0A0A0A]">
-            {/* Tab Headers */}
-            <div className="flex border-b border-white/10">
-                {TABS.map((tab) => {
-                    const isFeesTabHighlighted = tab.id === 'fees' && activeToken?.hasBagsFees;
+        <div className="flex h-full flex-col overflow-hidden">
+            <div className="border-b border-white/5 p-2">
+                <div className="flex gap-1 overflow-x-auto custom-scrollbar">
+                    {TABS.map((tab) => {
+                        const isFeesTabHighlighted = tab.id === 'fees' && activeToken?.hasBagsFees;
 
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveBottomTab(tab.id)}
-                            className={`btn-press flex items-center gap-2 px-4 py-2 text-meta font-bold uppercase tracking-wider transition-colors ${activeBottomTab === tab.id
-                                    ? 'text-acid-green border-b-2 border-[#39FF14] bg-acid-green/5'
-                                    : isFeesTabHighlighted
-                                        ? 'text-gold hover:text-gold'
-                                        : 'text-muted-high hover:text-fg'
-                                }`}
-                        >
-                            {tab.id === 'fees' ? <BagsLogo size={12} /> : tab.icon}
-                            {tab.label}
-                            {isFeesTabHighlighted && activeBottomTab !== tab.id && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] badge-live" />
-                            )}
-                        </button>
-                    );
-                })}
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveBottomTab(tab.id)}
+                                className={cn(
+                                    "btn-press inline-flex items-center gap-2 whitespace-nowrap rounded-full border px-3 py-2 text-xs font-medium transition-colors",
+                                    activeBottomTab === tab.id
+                                        ? "border-white/15 bg-white text-background"
+                                        : isFeesTabHighlighted
+                                            ? "border-gold/20 bg-gold/[0.08] text-gold hover:bg-gold/[0.1]"
+                                            : "border-white/10 bg-white/[0.02] text-muted-high hover:text-fg"
+                                )}
+                            >
+                                {tab.id === 'fees' ? <BagsLogo size={12} /> : tab.icon}
+                                {tab.label}
+                                {isFeesTabHighlighted && activeBottomTab !== tab.id && (
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#FFD700] badge-live" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
-            {/* Tab Content */}
-            <div className="flex-1 overflow-auto custom-scrollbar">
+            <div className="flex-1 overflow-auto px-2 pb-2 custom-scrollbar">
                 {activeBottomTab === 'trades' && <TradesTable trades={trades} />}
                 {activeBottomTab === 'holders' && <HoldersTable holders={holders} />}
                 {activeBottomTab === 'top-traders' && <TopTradersTable traders={topTraders} />}
@@ -113,38 +116,38 @@ export function TerminalBottomTabs() {
 // Trades Table
 function TradesTable({ trades }: { trades: TradeRow[] }) {
     return (
-        <table className="w-full text-meta font-mono">
-            <thead className="sticky top-0 bg-[#0A0A0A]">
-                <tr className="text-muted-high uppercase tracking-widest border-b border-white/10">
-                    <th className="py-2 px-3 text-left font-normal">Type</th>
-                    <th className="py-2 px-3 text-left font-normal">Wallet</th>
-                    <th className="py-2 px-3 text-right font-normal">Amount</th>
-                    <th className="py-2 px-3 text-right font-normal">Total</th>
-                    <th className="py-2 px-3 text-right font-normal">Time</th>
+        <table className="w-full text-sm font-mono">
+            <thead className="sticky top-0 bg-background/95 backdrop-blur">
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-muted-high">
+                    <th className="px-3 py-3 text-left font-normal">Type</th>
+                    <th className="px-3 py-3 text-left font-normal">Wallet</th>
+                    <th className="px-3 py-3 text-right font-normal">Amount</th>
+                    <th className="px-3 py-3 text-right font-normal">Total</th>
+                    <th className="px-3 py-3 text-right font-normal">Time</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
                 {trades.map((trade) => (
                     <tr
                         key={trade.id}
-                        className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                        className="cursor-pointer transition-colors hover:bg-white/[0.03]"
                     >
-                        <td className="py-2 px-3">
+                        <td className="px-3 py-3">
                             <span className={`flex items-center gap-1 ${trade.type === 'buy' ? 'text-acid-green' : 'text-error'}`}>
                                 {trade.type === 'buy' ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
                                 {trade.type.toUpperCase()}
                             </span>
                         </td>
-                        <td className="py-2 px-3 text-fg">
+                        <td className="px-3 py-3 text-fg">
                             {trade.walletLabel ? (
                                 <span className="text-[#00F0FF]">{trade.walletLabel}</span>
                             ) : (
                                 trade.wallet
                             )}
                         </td>
-                        <td className="py-2 px-3 text-right text-fg">{formatNum(trade.amount)}</td>
-                        <td className="py-2 px-3 text-right text-fg">${trade.total.toFixed(2)}</td>
-                        <td className="py-2 px-3 text-right text-muted-high">{formatTimeAgo(trade.timestamp)}</td>
+                        <td className="px-3 py-3 text-right text-fg">{formatNum(trade.amount)}</td>
+                        <td className="px-3 py-3 text-right text-fg">${trade.total.toFixed(2)}</td>
+                        <td className="px-3 py-3 text-right text-muted-high">{formatTimeAgo(trade.timestamp)}</td>
                     </tr>
                 ))}
             </tbody>
@@ -155,24 +158,24 @@ function TradesTable({ trades }: { trades: TradeRow[] }) {
 // Holders Table
 function HoldersTable({ holders }: { holders: WalletRow[] }) {
     return (
-        <table className="w-full text-meta font-mono">
-            <thead className="sticky top-0 bg-[#0A0A0A]">
-                <tr className="text-muted-high uppercase tracking-widest border-b border-white/10">
-                    <th className="py-2 px-3 text-left font-normal">Wallet</th>
-                    <th className="py-2 px-3 text-right font-normal">Holding</th>
-                    <th className="py-2 px-3 text-right font-normal">%</th>
-                    <th className="py-2 px-3 text-right font-normal">Bought</th>
-                    <th className="py-2 px-3 text-right font-normal">Sold</th>
-                    <th className="py-2 px-3 text-right font-normal">PnL</th>
+        <table className="w-full text-sm font-mono">
+            <thead className="sticky top-0 bg-background/95 backdrop-blur">
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-muted-high">
+                    <th className="px-3 py-3 text-left font-normal">Wallet</th>
+                    <th className="px-3 py-3 text-right font-normal">Holding</th>
+                    <th className="px-3 py-3 text-right font-normal">%</th>
+                    <th className="px-3 py-3 text-right font-normal">Bought</th>
+                    <th className="px-3 py-3 text-right font-normal">Sold</th>
+                    <th className="px-3 py-3 text-right font-normal">PnL</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
                 {holders.map((holder, idx) => (
                     <tr
                         key={holder.wallet}
-                        className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                        className="cursor-pointer transition-colors hover:bg-white/[0.03]"
                     >
-                        <td className="py-2 px-3">
+                        <td className="px-3 py-3">
                             <div className="flex items-center gap-2">
                                 <span className="text-muted-high">#{idx + 1}</span>
                                 {holder.walletLabel ? (
@@ -182,11 +185,11 @@ function HoldersTable({ holders }: { holders: WalletRow[] }) {
                                 )}
                             </div>
                         </td>
-                        <td className="py-2 px-3 text-right text-fg">{formatNum(holder.holding)}</td>
-                        <td className="py-2 px-3 text-right text-fg-soft">{holder.holdingPercent.toFixed(1)}%</td>
-                        <td className="py-2 px-3 text-right text-acid-green">{formatNum(holder.bought)}</td>
-                        <td className="py-2 px-3 text-right text-error">{formatNum(holder.sold)}</td>
-                        <td className={`py-2 px-3 text-right ${holder.pnl >= 0 ? 'text-acid-green' : 'text-error'}`}>
+                        <td className="px-3 py-3 text-right text-fg">{formatNum(holder.holding)}</td>
+                        <td className="px-3 py-3 text-right text-fg-soft">{holder.holdingPercent.toFixed(1)}%</td>
+                        <td className="px-3 py-3 text-right text-acid-green">{formatNum(holder.bought)}</td>
+                        <td className="px-3 py-3 text-right text-error">{formatNum(holder.sold)}</td>
+                        <td className={`px-3 py-3 text-right ${holder.pnl >= 0 ? 'text-acid-green' : 'text-error'}`}>
                             {holder.pnl >= 0 ? '+' : ''}${formatNum(Math.abs(holder.pnl))}
                         </td>
                     </tr>
@@ -199,43 +202,43 @@ function HoldersTable({ holders }: { holders: WalletRow[] }) {
 // Top Traders Table
 function TopTradersTable({ traders }: { traders: WalletRow[] }) {
     return (
-        <table className="w-full text-meta font-mono">
-            <thead className="sticky top-0 bg-[#0A0A0A]">
-                <tr className="text-muted-high uppercase tracking-widest border-b border-white/10">
-                    <th className="py-2 px-3 text-left font-normal">Rank</th>
-                    <th className="py-2 px-3 text-left font-normal">Wallet</th>
-                    <th className="py-2 px-3 text-right font-normal">Realized PnL</th>
-                    <th className="py-2 px-3 text-right font-normal">ROI</th>
-                    <th className="py-2 px-3 text-right font-normal">Volume</th>
-                    <th className="py-2 px-3 text-right font-normal">Last Active</th>
+        <table className="w-full text-sm font-mono">
+            <thead className="sticky top-0 bg-background/95 backdrop-blur">
+                <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-muted-high">
+                    <th className="px-3 py-3 text-left font-normal">Rank</th>
+                    <th className="px-3 py-3 text-left font-normal">Wallet</th>
+                    <th className="px-3 py-3 text-right font-normal">Realized PnL</th>
+                    <th className="px-3 py-3 text-right font-normal">ROI</th>
+                    <th className="px-3 py-3 text-right font-normal">Volume</th>
+                    <th className="px-3 py-3 text-right font-normal">Last Active</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody className="divide-y divide-white/5">
                 {traders.map((trader, idx) => (
                     <tr
                         key={trader.wallet}
-                        className="border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors"
+                        className="cursor-pointer transition-colors hover:bg-white/[0.03]"
                     >
-                        <td className="py-2 px-3">
+                        <td className="px-3 py-3">
                             <span className={`${idx < 3 ? 'text-gold' : 'text-muted-high'}`}>
                                 #{idx + 1}
                             </span>
                         </td>
-                        <td className="py-2 px-3">
+                        <td className="px-3 py-3">
                             {trader.walletLabel ? (
                                 <span className="text-[#00F0FF]">{trader.walletLabel}</span>
                             ) : (
                                 <span className="text-fg">{trader.wallet}</span>
                             )}
                         </td>
-                        <td className={`py-2 px-3 text-right font-bold ${trader.pnl >= 0 ? 'text-acid-green' : 'text-error'}`}>
+                        <td className={`px-3 py-3 text-right font-bold ${trader.pnl >= 0 ? 'text-acid-green' : 'text-error'}`}>
                             {trader.pnl >= 0 ? '+' : ''}${formatNum(Math.abs(trader.pnl))}
                         </td>
-                        <td className={`py-2 px-3 text-right ${trader.pnlPercent >= 0 ? 'text-acid-green' : 'text-error'}`}>
+                        <td className={`px-3 py-3 text-right ${trader.pnlPercent >= 0 ? 'text-acid-green' : 'text-error'}`}>
                             {trader.pnlPercent >= 0 ? '+' : ''}{trader.pnlPercent.toFixed(0)}%
                         </td>
-                        <td className="py-2 px-3 text-right text-fg">${formatNum(trader.bought + trader.sold)}</td>
-                        <td className="py-2 px-3 text-right text-muted-high">{formatTimeAgo(trader.lastActive)}</td>
+                        <td className="px-3 py-3 text-right text-fg">${formatNum(trader.bought + trader.sold)}</td>
+                        <td className="px-3 py-3 text-right text-muted-high">{formatTimeAgo(trader.lastActive)}</td>
                     </tr>
                 ))}
             </tbody>
@@ -258,14 +261,13 @@ function FeesTable({
     const totalClaimed = events.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
     return (
-        <div className="flex flex-col h-full">
-            {/* Time Range Filter Bar */}
-            <div className="flex items-center justify-between px-3 py-1.5 bg-[#0D0D0D] border-b border-white/5">
-                <div className="flex items-center gap-1.5">
+        <div className="flex h-full flex-col">
+            <div className="flex items-center justify-between gap-3 border-b border-white/5 px-3 py-2">
+                <div className="flex items-center gap-2">
                     <BagsLogo size={12} />
-                    <span className="text-meta text-muted-high uppercase tracking-widest">Fee Claims</span>
+                    <span className="text-xs uppercase tracking-[0.2em] text-muted-high">Fee Claims</span>
                     {events.length > 0 && (
-                        <span className="text-meta text-gold font-mono font-bold ml-2">
+                        <span className="font-mono text-xs text-gold num">
                             {totalClaimed.toFixed(4)} SOL
                         </span>
                     )}
@@ -275,10 +277,10 @@ function FeesTable({
                         <button
                             key={range.id}
                             onClick={() => onTimeRangeChange(range.id)}
-                            className={`btn-press px-2 py-0.5 text-meta font-bold uppercase tracking-wider transition-colors ${
+                            className={`rounded-full border px-3 py-1.5 text-[11px] uppercase tracking-[0.16em] transition-colors ${
                                 timeRange === range.id
-                                    ? 'bg-acid-green/15 text-acid-green border border-[#39FF14]/30'
-                                    : 'text-muted-high hover:text-fg border border-transparent'
+                                    ? 'border-white/15 bg-white/[0.08] text-fg'
+                                    : 'border-white/10 bg-white/[0.02] text-muted-high hover:text-fg'
                             }`}
                         >
                             {range.label}
@@ -288,67 +290,67 @@ function FeesTable({
             </div>
 
             {isLoading ? (
-                <div className="flex items-center justify-center flex-1 text-muted-high text-xs font-mono">
-                    <div className="text-center">
+                <div className="flex flex-1 items-center justify-center">
+                    <div className="text-center text-sm text-muted-high">
                         <BagsLogo size={24} className="mx-auto mb-2 opacity-50" />
                         <p>Loading fee claims...</p>
                     </div>
                 </div>
             ) : events.length === 0 ? (
-                <div className="flex items-center justify-center flex-1 text-muted-high text-xs font-mono">
-                    <div className="text-center">
+                <div className="flex flex-1 items-center justify-center">
+                    <div className="text-center text-sm text-muted-high">
                         <BagsLogo size={24} className="mx-auto mb-2 opacity-50" />
                         <p>No fee claims {timeRange !== 'all' ? `in the last ${timeRange}` : 'yet'}</p>
-                        <p className="text-meta text-[#444] mt-1">Claims appear here when earners collect fees</p>
+                        <p className="mt-1 text-xs text-muted-mid">Claims appear here when earners collect fees</p>
                     </div>
                 </div>
             ) : (
                 <div className="flex-1 overflow-auto">
-                    <table className="w-full text-meta font-mono">
-                        <thead className="sticky top-0 bg-[#0A0A0A]">
-                            <tr className="text-muted-high uppercase tracking-widest border-b border-white/10">
-                                <th className="py-2 px-3 text-left font-normal">Time</th>
-                                <th className="py-2 px-3 text-left font-normal">Wallet</th>
-                                <th className="py-2 px-3 text-left font-normal">Role</th>
-                                <th className="py-2 px-3 text-right font-normal">Amount</th>
-                                <th className="py-2 px-3 text-right font-normal">Tx</th>
+                    <table className="w-full text-sm font-mono">
+                        <thead className="sticky top-0 bg-background/95 backdrop-blur">
+                            <tr className="border-b border-white/5 text-[10px] uppercase tracking-[0.2em] text-muted-high">
+                                <th className="px-3 py-3 text-left font-normal">Time</th>
+                                <th className="px-3 py-3 text-left font-normal">Wallet</th>
+                                <th className="px-3 py-3 text-left font-normal">Role</th>
+                                <th className="px-3 py-3 text-right font-normal">Amount</th>
+                                <th className="px-3 py-3 text-right font-normal">Tx</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-white/5">
                             {events.map((event, idx) => (
                                 <tr
                                     key={`${event.signature}-${idx}`}
-                                    className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                                    className="transition-colors hover:bg-white/[0.03]"
                                 >
-                                    <td className="py-2 px-3 text-muted-high">
+                                    <td className="px-3 py-3 text-muted-high">
                                         {formatTimeAgo(event.timestamp * 1000)}
                                     </td>
-                                    <td className="py-2 px-3 text-fg">
+                                    <td className="px-3 py-3 text-fg">
                                         <a
                                             href={`https://solscan.io/account/${event.wallet}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="hover:text-[#00F0FF] transition-colors"
+                                            className="transition-colors hover:text-[#00F0FF]"
                                         >
                                             {event.wallet.slice(0, 4)}...{event.wallet.slice(-4)}
                                         </a>
                                     </td>
-                                    <td className="py-2 px-3">
+                                    <td className="px-3 py-3">
                                         {event.isCreator ? (
                                             <span className="text-acid-green">CREATOR</span>
                                         ) : (
                                             <span className="text-[#00F0FF]">EARNER</span>
                                         )}
                                     </td>
-                                    <td className="py-2 px-3 text-right text-gold font-bold">
+                                    <td className="px-3 py-3 text-right text-gold font-bold">
                                         {parseFloat(event.amount).toFixed(4)} SOL
                                     </td>
-                                    <td className="py-2 px-3 text-right">
+                                    <td className="px-3 py-3 text-right">
                                         <a
                                             href={`https://solscan.io/tx/${event.signature}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-muted-high hover:text-[#00F0FF] transition-colors inline-flex items-center gap-1"
+                                            className="inline-flex items-center gap-1 text-muted-high transition-colors hover:text-[#00F0FF]"
                                         >
                                             {event.signature.slice(0, 4)}...
                                             <ExternalLink size={10} />
@@ -367,11 +369,11 @@ function FeesTable({
 // Dev Tokens Table (placeholder)
 function DevTokensTable() {
     return (
-        <div className="flex items-center justify-center h-32 text-muted-high text-xs font-mono">
-            <div className="text-center">
+        <div className="flex h-32 items-center justify-center text-muted-high">
+            <div className="text-center text-sm">
                 <Code size={24} className="mx-auto mb-2 opacity-50" />
                 <p>Developer wallet activity</p>
-                <p className="text-meta text-[#444] mt-1">Coming soon</p>
+                <p className="mt-1 text-xs text-muted-mid">Coming soon</p>
             </div>
         </div>
     );

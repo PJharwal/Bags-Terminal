@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Activity, Search, Users } from 'lucide-react';
@@ -101,6 +101,60 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
   );
 };
 
+const HomeStat = ({ label, value, hint }: { label: string; value: string; hint: string }) => (
+  <div className="stat-card p-4">
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-meta font-mono uppercase tracking-widest text-fg-soft">{label}</span>
+      <span className="text-lg font-display font-bold text-white">{value}</span>
+    </div>
+    <div className="mt-2 text-xs text-muted-high">{hint}</div>
+  </div>
+);
+
+const HeroPreview = ({
+  isConnected,
+  tokens,
+}: {
+  isConnected: boolean;
+  tokens: PulseItem[];
+}) => (
+  <div className="card p-5 md:p-6">
+    <div className="flex items-center justify-between gap-3 mb-4">
+      <div>
+        <div className="text-meta font-mono uppercase tracking-[0.18em] text-fg-soft">Live Snapshot</div>
+        <div className="text-sm text-white mt-1">A cleaner view of what is moving right now</div>
+      </div>
+      <span className={`badge ${isConnected ? 'badge-green' : 'badge-muted'}`}>
+        {isConnected ? 'Live' : 'Syncing'}
+      </span>
+    </div>
+
+    <div className="space-y-3">
+      {tokens.length > 0 ? (
+        tokens.slice(0, 3).map((token) => (
+          <div key={token.tokenId} className="flex items-center justify-between gap-4 rounded-2xl border border-white/[0.06] bg-white/[0.02] px-4 py-3">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-mono font-bold text-white truncate">{token.symbol}</span>
+                <span className="text-meta text-fg-soft">{Math.round(token.bondingProgress)}%</span>
+              </div>
+              <div className="text-meta text-muted-high truncate">{token.name}</div>
+            </div>
+            <div className="text-right">
+              <div className="text-sm font-mono text-white">{formatCurrency(token.marketCap)}</div>
+              <div className="text-meta text-muted-high">market cap</div>
+            </div>
+          </div>
+        ))
+      ) : (
+        <div className="rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-6 text-sm text-muted-high">
+          {isConnected ? 'Waiting for tokens to stream in.' : 'Connect to see the live feed and token snapshot.'}
+        </div>
+      )}
+    </div>
+  </div>
+);
+
 export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
@@ -116,21 +170,25 @@ export default function HomePage() {
     loadInitialData();
   }, [connect, loadInitialData]);
 
-  if (!mounted) return null;
-
   // BAGS tokens from pulse (sorted by market cap)
-  const allBagsTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED]
-    .sort((a, b) => b.marketCap - a.marketCap);
+  const allBagsTokens = useMemo(
+    () => [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED].sort((a, b) => b.marketCap - a.marketCap),
+    [items.NEW, items.FINAL_STRETCH, items.MIGRATED],
+  );
 
-  const tickerTokens = allBagsTokens.length > 0
-    ? [...allBagsTokens, ...allBagsTokens].slice(0, 20)
-    : [];
+  const tickerTokens = useMemo(
+    () => (allBagsTokens.length > 0 ? [...allBagsTokens, ...allBagsTokens].slice(0, 20) : []),
+    [allBagsTokens],
+  );
 
   // Separate by state for display
-  const migratedTokens = items.MIGRATED.slice(0, 4);
-  const trendingTokens = [...items.FINAL_STRETCH, ...items.NEW]
-    .sort((a, b) => b.marketCap - a.marketCap)
-    .slice(0, 8);
+  const migratedTokens = useMemo(() => items.MIGRATED.slice(0, 4), [items.MIGRATED]);
+  const trendingTokens = useMemo(
+    () => [...items.FINAL_STRETCH, ...items.NEW].sort((a, b) => b.marketCap - a.marketCap).slice(0, 8),
+    [items.FINAL_STRETCH, items.NEW],
+  );
+
+  if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-[#050505] text-fg font-mono selection:bg-acid-green selection:text-black">
@@ -153,47 +211,71 @@ export default function HomePage() {
         {!connected ? (
           <>
             {/* Hero — Not Connected */}
-            <section className="pt-24 pb-16 px-6">
-              <div className="max-w-6xl mx-auto text-center">
-                <div className={`inline-flex items-center gap-2 px-3 py-1 text-meta uppercase tracking-widest mb-8 ${isConnected ? 'badge-green' : 'badge-muted'}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-acid-green shadow-[0_0_6px_rgba(57,255,20,0.6)]' : 'bg-[#FF003C] shadow-[0_0_6px_rgba(255,0,60,0.6)]'} animate-pulse`} />
-                  {isConnected ? 'System Online' : 'Connecting...'}
+            <section className="px-6 pt-20 pb-16">
+              <div className="max-w-7xl mx-auto grid lg:grid-cols-[1.05fr_0.95fr] gap-10 lg:gap-12 items-center">
+                <div className="text-center lg:text-left">
+                  <div className={`inline-flex items-center gap-2 px-3 py-1 text-meta uppercase tracking-widest mb-8 ${isConnected ? 'badge-green' : 'badge-muted'}`}>
+                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-acid-green' : 'bg-[#FF003C]'} animate-pulse`} />
+                    {isConnected ? 'Live Feed' : 'Syncing'}
+                  </div>
+
+                  <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="text-5xl md:text-7xl font-display font-bold leading-[0.92] tracking-tight mb-5 text-white"
+                  >
+                    BAGS<br />
+                    <span className="text-fg-soft">
+                      Terminal
+                    </span>
+                  </motion.h1>
+
+                  <motion.p
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                    className="text-lg md:text-xl text-fg-soft max-w-2xl mx-auto lg:mx-0"
+                  >
+                    A clean workspace for live BAGS tokens, simple trading, and deployer signals on Solana.
+                  </motion.p>
+
+                  <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start">
+                    <motion.button
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileTap={{ scale: 0.98 }}
+                      transition={{ delay: 0.2 }}
+                      onClick={() => setVisible(true)}
+                      className="btn-primary px-7 py-3.5"
+                    >
+                      <Wallet size={18} />
+                      Connect Wallet
+                    </motion.button>
+                    <Link href="/terminal" className="btn-ghost px-6 py-3.5">
+                      Open Terminal
+                    </Link>
+                  </div>
+
+                  <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+                    <HomeStat
+                      label="Feed"
+                      value={isConnected ? 'Live' : 'Syncing'}
+                      hint={isConnected ? 'Socket connected to the live token stream' : 'Waiting for the terminal feed to come online'}
+                    />
+                    <HomeStat
+                      label="BAGS Tokens"
+                      value={String(allBagsTokens.length)}
+                      hint="Tokens surfaced from the pulse index"
+                    />
+                    <HomeStat
+                      label="Migrated"
+                      value={String(migratedTokens.length)}
+                      hint="LP live and ready to trade"
+                    />
+                  </div>
                 </div>
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="text-7xl md:text-9xl font-display font-bold leading-[0.85] tracking-tighter mb-6 text-white"
-                >
-                  BAGS<br />
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#39FF14] to-transparent">
-                    TERMINAL
-                  </span>
-                </motion.h1>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
-                  className="text-xl md:text-2xl text-fg-soft mb-12 max-w-2xl mx-auto"
-                >
-                  Launch tokens with built-in fee sharing on Solana
-                </motion.p>
-
-                <motion.button
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileTap={{ scale: 0.97 }}
-                  transition={{ delay: 0.2 }}
-                  onClick={() => setVisible(true)}
-                  className="group relative px-12 py-5 bg-[#EDEDED] text-black font-bold uppercase tracking-wider overflow-hidden transition-all duration-150 hover:shadow-[0_0_20px_rgba(57,255,20,0.2)]"
-                >
-                  <div className="absolute inset-0 bg-acid-green translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
-                  <span className="relative z-10 group-hover:text-black flex items-center gap-3">
-                    <Wallet size={20} />
-                    Connect Wallet
-                  </span>
-                </motion.button>
+                <HeroPreview isConnected={isConnected} tokens={allBagsTokens} />
               </div>
             </section>
 
@@ -240,6 +322,24 @@ export default function HomePage() {
 
                 <div className="mb-8">
                   <ReferralBanner />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-10">
+                  <HomeStat
+                    label="Feed"
+                    value={isConnected ? 'Live' : 'Syncing'}
+                    hint={isConnected ? 'Socket connected to the live token stream' : 'Waiting for the terminal feed to come online'}
+                  />
+                  <HomeStat
+                    label="BAGS Tokens"
+                    value={String(allBagsTokens.length)}
+                    hint="Tokens surfaced from the pulse index"
+                  />
+                  <HomeStat
+                    label="Migrated"
+                    value={String(migratedTokens.length)}
+                    hint="LP live and ready to trade"
+                  />
                 </div>
 
                 {/* Quick Actions */}

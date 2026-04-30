@@ -7,14 +7,6 @@ import { BagsLogo } from "@/components/ui/BagsLogo";
 import { usePriceFlash } from "@/components/ui/usePriceFlash";
 import { cn } from "@/lib/utils";
 
-// Provider icon mapping
-const providerIcons: Record<string, string> = {
-    twitter: "𝕏",
-    tiktok: "TT",
-    kick: "K",
-    github: "GH",
-};
-
 interface TerminalHeaderProps {
     token: TerminalToken;
 }
@@ -35,20 +27,15 @@ function formatPrice(price: number): string {
     return price.toFixed(2);
 }
 
-// Format SOL amount
-function formatSOL(amount: number): string {
-    if (amount === 0) return "0";
-    if (amount < 0.01) return amount.toFixed(4);
-    if (amount < 1) return amount.toFixed(3);
-    if (amount < 100) return amount.toFixed(2);
-    return formatNumber(amount);
-}
-
 export function TerminalHeader({ token }: TerminalHeaderProps) {
     const [linkCopied, setLinkCopied] = useState(false);
+    const [addressCopied, setAddressCopied] = useState(false);
 
     const handleCopyAddress = () => {
-        navigator.clipboard.writeText(token.tokenId);
+        navigator.clipboard.writeText(token.tokenId).then(() => {
+            setAddressCopied(true);
+            setTimeout(() => setAddressCopied(false), 2000);
+        });
     };
 
     const handleShareLink = () => {
@@ -64,178 +51,117 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
     const priceFlash = usePriceFlash(token.priceUsd);
 
     return (
-        <div className="glass-heavy gradient-border flex items-center justify-between px-4 py-3">
-            {/* Left: Token Info */}
-            <div className="flex items-center gap-4">
-                {/* Token Image & Symbol */}
-                <div className="flex items-center gap-3">
+        <div className="card overflow-hidden">
+            <div className="grid gap-4 px-4 py-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.35fr)_auto] xl:items-center xl:px-5">
+                <div className="flex min-w-0 items-center gap-3">
                     {token.image ? (
                         <img
                             src={token.image}
                             alt={token.symbol}
-                            className="w-8 h-8 rounded-full border border-white/20"
+                            className="h-10 w-10 rounded-full border border-white/10 object-cover shadow-soft"
                         />
                     ) : (
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#39FF14]/30 to-[#00F0FF]/30 border border-white/20 flex items-center justify-center">
-                            <span className="text-xs font-bold text-fg">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03]">
+                            <span className="text-sm font-semibold text-fg">
                                 {token.symbol.charAt(0)}
                             </span>
                         </div>
                     )}
-                    <div className="flex flex-col min-w-0">
-                        <div className="flex items-center gap-2 min-w-0">
-                            <span
-                                className="text-sm font-bold text-fg truncate max-w-[120px]"
-                                title={token.symbol}
-                            >
+                    <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <span className="truncate text-base font-semibold text-fg" title={token.symbol}>
                                 {token.symbol}
                             </span>
                             {token.hasBagsFees && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-acid-green/10 border border-acid-green/20 text-meta text-acid-green font-bold uppercase shrink-0">
-                                    <BagsLogo size={10} /> BAGS
+                                <span className="badge-gold badge">
+                                    <BagsLogo size={10} />
+                                    BAGS
                                 </span>
                             )}
-                            <span className="text-xs text-muted-high truncate" title={token.name}>{token.name}</span>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-meta text-fg-soft font-mono num">
-                                {token.tokenId.slice(0, 6)}...{token.tokenId.slice(-4)}
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-high">
+                            <span className="truncate" title={token.name}>
+                                {token.name}
                             </span>
-                            <button
-                                onClick={handleCopyAddress}
-                                className="text-muted-high hover:text-fg transition-colors focus-ring"
-                                title="Copy address"
-                                aria-label="Copy token address"
-                            >
-                                <Copy size={10} aria-hidden="true" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Divider */}
-                <div className="h-8 w-px bg-white/10" />
-
-                {/* Price */}
-                <div className="flex flex-col">
-                    <span className="label">Price</span>
-                    <div className="flex items-center gap-2">
-                        <span className={cn("text-sm font-bold text-fg num px-1 -mx-1", priceFlash)}>
-                            ${formatPrice(token.priceUsd)}
-                        </span>
-                        <span className={`text-meta font-mono num ${priceChangeColor} ${token.priceChange24h >= 0 ? 'number-glow-green' : 'number-glow-red'}`}>
-                            {priceChangeSign}{token.priceChange24h.toFixed(1)}%
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Center: Stats */}
-            <div className="flex items-center gap-6">
-                <StatItem label="MC" value={`$${formatNumber(token.marketCap)}`} />
-                <StatItem label="LIQ" value={`$${formatNumber(token.liquidity)}`} />
-                <StatItem label="VOL_24H" value={`$${formatNumber(token.volume24h)}`} />
-                <StatItem label="VOL_5M" value={`$${formatNumber(token.volume5m)}`} />
-                <StatItem label="HOLDERS" value={formatNumber(token.holders)} />
-
-                {/* Fees - highlighted if has Bags fees */}
-                <div className={`flex flex-col ${token.hasBagsFees ? "px-2 py-1 bg-[#FFD700]/5 border border-[#FFD700]/10 rounded" : ""}`}>
-                    <span className={`${token.hasBagsFees ? "label-gold" : "label"} flex items-center gap-1`}>
-                        {token.hasBagsFees && <BagsLogo size={10} />}
-                        FEES
-                    </span>
-                    <div className="flex items-center gap-1">
-                        <span className={`text-xs font-bold font-mono ${token.hasBagsFees ? "number-glow-gold" : "text-fg"}`}>
-                            {formatSOL(token.lifetimeFees)} SOL
-                        </span>
-                    </div>
-                </div>
-
-                {/* Fee Earners Badge */}
-                {token.hasBagsFees && token.feeEarners.length > 0 && (
-                    <div className="flex flex-col">
-                        <span className="label">EARNERS</span>
-                        <div className="flex items-center gap-1">
-                            {token.topEarner && (
-                                <span className="text-meta text-[#00F0FF] font-mono">
-                                    {token.topEarner.provider && providerIcons[token.topEarner.provider]
-                                        ? `${providerIcons[token.topEarner.provider]} `
-                                        : ""}
-                                    {token.topEarner.username.length > 12
-                                        ? `${token.topEarner.username.slice(0, 12)}...`
-                                        : token.topEarner.username}
+                            <span className="hidden sm:inline text-white/25">•</span>
+                            <span className="flex items-center gap-2">
+                                <span className="font-mono text-[11px] text-muted-high num">
+                                    {token.tokenId.slice(0, 6)}...{token.tokenId.slice(-4)}
                                 </span>
-                            )}
-                            {token.feeEarners.length > 1 && (
-                                <span className="text-meta text-muted-high">
-                                    +{token.feeEarners.length - 1}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Bonding Progress */}
-                <div className="flex flex-col">
-                    <span className="label">BONDING</span>
-                    <div className="flex items-center gap-2">
-                        <div className="progress-bar w-16">
-                            <div
-                                className="progress-bar-fill"
-                                style={{ width: `${token.bondingProgress}%` }}
-                            />
-                        </div>
-                        <span className="text-meta font-mono text-fg num">
-                            {Math.round(token.bondingProgress)}%
-                        </span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Right: Actions */}
-            <div className="flex items-center gap-2">
-                {/* Deployer Badge */}
-                {token.deployerName && (
-                    <div className="flex items-center gap-2 px-2 py-1 bg-elevated border border-white/10 rounded">
-                        <span className="text-meta text-muted-high uppercase">DEV</span>
-                        <span className="text-meta text-fg font-mono">{token.deployerName}</span>
-                        {token.deployerSuccessRate && (
-                            <span className="text-meta text-acid-green font-mono">
-                                {token.deployerSuccessRate}%
+                                <button
+                                    onClick={handleCopyAddress}
+                                    className="text-muted-high transition-colors hover:text-fg"
+                                    title="Copy address"
+                                    aria-label="Copy token address"
+                                >
+                                    {addressCopied ? <Check size={12} className="text-acid-green" aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+                                </button>
                             </span>
-                        )}
+                        </div>
                     </div>
-                )}
+                </div>
 
-                {/* External Links */}
-                <div className="flex items-center gap-1">
-                    <LinkButton
-                        icon={<ExternalLink size={12} />}
-                        title="Solscan"
-                        href={`https://solscan.io/token/${token.tokenId}`}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-5">
+                    <StatItem label="Market Cap" value={`$${formatNumber(token.marketCap)}`} />
+                    <StatItem label="Liquidity" value={`$${formatNumber(token.liquidity)}`} />
+                    <StatItem label="24H Volume" value={`$${formatNumber(token.volume24h)}`} />
+                    <StatItem label="5M Volume" value={`$${formatNumber(token.volume5m)}`} />
+                    <StatItem
+                        label={token.hasBagsFees ? "Fees" : "Bonding"}
+                        value={token.hasBagsFees ? `${token.lifetimeFees.toFixed(token.lifetimeFees < 1 ? 4 : 2)} SOL` : `${Math.round(token.bondingProgress)}%`}
+                        highlight={token.hasBagsFees}
                     />
-                    <button
-                        onClick={handleShareLink}
-                        className="btn-ghost btn-press p-1.5 flex items-center gap-1"
-                        title="Copy share link"
-                    >
-                        {linkCopied ? (
-                            <Check size={12} className="text-acid-green" />
-                        ) : (
-                            <Link2 size={12} />
-                        )}
-                    </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+                    <div className="rounded-2xl border border-white/8 bg-black/20 px-4 py-3">
+                        <div className="text-[10px] uppercase tracking-[0.24em] text-muted-high">
+                            Price
+                        </div>
+                        <div className="mt-1 flex items-baseline gap-2">
+                            <span className={cn("text-[1.65rem] font-semibold text-fg num", priceFlash)}>
+                                ${formatPrice(token.priceUsd)}
+                            </span>
+                            <span className={`text-sm font-mono num ${priceChangeColor}`}>
+                                {priceChangeSign}{token.priceChange24h.toFixed(1)}%
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <LinkButton
+                            icon={<ExternalLink size={12} />}
+                            title="Solscan"
+                            href={`https://solscan.io/token/${token.tokenId}`}
+                        />
+                        <button
+                            onClick={handleShareLink}
+                            className="btn-ghost btn-press flex items-center gap-2 px-3 py-2 text-xs"
+                            title="Copy share link"
+                        >
+                            {linkCopied ? (
+                                <Check size={12} className="text-acid-green" />
+                            ) : (
+                                <Link2 size={12} />
+                            )}
+                            Share
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
 
-function StatItem({ label, value }: { label: string; value: string }) {
+function StatItem({ label, value, highlight = false }: { label: string; value: string; highlight?: boolean }) {
     return (
-        <div className="flex flex-col">
-            <span className="label">{label}</span>
-            <span className="text-xs font-bold text-fg font-mono num">{value}</span>
+        <div className={cn("stat-card px-3 py-2", highlight && "border-[#FFD700]/15 bg-[#FFD700]/5")}>
+            <span className={cn("block text-[9px] uppercase tracking-[0.26em]", highlight ? "text-gold" : "text-muted-high")}>
+                {label}
+            </span>
+            <span className={cn("mt-1 block text-[11px] font-semibold text-fg font-mono num", highlight && "number-glow-gold")}>
+                {value}
+            </span>
         </div>
     );
 }
