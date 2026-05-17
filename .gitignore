@@ -44,3 +44,6 @@ next-env.d.ts
 # Embedded tooling repos (not part of project)
 antigravity-kit/
 opencode-antigravity-auth/
+
+# GSD local orchestration state (never committed)
+.planning/
