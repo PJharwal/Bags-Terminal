@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useTerminalStore } from "@/store/terminal.store";
 import { useTurnkey } from "@/components/turnkey/TurnkeyProvider";
 import { useTradeSocket } from "@/hooks/useTradeSocket";
@@ -88,6 +88,19 @@ export function TerminalTradePanel() {
     const [quoteVaultAddress, setQuoteVaultAddress] = useState<string | null>(null);
     const [tokenStandard, setTokenStandard] = useState("spl");
     const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+
+    // Snapshot of the dispatched trade's context — read by the on-chain confirm
+    // effect so a buy/sell tab switch or token change mid-poll cannot mis-attribute
+    // the optimistic balance update or success/fail toast (CR-01).
+    const tradeCtxRef = useRef<{
+        action: TradeAction;
+        isBuy: boolean;
+        symbol: string;
+        estimatedTokens: number | null;
+        sellAmount: string;
+        tokenDecimals: number;
+        mint: string | undefined;
+    } | null>(null);
 
     const isBuy = action === "buy";
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
@@ -228,6 +241,20 @@ export function TerminalTradePanel() {
     useEffect(() => {
         if (!lastSignature) return;
 
+        // Read ALL trade-context values from the snapshot taken when this trade was
+        // dispatched (not live component state) so a tab/token switch during the
+        // 0.5–6s poll cannot mis-attribute the balance update or toast (CR-01).
+        const ctx = tradeCtxRef.current;
+        const ctxIsBuy = ctx ? ctx.isBuy : isBuy;
+        const ctxAction = ctx ? ctx.action : action;
+        const ctxSymbol = ctx ? ctx.symbol : (activeToken?.symbol ?? "");
+        const ctxEstimatedTokens = ctx ? ctx.estimatedTokens : estimatedTokens;
+        const ctxSellAmount = ctx ? ctx.sellAmount : sellAmount;
+        const ctxTokenDecimals = ctx ? ctx.tokenDecimals : tokenDecimals;
+        const ctxMint = ctx ? ctx.mint : activeToken?.tokenId;
+
+        let cancelled = false;
+
         const confirmTx = async () => {
             setTxResult({ signature: lastSignature });
             setTxStatus("sending");
@@ -240,19 +267,23 @@ export function TerminalTradePanel() {
                     const status = value?.[0];
 
                     if (status) {
+                        // Cancellation guard: ignore a late poll result for a
+                        // superseded trade (effect re-ran, or the snapshotted
+                        // trade's mint no longer matches the dispatched one).
+                        if (cancelled || (tradeCtxRef.current && tradeCtxRef.current.mint !== ctxMint)) return;
                         if (status.err) {
                             setTxResult({ signature: lastSignature, error: "Transaction failed on-chain. Check if your trading wallet has enough SOL." });
                             setTxStatus("error");
-                            toast.error(`${isBuy ? "Buy" : "Sell"} failed on-chain`);
+                            toast.error(`${ctxIsBuy ? "Buy" : "Sell"} failed on-chain`);
                             return;
                         }
                         if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
                             setTxStatus("success");
-                            toast.success(`${isBuy ? "Bought" : "Sold"} ${activeToken?.symbol ?? ""} — confirmed`);
-                            if (action === "buy" && estimatedTokens) {
-                                setTokenBalance((prev) => prev + estimatedTokens / Math.pow(10, tokenDecimals));
-                            } else if (action === "sell" && sellAmount) {
-                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(sellAmount)));
+                            toast.success(`${ctxIsBuy ? "Bought" : "Sold"} ${ctxSymbol} — confirmed`);
+                            if (ctxAction === "buy" && ctxEstimatedTokens) {
+                                setTokenBalance((prev) => prev + ctxEstimatedTokens / Math.pow(10, ctxTokenDecimals));
+                            } else if (ctxAction === "sell" && ctxSellAmount) {
+                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(ctxSellAmount)));
                             }
                             setSolAmount(""); setSellAmount(""); setSellPreset(null);
                             setTimeout(() => { setBalanceRefreshTrigger((p) => p + 1); refreshTurnkeyBalance(); }, 3000);
@@ -261,9 +292,11 @@ export function TerminalTradePanel() {
                     }
                 } catch { /* RPC error, retry */ }
 
+                if (cancelled) return;
                 await new Promise((r) => setTimeout(r, 500));
             }
 
+            if (cancelled) return;
             // After 6s of polling with no result
             setTxResult({ signature: lastSignature, error: "Transaction not confirmed. It may have been dropped." });
             setTxStatus("error");
@@ -271,6 +304,8 @@ export function TerminalTradePanel() {
         };
 
         confirmTx();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastSignature]);
 
     // Handle errors
@@ -299,6 +334,17 @@ export function TerminalTradePanel() {
         setTxStatus("sending");
         setTxResult(null);
         toast.info(`${isBuy ? "Buying" : "Selling"} ${activeToken?.symbol ?? ""}...`);
+
+        // Snapshot the dispatched trade context for the confirm effect (CR-01).
+        tradeCtxRef.current = {
+            action,
+            isBuy,
+            symbol: activeToken?.symbol ?? "",
+            estimatedTokens,
+            sellAmount,
+            tokenDecimals,
+            mint: activeToken?.tokenId,
+        };
 
         const poolHint = getPoolHint();
 
