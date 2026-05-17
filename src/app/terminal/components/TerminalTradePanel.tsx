@@ -126,11 +126,19 @@ export function TerminalTradePanel() {
         return 0;
     }, [zeroConfig, jitoMode, jitoTips, jitoManualTip]);
 
-    // Enabling Zero-Config forces slippage back to "auto" (omnera TokenTrading.tsx:804)
+    // Enabling Zero-Config restores safe defaults and closes the settings panel,
+    // matching omnera TokenTrading.tsx:801-808 (slippage="auto", jitoMode="auto",
+    // priorityFee to its default, settings closed). Bags' priority "None" default
+    // is "0" (PRIORITY_PRESETS[0].value), the equivalent of omnera's reset value.
     const toggleZeroConfig = useCallback(() => {
         setZeroConfig((prev) => {
             const next = !prev;
-            if (next) setSlippage("auto");
+            if (next) {
+                setSlippage("auto");
+                setJitoMode("auto");
+                setPriorityFee("0");
+                setSettingsOpen(false);
+            }
             return next;
         });
     }, []);
