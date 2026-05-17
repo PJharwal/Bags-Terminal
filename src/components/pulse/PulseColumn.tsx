@@ -157,7 +157,7 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
             {/* Virtual list */}
             <div
                 ref={parentRef}
-                className="flex-1 overflow-y-auto custom-scrollbar"
+                className="flex-1 overflow-y-auto custom-scrollbar relative"
             >
                 {processedItems.length > 0 ? (
                     <div
@@ -169,6 +169,8 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                     >
                         {virtualItems.map((virtualItem) => {
                             const item = processedItems[virtualItem.index];
+                            // Stagger only top-of-viewport items
+                            const animate = virtualItem.index < 10;
                             return (
                                 <div
                                     key={virtualItem.key}
@@ -179,7 +181,11 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                                         width: "100%",
                                         height: `${virtualItem.size}px`,
                                         transform: `translateY(${virtualItem.start}px)`,
+                                        animationDelay: animate
+                                            ? `${virtualItem.index * 40}ms`
+                                            : undefined,
                                     }}
+                                    className={animate ? "slide-in-top" : ""}
                                 >
                                     <PulseCardCompact
                                         item={item}
@@ -192,8 +198,13 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                         })}
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-[#333] font-mono text-[10px] uppercase tracking-widest">
-                        NO SIGNAL
+                    <div className="scan-line flex flex-col items-center justify-center h-full gap-2">
+                        <div className="text-[#333] font-mono text-[10px] uppercase tracking-[0.2em]">
+                            NO SIGNAL
+                        </div>
+                        <div className="text-[#222] font-mono text-[8px] tracking-widest">
+                            WAITING…
+                        </div>
                     </div>
                 )}
             </div>

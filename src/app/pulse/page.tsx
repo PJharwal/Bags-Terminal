@@ -6,6 +6,7 @@ import { useSocketStore } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { PulseColumn } from "@/components/pulse/PulseColumn";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
+import { LiveTradesPanel } from "@/components/pulse/LiveTradesPanel";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
 import { motion } from "framer-motion";
@@ -26,6 +27,7 @@ import {
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 import type { RawTokenData } from "@/lib/bags-types";
 import { useSolPrice } from "@/hooks/useSolPrice";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 type Network = "solana" | "base" | "ethereum";
 
@@ -147,6 +149,7 @@ export default function PulsePage() {
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showTrades, setShowTrades] = useState(true);
     const processedTokensRef = useRef<Set<string>>(new Set());
     const refreshingRef = useRef(false);
 
@@ -278,7 +281,7 @@ export default function PulsePage() {
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
+        <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
             {/* ── HEADER BAR ──────────────────────────────────────── */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-white/5 bg-[#080808] z-10">
                 <div className="flex items-center gap-4">
@@ -456,6 +459,19 @@ export default function PulsePage() {
                             >
                                 BAGS{filters.bagsOnly ? " ON" : ""}
                             </button>
+
+                            <div className="h-4 w-px bg-white/5" />
+
+                            <button
+                                onClick={() => setShowTrades((v) => !v)}
+                                className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-wider transition-all ${
+                                    showTrades
+                                        ? "bg-[#00F0FF]/10 text-[#00F0FF] border border-[#00F0FF]/20"
+                                        : "text-[#666] hover:text-[#EDEDED]"
+                                }`}
+                            >
+                                TRADES{showTrades ? " ON" : ""}
+                            </button>
                         </>
                     )}
                 </div>
@@ -485,37 +501,60 @@ export default function PulsePage() {
                 {activeTab === "bags" ? (
                     <LaunchFeedSection />
                 ) : (
-                    <div className="flex-1 grid grid-cols-3 divide-x divide-white/5">
+                    <div
+                        className="flex-1 grid divide-x divide-white/5"
+                        style={{
+                            gridTemplateColumns: showTrades && !drawerOpen
+                                ? "1fr 1fr 1fr 300px"
+                                : "1fr 1fr 1fr",
+                        }}
+                    >
                         {COLUMNS.map((col) => (
                             <div
                                 key={col.state}
                                 className="relative flex flex-col min-h-0"
                             >
-                                {/* Column header */}
+                                {/* Column header — accent top-bar + icon/label row */}
+                                <div
+                                    className="h-[3px]"
+                                    style={{
+                                        background: `linear-gradient(90deg, transparent, ${col.color}55, transparent)`,
+                                    }}
+                                />
                                 <div className="px-4 py-2.5 border-b border-white/5 bg-[#080808] flex justify-between items-center">
-                                    <div className="flex items-center gap-2">
-                                        <col.icon
-                                            size={13}
-                                            style={{ color: col.color }}
-                                        />
-                                        <span
-                                            className="text-[10px] font-bold uppercase tracking-widest"
-                                            style={{ color: col.color }}
+                                    <div className="flex items-center gap-2.5">
+                                        <div
+                                            className="w-6 h-6 border flex items-center justify-center flex-shrink-0"
+                                            style={{
+                                                borderColor: `${col.color}33`,
+                                                background: `${col.color}08`,
+                                            }}
                                         >
-                                            {col.label}
-                                        </span>
-                                        <span className="text-[9px] text-[#444] hidden lg:inline">
-                                            {col.description}
-                                        </span>
+                                            <col.icon
+                                                size={12}
+                                                style={{ color: col.color }}
+                                            />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <div
+                                                className="text-[10px] font-bold uppercase tracking-widest leading-none"
+                                                style={{ color: col.color }}
+                                            >
+                                                {col.label}
+                                            </div>
+                                            <div className="text-[8px] text-[#444] mt-0.5 hidden sm:block leading-none">
+                                                {col.description}
+                                            </div>
+                                        </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <span className="text-[10px] font-mono text-[#555]">
+                                        <span className="text-[10px] font-mono font-bold tabular-nums text-[#888]">
                                             {items[col.state].length}
                                         </span>
                                         {/* Live pulse dot for NEW column */}
                                         {col.state === "NEW" &&
                                             isConnected && (
-                                                <div className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
+                                                <LivePulseDot color="green" />
                                             )}
                                     </div>
                                 </div>
@@ -550,6 +589,11 @@ export default function PulsePage() {
                                 </div>
                             </div>
                         ))}
+
+                        {/* Live Trades Side Panel */}
+                        {showTrades && !drawerOpen && (
+                            <LiveTradesPanel />
+                        )}
                     </div>
                 )}
             </div>

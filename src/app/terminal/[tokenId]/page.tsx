@@ -66,7 +66,7 @@ export default function TerminalPage() {
     // Loading state
     if (isLoading) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
+            <div className="h-[calc(100vh-92px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 size={32} className="text-[#39FF14] animate-spin" />
                     <span className="text-[#666] text-xs font-mono uppercase tracking-widest">
@@ -80,7 +80,7 @@ export default function TerminalPage() {
     // Error state
     if (error) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
+            <div className="h-[calc(100vh-92px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4 text-center max-w-md">
                     <div className="text-[#FF003C] text-lg font-bold">Failed to load token</div>
                     <div className="text-[#666] text-sm font-mono">{error}</div>
@@ -110,7 +110,7 @@ export default function TerminalPage() {
     // No token loaded yet
     if (!activeToken) {
         return (
-            <div className="h-[calc(100vh-56px)] flex items-center justify-center bg-[#050505]">
+            <div className="h-[calc(100vh-92px)] flex items-center justify-center bg-[#050505]">
                 <div className="flex flex-col items-center gap-4">
                     <Loader2 size={32} className="text-[#39FF14] animate-spin" />
                     <span className="text-[#666] text-xs font-mono uppercase tracking-widest">
@@ -122,7 +122,7 @@ export default function TerminalPage() {
     }
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
+        <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
             {/* Back Button */}
             <div className="absolute top-[70px] left-4 z-20">
                 <button
