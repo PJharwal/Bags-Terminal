@@ -151,7 +151,7 @@ export function TerminalTradePanel() {
             case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, coinCreator: coinCreator || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
             case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
             case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
-            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined };
+            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined, tokenStandard };
             case "meteora_dbc": return { poolAddress: poolAddress || undefined, poolType: "meteora_dbc" };
             case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
             default: return {};
