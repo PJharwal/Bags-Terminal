@@ -46,6 +46,16 @@ interface ExecuteRequest {
   phantom_address: string;
 }
 
+interface JitoTipData {
+  landed_tips_25th_percentile: number;
+  landed_tips_50th_percentile: number;
+  landed_tips_75th_percentile: number;
+  landed_tips_95th_percentile: number;
+  landed_tips_99th_percentile: number;
+  ema_landed_tips_50th_percentile: number;
+  time: string;
+}
+
 interface TradeSocketState {
   isConnected: boolean;
   isPreparing: boolean;
@@ -61,6 +71,7 @@ interface TradeSocketState {
   tokensReceived: number | null;
   tokensDisplay: number | null;
   lastError: string | null;
+  jitoTips: JitoTipData | null;
 }
 
 export function useTradeSocket() {
@@ -82,6 +93,7 @@ export function useTradeSocket() {
     tokensReceived: null,
     tokensDisplay: null,
     lastError: null,
+    jitoTips: null,
   });
 
   const getToken = useCallback(() => {
@@ -158,6 +170,8 @@ export function useTradeSocket() {
         setState((s) => ({ ...s, isExecuting: false, lastError: result.error || "Execute failed" }));
       }
     });
+
+    socket.on("jito_tips", (data: JitoTipData) => setState((s) => ({ ...s, jitoTips: data })));
 
     socket.on("connect_error", (error) => {
       console.error("[TradeSocket] Connection error:", error.message);
