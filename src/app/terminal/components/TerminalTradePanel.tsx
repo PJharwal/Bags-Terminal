@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useTerminalStore } from "@/store/terminal.store";
 import { useTurnkey } from "@/components/turnkey/TurnkeyProvider";
 import { useTradeSocket } from "@/hooks/useTradeSocket";
-import { SlippageSettings } from "@/components/terminal/SlippageSettings";
-import { Wallet, Zap, Loader2, ExternalLink, AlertCircle } from "lucide-react";
+import { toast } from "@/components/ui/Toast";
+import { Wallet, Zap, Loader2, ExternalLink, AlertCircle, Settings2, ChevronDown } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey } from "@solana/web3.js";
@@ -14,8 +14,17 @@ import { config } from "@/config/env";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
+const SLIPPAGE_PRESETS = ["auto", "0.5", "1", "3", "5"];
+const PRIORITY_PRESETS: { label: string; value: string }[] = [
+    { label: "None", value: "0" },
+    { label: "0.001", value: "0.001" },
+    { label: "0.005", value: "0.005" },
+    { label: "0.01", value: "0.01" },
+];
+const JITO_MODES: ("off" | "auto" | "manual")[] = ["off", "auto", "manual"];
 
 type TradeAction = "buy" | "sell";
+type JitoMode = "off" | "auto" | "manual";
 type TxStatus = "idle" | "preparing" | "ready" | "sending" | "success" | "error";
 
 interface GMGNTokenInfoResponse {
@@ -25,16 +34,17 @@ interface GMGNTokenInfoResponse {
         decimals: number;
         standard?: string;
         dev?: { creator_address?: string };
-        tpool: { exchange: string; pool_address: string; quote_address: string };
+        tpool: { exchange: string; pool_address: string; quote_address: string; creator?: string };
         pool?: { base_vault_address?: string; quote_vault_address?: string; quote_symbol?: string };
     }[];
 }
 
 export function TerminalTradePanel() {
-    const { activeToken, slippageBps } = useTerminalStore();
+    const { activeToken } = useTerminalStore();
     const {
         isAuthenticated, turnkeyAddress,
         balance: turnkeyBalance, refreshBalance: refreshTurnkeyBalance,
+        user, switchActiveWallet,
     } = useTurnkey();
     const { connected } = useWallet();
     const { setVisible } = useWalletModal();
@@ -44,7 +54,7 @@ export function TerminalTradePanel() {
         isPreparing, isReady: socketReady, isExecuting: socketExecuting,
         estimatedTokens, estimatedDisplay, pricePerToken,
         estimatedSol, estimatedSolDisplay, sellPricePerToken,
-        lastSignature, lastError,
+        lastSignature, lastError, jitoTips,
         connect: socketConnect, disconnect: socketDisconnect,
         prepareBuy, executeBuy, prepareSell, executeSell,
         instantBuy, instantSell, clearError, resetPrepare,
@@ -58,6 +68,15 @@ export function TerminalTradePanel() {
     const [txStatus, setTxStatus] = useState<TxStatus>("idle");
     const [txResult, setTxResult] = useState<{ signature?: string; error?: string } | null>(null);
 
+    // Zero-Config / advanced trade settings (LOCAL state — omnera parity, not the terminal store)
+    const [zeroConfig, setZeroConfig] = useState(true);
+    const [jitoMode, setJitoMode] = useState<JitoMode>("auto");
+    const [jitoManualTip, setJitoManualTip] = useState("0.001");
+    const [priorityFee, setPriorityFee] = useState("0"); // SOL string; "0" = None
+    const [slippage, setSlippage] = useState("auto"); // number string or "auto"
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [walletMenuOpen, setWalletMenuOpen] = useState(false);
+
     // Token metadata (from GMGN)
     const [tokenDecimals, setTokenDecimals] = useState(6);
     const [tokenBalance, setTokenBalance] = useState(0);
@@ -65,29 +84,79 @@ export function TerminalTradePanel() {
     const [poolAddress, setPoolAddress] = useState<string | null>(null);
     const [quoteAddress, setQuoteAddress] = useState<string | null>(null);
     const [creatorAddress, setCreatorAddress] = useState<string | null>(null);
+    const [coinCreator, setCoinCreator] = useState<string | null>(null);
     const [baseVaultAddress, setBaseVaultAddress] = useState<string | null>(null);
     const [quoteVaultAddress, setQuoteVaultAddress] = useState<string | null>(null);
     const [tokenStandard, setTokenStandard] = useState("spl");
     const [balanceRefreshTrigger, setBalanceRefreshTrigger] = useState(0);
+
+    // Snapshot of the dispatched trade's context — read by the on-chain confirm
+    // effect so a buy/sell tab switch or token change mid-poll cannot mis-attribute
+    // the optimistic balance update or success/fail toast (CR-01).
+    const tradeCtxRef = useRef<{
+        action: TradeAction;
+        isBuy: boolean;
+        symbol: string;
+        estimatedTokens: number | null;
+        sellAmount: string;
+        tokenDecimals: number;
+        mint: string | undefined;
+    } | null>(null);
 
     const isBuy = action === "buy";
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
 
     const connection = useMemo(() => new Connection(config.solanaRpcUrl), []);
 
+    // --- omnera EXACT transform formulas (RESEARCH §1, replicate verbatim) ---
+    const effectiveSlippageBps = useMemo<number | undefined>(() => {
+        return slippage === "auto" ? undefined : Math.round(parseFloat(slippage) * 100);
+    }, [slippage]);
+
+    const effectivePriorityFee = useMemo<number | undefined>(() => {
+        return zeroConfig ? undefined : Math.floor(((parseFloat(priorityFee) || 0) * 1e15) / 1_000_000);
+    }, [zeroConfig, priorityFee]);
+
+    const effectiveJitoTip = useMemo<number | undefined>(() => {
+        if (zeroConfig) return undefined;
+        if (jitoMode === "off") return 0;
+        if (jitoMode === "auto" && jitoTips)
+            return Math.floor(jitoTips.landed_tips_50th_percentile * 1_000_000_000);
+        if (jitoMode === "manual")
+            return Math.floor(parseFloat(jitoManualTip) * 1_000_000_000) || 0;
+        return 0;
+    }, [zeroConfig, jitoMode, jitoTips, jitoManualTip]);
+
+    // Enabling Zero-Config restores safe defaults and closes the settings panel,
+    // matching omnera TokenTrading.tsx:801-808 (slippage="auto", jitoMode="auto",
+    // priorityFee to its default, settings closed). Bags' priority "None" default
+    // is "0" (PRIORITY_PRESETS[0].value), the equivalent of omnera's reset value.
+    const toggleZeroConfig = useCallback(() => {
+        setZeroConfig((prev) => {
+            const next = !prev;
+            if (next) {
+                setSlippage("auto");
+                setJitoMode("auto");
+                setPriorityFee("0");
+                setSettingsOpen(false);
+            }
+            return next;
+        });
+    }, []);
+
     // Map GMGN exchange to pool_type hint
     const getPoolHint = useCallback(() => {
         if (!exchange) return {};
         switch (exchange) {
-            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
+            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, coinCreator: coinCreator || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
             case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
             case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
-            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined };
+            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined, tokenStandard };
             case "meteora_dbc": return { poolAddress: poolAddress || undefined, poolType: "meteora_dbc" };
             case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
             default: return {};
         }
-    }, [exchange, poolAddress, quoteAddress, creatorAddress, baseVaultAddress, quoteVaultAddress, tokenStandard]);
+    }, [exchange, poolAddress, quoteAddress, creatorAddress, coinCreator, baseVaultAddress, quoteVaultAddress, tokenStandard]);
 
     // Connect socket when authenticated
     useEffect(() => {
@@ -101,7 +170,7 @@ export function TerminalTradePanel() {
     useEffect(() => {
         if (!activeToken?.tokenId) return;
         setExchange(null); setPoolAddress(null); setQuoteAddress(null);
-        setCreatorAddress(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
+        setCreatorAddress(null); setCoinCreator(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
         setTokenStandard("spl"); setTxStatus("idle"); setTxResult(null); resetPrepare();
 
         const fetchGMGNInfo = async () => {
@@ -111,7 +180,7 @@ export function TerminalTradePanel() {
                 if (data.code === 0 && data.data?.length > 0) {
                     const d = data.data[0];
                     if (d.decimals) setTokenDecimals(d.decimals);
-                    if (d.tpool) { setExchange(d.tpool.exchange); setPoolAddress(d.tpool.pool_address); setQuoteAddress(d.tpool.quote_address || null); }
+                    if (d.tpool) { setExchange(d.tpool.exchange); setPoolAddress(d.tpool.pool_address); setQuoteAddress(d.tpool.quote_address || null); setCoinCreator(d.tpool.creator || null); }
                     if (d.pool) { setBaseVaultAddress(d.pool.base_vault_address || null); setQuoteVaultAddress(d.pool.quote_vault_address || null); }
                     if (d.dev?.creator_address) setCreatorAddress(d.dev.creator_address);
                     if (d.standard === "2022") setTokenStandard("2022");
@@ -151,12 +220,15 @@ export function TerminalTradePanel() {
         const val = parseFloat(solAmount);
         if (!val || val <= 0) { resetPrepare(); return; }
         const timer = setTimeout(() => {
-            const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
             const poolHint = getPoolHint();
-            prepareBuy({ mint: activeToken!.tokenId, solAmount: val, slippageBps: slippageBpsVal, ...poolHint });
+            prepareBuy({
+                mint: activeToken!.tokenId, solAmount: val,
+                slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
+                ...poolHint,
+            });
         }, 300);
         return () => clearTimeout(timer);
-    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, slippageBps, exchange, prepareBuy, resetPrepare, getPoolHint]);
+    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, coinCreator, prepareBuy, resetPrepare, getPoolHint]);
 
     // Auto-prepare SELL when amount changes (debounced)
     useEffect(() => {
@@ -164,16 +236,33 @@ export function TerminalTradePanel() {
         const val = parseFloat(sellAmount);
         if (!val || val <= 0) { resetPrepare(); return; }
         const timer = setTimeout(() => {
-            const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
             const poolHint = getPoolHint();
-            prepareSell({ mint: activeToken!.tokenId, tokenAmount: val, tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+            prepareSell({
+                mint: activeToken!.tokenId, tokenAmount: val, tokenDecimals,
+                slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
+                ...poolHint,
+            });
         }, 300);
         return () => clearTimeout(timer);
-    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, slippageBps, exchange, prepareSell, resetPrepare, getPoolHint]);
+    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, coinCreator, prepareSell, resetPrepare, getPoolHint]);
 
     // Handle execute results — verify on-chain before showing success
     useEffect(() => {
         if (!lastSignature) return;
+
+        // Read ALL trade-context values from the snapshot taken when this trade was
+        // dispatched (not live component state) so a tab/token switch during the
+        // 0.5–6s poll cannot mis-attribute the balance update or toast (CR-01).
+        const ctx = tradeCtxRef.current;
+        const ctxIsBuy = ctx ? ctx.isBuy : isBuy;
+        const ctxAction = ctx ? ctx.action : action;
+        const ctxSymbol = ctx ? ctx.symbol : (activeToken?.symbol ?? "");
+        const ctxEstimatedTokens = ctx ? ctx.estimatedTokens : estimatedTokens;
+        const ctxSellAmount = ctx ? ctx.sellAmount : sellAmount;
+        const ctxTokenDecimals = ctx ? ctx.tokenDecimals : tokenDecimals;
+        const ctxMint = ctx ? ctx.mint : activeToken?.tokenId;
+
+        let cancelled = false;
 
         const confirmTx = async () => {
             setTxResult({ signature: lastSignature });
@@ -187,17 +276,23 @@ export function TerminalTradePanel() {
                     const status = value?.[0];
 
                     if (status) {
+                        // Cancellation guard: ignore a late poll result for a
+                        // superseded trade (effect re-ran, or the snapshotted
+                        // trade's mint no longer matches the dispatched one).
+                        if (cancelled || (tradeCtxRef.current && tradeCtxRef.current.mint !== ctxMint)) return;
                         if (status.err) {
                             setTxResult({ signature: lastSignature, error: "Transaction failed on-chain. Check if your trading wallet has enough SOL." });
                             setTxStatus("error");
+                            toast.error(`${ctxIsBuy ? "Buy" : "Sell"} failed on-chain`);
                             return;
                         }
                         if (status.confirmationStatus === "confirmed" || status.confirmationStatus === "finalized") {
                             setTxStatus("success");
-                            if (action === "buy" && estimatedTokens) {
-                                setTokenBalance((prev) => prev + estimatedTokens / Math.pow(10, tokenDecimals));
-                            } else if (action === "sell" && sellAmount) {
-                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(sellAmount)));
+                            toast.success(`${ctxIsBuy ? "Bought" : "Sold"} ${ctxSymbol} — confirmed`);
+                            if (ctxAction === "buy" && ctxEstimatedTokens) {
+                                setTokenBalance((prev) => prev + ctxEstimatedTokens / Math.pow(10, ctxTokenDecimals));
+                            } else if (ctxAction === "sell" && ctxSellAmount) {
+                                setTokenBalance((prev) => Math.max(0, prev - parseFloat(ctxSellAmount)));
                             }
                             setSolAmount(""); setSellAmount(""); setSellPreset(null);
                             setTimeout(() => { setBalanceRefreshTrigger((p) => p + 1); refreshTurnkeyBalance(); }, 3000);
@@ -206,15 +301,20 @@ export function TerminalTradePanel() {
                     }
                 } catch { /* RPC error, retry */ }
 
+                if (cancelled) return;
                 await new Promise((r) => setTimeout(r, 500));
             }
 
+            if (cancelled) return;
             // After 6s of polling with no result
             setTxResult({ signature: lastSignature, error: "Transaction not confirmed. It may have been dropped." });
             setTxStatus("error");
+            toast.error("Transaction not confirmed — may have been dropped");
         };
 
         confirmTx();
+        return () => { cancelled = true; };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [lastSignature]);
 
     // Handle errors
@@ -222,6 +322,7 @@ export function TerminalTradePanel() {
         if (lastError) {
             setTxResult({ error: lastError });
             setTxStatus("error");
+            toast.error(lastError);
             clearError();
         }
     }, [lastError, clearError]);
@@ -241,9 +342,20 @@ export function TerminalTradePanel() {
 
         setTxStatus("sending");
         setTxResult(null);
+        toast.info(`${isBuy ? "Buying" : "Selling"} ${activeToken?.symbol ?? ""}...`);
+
+        // Snapshot the dispatched trade context for the confirm effect (CR-01).
+        tradeCtxRef.current = {
+            action,
+            isBuy,
+            symbol: activeToken?.symbol ?? "",
+            estimatedTokens,
+            sellAmount,
+            tokenDecimals,
+            mint: activeToken?.tokenId,
+        };
 
         const poolHint = getPoolHint();
-        const slippageBpsVal = slippageBps > 0 ? slippageBps : undefined;
 
         if (socketReady) {
             // TX is pre-signed, just broadcast
@@ -252,9 +364,17 @@ export function TerminalTradePanel() {
         } else {
             // Instant flow (prepare + execute in one step)
             if (action === "buy") {
-                instantBuy({ mint: activeToken!.tokenId, solAmount: parseFloat(solAmount), slippageBps: slippageBpsVal, ...poolHint });
+                instantBuy({
+                    mint: activeToken!.tokenId, solAmount: parseFloat(solAmount),
+                    slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
+                    ...poolHint,
+                });
             } else {
-                instantSell({ mint: activeToken!.tokenId, tokenAmount: parseFloat(sellAmount), tokenDecimals, slippageBps: slippageBpsVal, ...poolHint });
+                instantSell({
+                    mint: activeToken!.tokenId, tokenAmount: parseFloat(sellAmount), tokenDecimals,
+                    slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
+                    ...poolHint,
+                });
             }
         }
     };
@@ -270,6 +390,10 @@ export function TerminalTradePanel() {
         if (socketReady && action === "sell" && estimatedSolDisplay) return `Sell for ~${estimatedSolDisplay.toFixed(4)} SOL`;
         return `${isBuy ? "Buy" : "Sell"} ${activeToken?.symbol || "Token"}`;
     };
+
+    const wallets = user?.wallets ?? [];
+    const activeWalletId = user?.activeWallet?.id ?? null;
+    const walletLabel = (name: string) => (name === "omnera" ? "Trading" : name);
 
     return (
         <div className="flex flex-col h-full bg-[#0A0A0A] border-l border-white/10">
@@ -290,6 +414,41 @@ export function TerminalTradePanel() {
                 {!socketConnected && isAuthenticated && (
                     <div className="p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 text-[10px] text-[#FF003C] font-mono text-center">
                         Trade server disconnected
+                    </div>
+                )}
+
+                {/* Wallet Selector */}
+                {isAuthenticated && wallets.length > 0 && (
+                    <div className="relative">
+                        <button
+                            onClick={() => setWalletMenuOpen((o) => !o)}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-[#1A1A1A] border border-[#333] text-[10px] font-mono text-[#EDEDED] hover:border-[#666] transition-colors"
+                        >
+                            <span className="flex items-center gap-2 uppercase tracking-wider">
+                                <Wallet size={12} className="text-[#39FF14]" />
+                                {user?.activeWallet ? walletLabel(user.activeWallet.walletName) : "Select Wallet"}
+                                {user?.activeWallet && (
+                                    <span className="text-[#666]">
+                                        {user.activeWallet.solanaAddress.slice(0, 4)}...{user.activeWallet.solanaAddress.slice(-4)}
+                                    </span>
+                                )}
+                            </span>
+                            <ChevronDown size={12} className="text-[#666]" />
+                        </button>
+                        {walletMenuOpen && (
+                            <div className="absolute z-20 mt-1 w-full bg-[#1A1A1A] border border-[#333] shadow-[0_8px_32px_rgba(0,0,0,0.6)]">
+                                {wallets.map((w) => (
+                                    <button
+                                        key={w.id}
+                                        onClick={() => { switchActiveWallet(w.id); setWalletMenuOpen(false); }}
+                                        className={`w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono uppercase tracking-wider transition-colors hover:bg-[#0A0A0A] ${w.id === activeWalletId ? "text-[#39FF14]" : "text-[#888]"}`}
+                                    >
+                                        <span>{walletLabel(w.walletName)}</span>
+                                        <span className="text-[#666] normal-case">{w.solanaAddress.slice(0, 4)}...{w.solanaAddress.slice(-4)}</span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
 
@@ -377,8 +536,120 @@ export function TerminalTradePanel() {
                     )}
                 </div>
 
-                {/* Slippage */}
-                <SlippageSettings />
+                {/* Zero-Config / Advanced Settings */}
+                <div className="flex flex-col gap-2 p-3 bg-[#1A1A1A] border border-white/10">
+                    <div className="flex items-center justify-between">
+                        <span className="flex items-center gap-2 text-[10px] text-[#666] uppercase tracking-widest">
+                            <Settings2 size={12} className={zeroConfig ? "text-[#39FF14]" : "text-[#666]"} />
+                            Zero-Config
+                        </span>
+                        <button
+                            onClick={toggleZeroConfig}
+                            role="switch"
+                            aria-checked={zeroConfig}
+                            className={`relative w-9 h-5 border transition-colors ${zeroConfig ? "bg-[#39FF14]/20 border-[#39FF14]" : "bg-[#0A0A0A] border-[#333]"}`}
+                        >
+                            <span
+                                className={`absolute top-0.5 h-3.5 w-3.5 transition-all ${zeroConfig ? "left-[18px] bg-[#39FF14]" : "left-0.5 bg-[#666]"}`}
+                            />
+                        </button>
+                    </div>
+                    <p className="text-[9px] text-[#444] font-mono leading-relaxed">
+                        {zeroConfig
+                            ? "Backend auto-tunes slippage, priority fee & Jito tip."
+                            : "Manual control of slippage, priority fee & Jito MEV."}
+                    </p>
+
+                    {!zeroConfig && (
+                        <button
+                            onClick={() => setSettingsOpen((o) => !o)}
+                            className="flex items-center justify-between text-[9px] text-[#888] uppercase tracking-wider hover:text-[#EDEDED] transition-colors"
+                        >
+                            <span>Advanced Options</span>
+                            <ChevronDown size={11} className={`transition-transform ${settingsOpen ? "rotate-180" : ""}`} />
+                        </button>
+                    )}
+
+                    {!zeroConfig && settingsOpen && (
+                        <div className="flex flex-col gap-3 pt-1">
+                            {/* Slippage */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[9px] text-[#666] uppercase tracking-widest">Slippage</span>
+                                <div className="grid grid-cols-5 gap-1.5">
+                                    {SLIPPAGE_PRESETS.map((s) => (
+                                        <button key={s} onClick={() => setSlippage(s)}
+                                            className="py-1.5 text-[9px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                            style={{ borderColor: slippage === s ? "#39FF14" : undefined, color: slippage === s ? "#39FF14" : undefined }}
+                                        >{s === "auto" ? "AUTO" : `${s}%`}</button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={slippage === "auto" ? "" : slippage}
+                                        onChange={(e) => setSlippage(e.target.value === "" ? "auto" : e.target.value)}
+                                        className="w-full bg-[#0A0A0A] border border-[#333] px-3 py-1.5 text-[10px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+                                        placeholder="Custom %" step="0.1" min="0"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-[#666] font-mono">%</span>
+                                </div>
+                            </div>
+
+                            {/* Priority Fee */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[9px] text-[#666] uppercase tracking-widest">Priority Fee (SOL)</span>
+                                <div className="grid grid-cols-4 gap-1.5">
+                                    {PRIORITY_PRESETS.map((p) => (
+                                        <button key={p.label} onClick={() => setPriorityFee(p.value)}
+                                            className="py-1.5 text-[9px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                            style={{ borderColor: priorityFee === p.value ? "#39FF14" : undefined, color: priorityFee === p.value ? "#39FF14" : undefined }}
+                                        >{p.label}</button>
+                                    ))}
+                                </div>
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        value={priorityFee}
+                                        onChange={(e) => setPriorityFee(e.target.value === "" ? "0" : e.target.value)}
+                                        className="w-full bg-[#0A0A0A] border border-[#333] px-3 py-1.5 text-[10px] font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
+                                        placeholder="0.00" step="0.001" min="0"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-[#666] font-mono">SOL</span>
+                                </div>
+                            </div>
+
+                            {/* Jito MEV */}
+                            <div className="flex flex-col gap-1.5">
+                                <span className="text-[9px] text-[#666] uppercase tracking-widest">Jito MEV</span>
+                                <div className="grid grid-cols-3 gap-1.5">
+                                    {JITO_MODES.map((m) => (
+                                        <button key={m} onClick={() => setJitoMode(m)}
+                                            className="py-1.5 text-[9px] font-mono font-bold uppercase border transition-colors border-[#333] text-[#888] hover:border-[#666]"
+                                            style={{ borderColor: jitoMode === m ? "#FFD700" : undefined, color: jitoMode === m ? "#FFD700" : undefined }}
+                                        >{m}</button>
+                                    ))}
+                                </div>
+                                {jitoMode === "auto" && (
+                                    <span className="text-[9px] text-[#888] font-mono">
+                                        Live tip: ~{jitoTips?.landed_tips_50th_percentile?.toFixed(5) ?? "..."} SOL
+                                    </span>
+                                )}
+                                {jitoMode === "manual" && (
+                                    <div className="relative">
+                                        <input
+                                            type="number"
+                                            value={jitoManualTip}
+                                            onChange={(e) => setJitoManualTip(e.target.value === "" ? "0" : e.target.value)}
+                                            className="w-full bg-[#0A0A0A] border border-[#333] px-3 py-1.5 text-[10px] font-mono text-[#EDEDED] focus:border-[#FFD700] focus:outline-none"
+                                            placeholder="0.001" step="0.0001" min="0"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-[#666] font-mono">SOL</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {/* TX Result */}
                 {txResult && (
