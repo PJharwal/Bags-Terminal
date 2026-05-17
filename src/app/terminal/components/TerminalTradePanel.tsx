@@ -34,7 +34,7 @@ interface GMGNTokenInfoResponse {
         decimals: number;
         standard?: string;
         dev?: { creator_address?: string };
-        tpool: { exchange: string; pool_address: string; quote_address: string };
+        tpool: { exchange: string; pool_address: string; quote_address: string; creator?: string };
         pool?: { base_vault_address?: string; quote_vault_address?: string; quote_symbol?: string };
     }[];
 }
@@ -84,6 +84,7 @@ export function TerminalTradePanel() {
     const [poolAddress, setPoolAddress] = useState<string | null>(null);
     const [quoteAddress, setQuoteAddress] = useState<string | null>(null);
     const [creatorAddress, setCreatorAddress] = useState<string | null>(null);
+    const [coinCreator, setCoinCreator] = useState<string | null>(null);
     const [baseVaultAddress, setBaseVaultAddress] = useState<string | null>(null);
     const [quoteVaultAddress, setQuoteVaultAddress] = useState<string | null>(null);
     const [tokenStandard, setTokenStandard] = useState("spl");
@@ -147,7 +148,7 @@ export function TerminalTradePanel() {
     const getPoolHint = useCallback(() => {
         if (!exchange) return {};
         switch (exchange) {
-            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
+            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, coinCreator: coinCreator || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
             case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
             case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
             case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined };
@@ -155,7 +156,7 @@ export function TerminalTradePanel() {
             case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
             default: return {};
         }
-    }, [exchange, poolAddress, quoteAddress, creatorAddress, baseVaultAddress, quoteVaultAddress, tokenStandard]);
+    }, [exchange, poolAddress, quoteAddress, creatorAddress, coinCreator, baseVaultAddress, quoteVaultAddress, tokenStandard]);
 
     // Connect socket when authenticated
     useEffect(() => {
@@ -169,7 +170,7 @@ export function TerminalTradePanel() {
     useEffect(() => {
         if (!activeToken?.tokenId) return;
         setExchange(null); setPoolAddress(null); setQuoteAddress(null);
-        setCreatorAddress(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
+        setCreatorAddress(null); setCoinCreator(null); setBaseVaultAddress(null); setQuoteVaultAddress(null);
         setTokenStandard("spl"); setTxStatus("idle"); setTxResult(null); resetPrepare();
 
         const fetchGMGNInfo = async () => {
@@ -179,7 +180,7 @@ export function TerminalTradePanel() {
                 if (data.code === 0 && data.data?.length > 0) {
                     const d = data.data[0];
                     if (d.decimals) setTokenDecimals(d.decimals);
-                    if (d.tpool) { setExchange(d.tpool.exchange); setPoolAddress(d.tpool.pool_address); setQuoteAddress(d.tpool.quote_address || null); }
+                    if (d.tpool) { setExchange(d.tpool.exchange); setPoolAddress(d.tpool.pool_address); setQuoteAddress(d.tpool.quote_address || null); setCoinCreator(d.tpool.creator || null); }
                     if (d.pool) { setBaseVaultAddress(d.pool.base_vault_address || null); setQuoteVaultAddress(d.pool.quote_vault_address || null); }
                     if (d.dev?.creator_address) setCreatorAddress(d.dev.creator_address);
                     if (d.standard === "2022") setTokenStandard("2022");
@@ -227,7 +228,7 @@ export function TerminalTradePanel() {
             });
         }, 300);
         return () => clearTimeout(timer);
-    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, prepareBuy, resetPrepare, getPoolHint]);
+    }, [solAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, coinCreator, prepareBuy, resetPrepare, getPoolHint]);
 
     // Auto-prepare SELL when amount changes (debounced)
     useEffect(() => {
@@ -243,7 +244,7 @@ export function TerminalTradePanel() {
             });
         }, 300);
         return () => clearTimeout(timer);
-    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, prepareSell, resetPrepare, getPoolHint]);
+    }, [sellAmount, isAuthenticated, socketConnected, action, activeToken?.tokenId, tokenDecimals, effectiveSlippageBps, effectivePriorityFee, effectiveJitoTip, exchange, coinCreator, prepareSell, resetPrepare, getPoolHint]);
 
     // Handle execute results — verify on-chain before showing success
     useEffect(() => {

@@ -16,6 +16,7 @@ interface PrepareRequest {
   pool_type?: string;
   quote_address?: string;
   creator_address?: string;
+  coin_creator?: string;
   priority_fee?: number;
   jito_tip?: number;
   base_vault_address?: string;
@@ -34,6 +35,7 @@ interface PrepareSellRequest {
   pool_type?: string;
   quote_address?: string;
   creator_address?: string;
+  coin_creator?: string;
   priority_fee?: number;
   jito_tip?: number;
   base_vault_address?: string;
@@ -190,7 +192,7 @@ export function useTradeSocket() {
   const prepareBuy = useCallback((params: {
     mint: string; solAmount: number; slippageBps?: number;
     poolAddress?: string; poolType?: string; quoteAddress?: string;
-    creatorAddress?: string; priorityFee?: number; jitoTip?: number;
+    creatorAddress?: string; coinCreator?: string; priorityFee?: number; jitoTip?: number;
     baseVaultAddress?: string; quoteVaultAddress?: string; tokenStandard?: string;
   }) => {
     const token = getToken();
@@ -209,7 +211,8 @@ export function useTradeSocket() {
       mint: params.mint, sol_amount: solLamports,
       slippage_bps: params.slippageBps, pool_address: params.poolAddress,
       pool_type: params.poolType, quote_address: params.quoteAddress,
-      creator_address: params.creatorAddress, priority_fee: params.priorityFee,
+      creator_address: params.creatorAddress, coin_creator: params.coinCreator,
+      priority_fee: params.priorityFee,
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     };
@@ -228,7 +231,7 @@ export function useTradeSocket() {
   const prepareSell = useCallback((params: {
     mint: string; tokenAmount: number; tokenDecimals?: number;
     slippageBps?: number; poolAddress?: string; poolType?: string;
-    quoteAddress?: string; creatorAddress?: string; priorityFee?: number;
+    quoteAddress?: string; creatorAddress?: string; coinCreator?: string; priorityFee?: number;
     jitoTip?: number; baseVaultAddress?: string; quoteVaultAddress?: string;
     tokenStandard?: string;
   }) => {
@@ -249,7 +252,8 @@ export function useTradeSocket() {
       mint: params.mint, token_amount: tokenBaseUnits,
       slippage_bps: params.slippageBps, pool_address: params.poolAddress,
       pool_type: params.poolType, quote_address: params.quoteAddress,
-      creator_address: params.creatorAddress, priority_fee: params.priorityFee,
+      creator_address: params.creatorAddress, coin_creator: params.coinCreator,
+      priority_fee: params.priorityFee,
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     };
@@ -268,7 +272,7 @@ export function useTradeSocket() {
   const instantBuy = useCallback((params: {
     mint: string; solAmount: number; slippageBps?: number;
     poolAddress?: string; poolType?: string; quoteAddress?: string;
-    creatorAddress?: string; priorityFee?: number; jitoTip?: number;
+    creatorAddress?: string; coinCreator?: string; priorityFee?: number; jitoTip?: number;
     baseVaultAddress?: string; quoteVaultAddress?: string; tokenStandard?: string;
   }) => {
     const token = getToken();
@@ -287,7 +291,8 @@ export function useTradeSocket() {
       mint: params.mint, sol_amount: solLamports,
       slippage_bps: params.slippageBps, pool_address: params.poolAddress,
       pool_type: params.poolType, quote_address: params.quoteAddress,
-      creator_address: params.creatorAddress, priority_fee: params.priorityFee,
+      creator_address: params.creatorAddress, coin_creator: params.coinCreator,
+      priority_fee: params.priorityFee,
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     } as PrepareRequest);
@@ -296,7 +301,7 @@ export function useTradeSocket() {
   const instantSell = useCallback((params: {
     mint: string; tokenAmount: number; tokenDecimals?: number;
     slippageBps?: number; poolAddress?: string; poolType?: string;
-    quoteAddress?: string; creatorAddress?: string; priorityFee?: number;
+    quoteAddress?: string; creatorAddress?: string; coinCreator?: string; priorityFee?: number;
     jitoTip?: number; baseVaultAddress?: string; quoteVaultAddress?: string;
     tokenStandard?: string;
   }) => {
@@ -317,7 +322,8 @@ export function useTradeSocket() {
       mint: params.mint, token_amount: tokenBaseUnits,
       slippage_bps: params.slippageBps, pool_address: params.poolAddress,
       pool_type: params.poolType, quote_address: params.quoteAddress,
-      creator_address: params.creatorAddress, priority_fee: params.priorityFee,
+      creator_address: params.creatorAddress, coin_creator: params.coinCreator,
+      priority_fee: params.priorityFee,
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     } as PrepareSellRequest);
