@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "targetPublicKey is required" }, { status: 400 });
     }
 
-    // Fetch wallet info from omnera-buy-sell backend
+    // Fetch wallet info from omnera-buy-sell backendddd
     const dbResponse = await fetch(
       `${config.buysellServerUrl}/api/turnkey/user/${phantomAddress}`,
     );
