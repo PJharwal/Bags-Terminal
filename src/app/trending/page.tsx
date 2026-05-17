@@ -12,6 +12,8 @@ import { TrendingUp, Loader2, Coins, Users, Zap, DollarSign, Percent, Award, Wal
 import type { PulseItem } from "@/lib/types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
 import FeeLeadersSection from "@/components/bags/FeeLeadersSection";
+import { SectionHeader } from "@/components/ui/SectionHeader";
+import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 // View modes for the page
 type ViewMode = "all" | "bags" | "leaders";
@@ -345,33 +347,32 @@ export default function TrendingPage() {
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
 
     return (
-        <div className="min-h-[calc(100vh-56px)] bg-[#050505] text-[#EDEDED] p-6 font-mono">
+        <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] p-4 sm:p-6 font-mono">
             {/* Header */}
-            <div className="max-w-7xl mx-auto mb-8">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                    <div>
-                        <div className="flex items-center gap-3 mb-2">
-                            <TrendingUp className="text-[#39FF14]" size={24} />
-                            <h1 className="text-3xl font-bold tracking-tight">Trending</h1>
-                            <span className={`ml-2 inline-flex items-center gap-1.5 px-2 py-0.5 text-[10px] uppercase tracking-widest border ${
-                                isConnected ? 'border-[#39FF14] text-[#39FF14]' : 'border-[#FF003C] text-[#FF003C]'
-                            }`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14]' : 'bg-[#FF003C]'} animate-pulse`} />
-                                {isConnected ? 'Live' : 'Connecting'}
+            <div className="max-w-7xl mx-auto mb-6">
+                <SectionHeader
+                    kicker={viewMode === "leaders" ? "◆ FEE LEADERS" : viewMode === "bags" ? "◈ BAGS ONLY" : "↗ TRENDING"}
+                    title={viewMode === "leaders" ? "TOP EARNERS" : viewMode === "bags" ? "BAGS TOKENS" : "TRENDING NOW"}
+                    subtitle={
+                        viewMode === "all"
+                            ? `Real-time tokens with fee sharing data${allBagsTokens.length > 0 ? ` · ${allBagsTokens.length} tokens` : ''}`
+                            : viewMode === "leaders"
+                                ? 'Top tokens ranked by lifetime fees earned on BAGS'
+                                : 'BAGS tokens with fee-sharing from bags.fm'
+                    }
+                    right={
+                        <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
+                            <LivePulseDot color={isConnected ? 'green' : 'red'} />
+                            <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
+                                {isConnected ? 'LIVE' : 'CONNECTING'}
                             </span>
                         </div>
-                        <p className="text-sm text-[#888]">
-                            {viewMode === "all"
-                                ? `Real-time tokens with fee sharing data ${allBagsTokens.length > 0 ? `(${allBagsTokens.length} tokens)` : ''}`
-                                : viewMode === "leaders"
-                                    ? 'Top tokens ranked by lifetime fees earned on BAGS'
-                                    : 'BAGS tokens with fee-sharing from bags.fm'
-                            }
-                        </p>
-                    </div>
+                    }
+                    size="lg"
+                />
 
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center gap-2 stat-card rounded p-1">
+                {/* View Mode Toggle */}
+                <div className="flex items-center gap-2 mt-5 border border-white/5 p-1 w-fit bg-[#0A0A0A]">
                         <button
                             onClick={() => setViewMode("all")}
                             className={`px-4 py-2 text-sm font-mono uppercase tracking-wider transition-all rounded ${
@@ -405,7 +406,6 @@ export default function TrendingPage() {
                             BAGS Only
                         </button>
                     </div>
-                </div>
             </div>
 
             {/* Fee Leaders Section */}

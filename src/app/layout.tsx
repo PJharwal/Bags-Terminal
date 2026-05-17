@@ -5,6 +5,7 @@ import SocketInitializer from "@/components/terminal/SocketInitializer";
 import { WalletProviderWrapper } from "@/components/wallet/WalletProviderWrapper";
 import { TurnkeyProvider } from "@/components/turnkey/TurnkeyProvider";
 import { ToastContainer } from "@/components/ui/Toast";
+import { LiveTicker } from "@/components/ui/LiveTicker";
 
 export const metadata: Metadata = {
   title: "BAGS Terminal",
@@ -24,6 +25,7 @@ export default function RootLayout({
             <TopBar />
             <main className="min-h-screen pt-14 flex flex-col">
               <SocketInitializer />
+              <LiveTicker />
               <div className="flex-1">
                 {children}
               </div>

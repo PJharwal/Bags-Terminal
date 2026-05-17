@@ -70,7 +70,7 @@ export default function TerminalIndexPage() {
     };
 
     return (
-        <div className="h-[calc(100vh-56px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
+        <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden font-mono">
             {/* Header */}
             <div className="glass gradient-border flex items-center justify-between px-6 py-4">
                 <div className="flex items-center gap-3">

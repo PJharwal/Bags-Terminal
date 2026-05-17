@@ -3,9 +3,10 @@
 import type { PulseItem } from "@/lib/types";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatAge } from "@/lib/lifecycle";
-import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { Users, TrendingUp, Zap, ExternalLink } from "lucide-react";
+import { Users, TrendingUp, ExternalLink } from "lucide-react";
+import { Sparkline, generateSpark } from "@/components/ui/Sparkline";
+import { useMemo } from "react";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -39,20 +40,27 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     const bondingColor = getBondingColor(item.bondingProgress);
     const imgSrc = item.logoUrl || (item as unknown as { image?: string }).image;
 
+    // Stable sparkline per token
+    const sparkData = useMemo(() => {
+        const seed =
+            item.tokenId
+                .split("")
+                .reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
+        const bias = item.bondingProgress > 50 ? 1 : -0.3;
+        return generateSpark(seed, bias, 24);
+    }, [item.tokenId, item.bondingProgress]);
+
     const handleOpenTerminal = (e: React.MouseEvent) => {
         e.stopPropagation();
         router.push(`/terminal/${item.tokenId}`);
     };
 
     return (
-        <motion.div
-            onClick={() => selectToken(item.tokenId, 'pulse')}
+        <div
+            onClick={() => selectToken(item.tokenId, "pulse")}
             onDoubleClick={() => router.push(`/terminal/${item.tokenId}`)}
             onMouseEnter={() => hoverToken(item.tokenId)}
             onMouseLeave={() => hoverToken(null)}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2 }}
             className={`
                 relative cursor-pointer transition-all duration-100 group h-full
                 ${isSelected ? "bg-[#39FF14]/5" : "hover:bg-white/[0.02]"}
@@ -126,6 +134,17 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     </div>
                 </div>
 
+                {/* Sparkline — hidden on very small screens */}
+                <div className="hidden lg:block flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <Sparkline
+                        data={sparkData}
+                        width={44}
+                        height={20}
+                        color={bondingColor}
+                        filled
+                    />
+                </div>
+
                 {/* Hover action */}
                 <div className="flex-shrink-0 flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
@@ -137,6 +156,6 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                     </button>
                 </div>
             </div>
-        </motion.div>
+        </div>
     );
 }
