@@ -181,18 +181,26 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                                         width: "100%",
                                         height: `${virtualItem.size}px`,
                                         transform: `translateY(${virtualItem.start}px)`,
-                                        animationDelay: animate
-                                            ? `${virtualItem.index * 40}ms`
-                                            : undefined,
                                     }}
-                                    className={animate ? "slide-in-top" : ""}
                                 >
-                                    <PulseCardCompact
-                                        item={item}
-                                        isSelected={
-                                            selectedTokenId === item.tokenId
-                                        }
-                                    />
+                                    {/* Animation lives on an inner node so its transform
+                                        keyframe does not clobber the virtualizer's
+                                        positioning translateY on the wrapper. */}
+                                    <div
+                                        className={animate ? "slide-in-top" : ""}
+                                        style={{
+                                            animationDelay: animate
+                                                ? `${virtualItem.index * 40}ms`
+                                                : undefined,
+                                        }}
+                                    >
+                                        <PulseCardCompact
+                                            item={item}
+                                            isSelected={
+                                                selectedTokenId === item.tokenId
+                                            }
+                                        />
+                                    </div>
                                 </div>
                             );
                         })}

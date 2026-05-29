@@ -194,37 +194,46 @@ export const dexScreenerService = {
   },
 
   /**
-   * Get trending/top Solana tokens by searching popular tokens
+   * Get trending Solana tokens from DexScreener's boosted/promoted list,
+   * enriched with live market data. Replaces the old hardcoded keyword search.
    */
   getTrendingSolana: async (): Promise<DexScreenerToken[]> => {
-    // Search for multiple popular tokens in parallel
-    const searches = ['BONK', 'WIF', 'JUP', 'PEPE', 'TRUMP', 'AI'];
+    type BoostEntry = { chainId: string; tokenAddress: string };
 
-    const searchPromises = searches.map(query =>
-      fetchDexScreener<{ pairs: DexScreenerPair[] }>(`/latest/dex/search?q=${query}`)
-        .catch(() => null)
+    const collectSolanaAddresses = (data: BoostEntry[] | null): string[] =>
+      Array.isArray(data)
+        ? data
+            .filter(b => b.chainId === 'solana' && b.tokenAddress)
+            .map(b => b.tokenAddress)
+            .slice(0, 30)
+        : [];
+
+    // Top boosted tokens first; fall back to latest profiles.
+    let addresses = collectSolanaAddresses(
+      await fetchDexScreener<BoostEntry[]>('/token-boosts/top/v1')
+    );
+    if (addresses.length === 0) {
+      addresses = collectSolanaAddresses(
+        await fetchDexScreener<BoostEntry[]>('/token-profiles/latest/v1')
+      );
+    }
+    if (addresses.length === 0) return [];
+
+    // Enrich each token with its highest-liquidity pair.
+    const enriched = await Promise.all(
+      addresses.map(addr => dexScreenerService.getTokenPairs(addr).catch(() => null))
     );
 
-    const results = await Promise.all(searchPromises);
-    const allPairs: DexScreenerToken[] = [];
-
-    for (const data of results) {
-      if (data?.pairs) {
-        const solanaPairs = data.pairs
-          .filter(p => p.chainId === 'solana')
-          .slice(0, 8)
-          .map(transformPair);
-        allPairs.push(...solanaPairs);
-      }
-    }
-
-    // Deduplicate by address and sort by volume
     const unique = Array.from(
-      new Map(allPairs.map(t => [t.address, t])).values()
+      new Map(
+        enriched
+          .filter((t): t is DexScreenerToken => t !== null)
+          .map(t => [t.address, t])
+      ).values()
     );
 
     return unique
-      .filter(t => t.marketCap > 10000 && t.volume24h > 1000)
+      .filter(t => t.marketCap > 0)
       .sort((a, b) => b.volume24h - a.volume24h)
       .slice(0, 50);
   },

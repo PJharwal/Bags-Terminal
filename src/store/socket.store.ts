@@ -21,11 +21,16 @@ interface SocketState {
   bagsTokens: NewTokenEvent[];
   bagsTrades: TradeEvent[];
 
+  // Liveness signals — distinguish "socket connected" from "data actually flowing".
+  lastEventAt: number;   // last time a real socket event (token/trade/migration) arrived
+  lastFeedOkAt: number;  // last time a REST poll succeeded
+
   // Actions
   connect: () => void;
   disconnect: () => void;
   subscribe: (room: SocketRoom) => void;
   unsubscribe: (room: SocketRoom) => void;
+  markFeedOk: () => void;
 }
 
 export const useSocketStore = create<SocketState>((set, get) => ({
@@ -35,6 +40,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
   latestTrades: [],
   bagsTokens: [],
   bagsTrades: [],
+  lastEventAt: 0,
+  lastFeedOkAt: 0,
 
   connect: () => {
     const { socket } = get();
@@ -78,7 +85,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     newSocket.on('new_token', (token: NewTokenEvent) => {
       // Add to all tokens
       set((state) => ({
-        latestTokens: [token, ...state.latestTokens].slice(0, 50)
+        latestTokens: [token, ...state.latestTokens].slice(0, 50),
+        lastEventAt: Date.now(),
       }));
 
       // Track BAGS tokens separately (CA ends with 'bags')
@@ -97,7 +105,8 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     newSocket.on('trade', (trade: TradeEvent) => {
       // Add to all trades
       set((state) => ({
-        latestTrades: [trade, ...state.latestTrades].slice(0, 100)
+        latestTrades: [trade, ...state.latestTrades].slice(0, 100),
+        lastEventAt: Date.now(),
       }));
 
       // Track BAGS token trades separately
@@ -114,6 +123,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     // Handle migration events
     newSocket.on('migration', (migration: MigrationEvent) => {
       // Update pulse store - transition to MIGRATED state for all tokens
+      set({ lastEventAt: Date.now() });
       usePulseStore.getState().transitionItem(migration.mint, 'MIGRATED');
     });
 
@@ -157,5 +167,22 @@ export const useSocketStore = create<SocketState>((set, get) => ({
     if (socket?.connected) {
       socket.emit('unsubscribe', { room });
     }
-  }
+  },
+
+  markFeedOk: () => set({ lastFeedOkAt: Date.now() })
 }));
+
+/**
+ * Derived feed status: 'live' (real socket events flowing), 'polling'
+ * (no socket events but REST data is fresh), or 'offline'.
+ * hasData lets pages factor in their own loaded data.
+ */
+export function getFeedStatus(
+  s: { lastEventAt: number; lastFeedOkAt: number },
+  hasData = false
+): 'live' | 'polling' | 'offline' {
+  const now = Date.now();
+  if (s.lastEventAt > 0 && now - s.lastEventAt < 30_000) return 'live';
+  if (hasData || (s.lastFeedOkAt > 0 && now - s.lastFeedOkAt < 60_000)) return 'polling';
+  return 'offline';
+}

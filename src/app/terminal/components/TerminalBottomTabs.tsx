@@ -110,6 +110,20 @@ export function TerminalBottomTabs() {
     );
 }
 
+// Shared empty-state row — honest messaging when a data source is unavailable.
+function TableEmpty({ colSpan, message }: { colSpan: number; message: string }) {
+    return (
+        <tr>
+            <td
+                colSpan={colSpan}
+                className="py-10 text-center text-[#555] text-[10px] font-mono uppercase tracking-widest"
+            >
+                {message}
+            </td>
+        </tr>
+    );
+}
+
 // Trades Table
 function TradesTable({ trades }: { trades: TradeRow[] }) {
     return (
@@ -124,6 +138,9 @@ function TradesTable({ trades }: { trades: TradeRow[] }) {
                 </tr>
             </thead>
             <tbody>
+                {trades.length === 0 && (
+                    <TableEmpty colSpan={5} message="No live trades — trade feed unavailable" />
+                )}
                 {trades.map((trade) => (
                     <tr
                         key={trade.id}
@@ -167,6 +184,9 @@ function HoldersTable({ holders }: { holders: WalletRow[] }) {
                 </tr>
             </thead>
             <tbody>
+                {holders.length === 0 && (
+                    <TableEmpty colSpan={6} message="Holder data unavailable — requires a holder API key" />
+                )}
                 {holders.map((holder, idx) => (
                     <tr
                         key={holder.wallet}
@@ -211,6 +231,9 @@ function TopTradersTable({ traders }: { traders: WalletRow[] }) {
                 </tr>
             </thead>
             <tbody>
+                {traders.length === 0 && (
+                    <TableEmpty colSpan={6} message="Trader data unavailable — requires a holder API key" />
+                )}
                 {traders.map((trader, idx) => (
                     <tr
                         key={trader.wallet}

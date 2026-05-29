@@ -15,7 +15,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "targetPublicKey is required" }, { status: 400 });
     }
 
-    // Fetch wallet info from omnera-buy-sell backendddd
+    if (!config.buysellServerUrl) {
+      return NextResponse.json(
+        { error: "Trading backend not configured (NEXT_PUBLIC_BUYSELL_SERVER_URL missing)" },
+        { status: 503 },
+      );
+    }
+
+    // Fetch wallet info from omnera-buy-sell backend
     const dbResponse = await fetch(
       `${config.buysellServerUrl}/api/turnkey/user/${phantomAddress}`,
     );
