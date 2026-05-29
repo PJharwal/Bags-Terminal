@@ -7,7 +7,7 @@ import { useState, useEffect } from "react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 import { LivePulseDot } from "@/components/ui/LivePulseDot";
-import { useSocketStore } from "@/store/socket.store";
+import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 
 const navItems = [
     { href: "/", label: "HOME" },
@@ -23,7 +23,8 @@ const navItems = [
 export default function TopBar() {
     const pathname = usePathname();
     const [scrolled, setScrolled] = useState(false);
-    const { isConnected } = useSocketStore();
+    const { lastEventAt, lastFeedOkAt } = useSocketStore();
+    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt });
     const [now, setNow] = useState<Date | null>(null);
 
     useEffect(() => {
@@ -90,9 +91,9 @@ export default function TopBar() {
 
                 {/* LIVE MAINNET badge (replaces old signal bars) */}
                 <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-[9px] font-bold uppercase tracking-widest border border-white/5">
-                    <LivePulseDot color={isConnected ? "green" : "red"} />
-                    <span className={isConnected ? "text-[#39FF14]" : "text-[#FF003C]"}>
-                        {isConnected ? "LIVE" : "OFFLINE"}
+                    <LivePulseDot color={feedStatus === "live" ? "green" : feedStatus === "polling" ? "gold" : "red"} />
+                    <span className={feedStatus === "live" ? "text-[#39FF14]" : feedStatus === "polling" ? "text-[#FFD700]" : "text-[#FF003C]"}>
+                        {feedStatus === "live" ? "LIVE" : feedStatus === "polling" ? "POLLING" : "OFFLINE"}
                     </span>
                     <span className="text-[#333] ml-0.5">·</span>
                     <span className="text-[#666]">MAINNET</span>

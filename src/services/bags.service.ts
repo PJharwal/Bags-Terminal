@@ -484,8 +484,9 @@ async function getTokenFeeInfo(mint: string): Promise<{
 // ==========================================
 
 async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
+  // SDK v1.3.5: leaderboard moved to /token-launch/top-tokens/lifetime-fees
   const result = await fetchBags<{ response: BagsLeaderboardItem[] }>(
-    '/token-launch/leaderboard'
+    '/token-launch/top-tokens/lifetime-fees'
   );
   return result?.response || [];
 }
@@ -621,9 +622,20 @@ async function getClaimTransactionsV3(
 // All Pools Methods
 // ==========================================
 
+// Cached for 60s — /solana/bags/pools can be slow (multi-second) upstream.
+let allPoolsCache: { data: BagsPool[]; ts: number } | null = null;
+
 async function getAllPools(): Promise<BagsPool[]> {
+  if (allPoolsCache && Date.now() - allPoolsCache.ts < 60_000) {
+    return allPoolsCache.data;
+  }
   const result = await fetchBags<BagsPool[]>('/solana/bags/pools');
-  return result || [];
+  if (result) {
+    allPoolsCache = { data: result, ts: Date.now() };
+    return result;
+  }
+  // Serve stale data on failure rather than an empty list.
+  return allPoolsCache?.data ?? [];
 }
 
 // ==========================================

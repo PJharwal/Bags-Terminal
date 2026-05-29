@@ -17,6 +17,7 @@ const PUBLIC_API_ROUTES = [
   'partner/claimable',
   'partner/claim',
   'token-launch/leaderboard',
+  'token-launch/top-tokens',
   'token-launch/feed',
   'pool/by-token-mint',
   'fee-share/admin',
@@ -100,6 +101,8 @@ export async function GET(
   const apiBase = getApiBase(pathStr);
   const url = `${apiBase}/${pathStr}${searchParams ? `?${searchParams}` : ''}`;
 
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
   try {
     const response = await fetch(url, {
       headers: {
@@ -107,6 +110,7 @@ export async function GET(
         'Authorization': `Bearer ${BAGS_API_KEY}`,
         'X-API-Key': BAGS_API_KEY,
       },
+      signal: controller.signal,
     });
 
     if (!response.ok) {
@@ -120,11 +124,14 @@ export async function GET(
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error) {
+    const aborted = error instanceof Error && error.name === 'AbortError';
     console.error('Bags proxy error:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch from Bags API' },
-      { status: 500 }
+      { error: aborted ? 'Bags API request timed out' : 'Failed to fetch from Bags API' },
+      { status: aborted ? 504 : 500 }
     );
+  } finally {
+    clearTimeout(timeout);
   }
 }
 

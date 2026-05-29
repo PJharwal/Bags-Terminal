@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
-import { useSocketStore } from "@/store/socket.store";
+import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 import { formatCurrency } from "@/lib/format";
 import { useSolPrice } from "@/hooks/useSolPrice";
 import { useFeeData } from "@/hooks/useFeeData";
@@ -301,7 +301,7 @@ export default function TrendingPage() {
     const [view, setView] = useState<"grid" | "table">("grid");
     const [tokensWithFees, setTokensWithFees] = useState<Set<string>>(new Set());
     const { items, loadInitialData, isInitialLoading } = usePulseStore();
-    const { connect, isConnected } = useSocketStore();
+    const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
     const { price: solPrice } = useSolPrice();
 
     useEffect(() => {
@@ -345,6 +345,12 @@ export default function TrendingPage() {
     const potentialBagsCount = allBagsTokens.filter(t => isBagsToken(t.tokenId)).length;
 
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
+    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, allBagsTokens.length > 0);
+
+    // Signal global status pill that REST data is present.
+    useEffect(() => {
+        if (allBagsTokens.length > 0) markFeedOk();
+    }, [allBagsTokens.length, markFeedOk]);
 
     return (
         <div className="min-h-[calc(100vh-92px)] bg-[#050505] text-[#EDEDED] p-4 sm:p-6 font-mono">
@@ -362,9 +368,9 @@ export default function TrendingPage() {
                     }
                     right={
                         <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                            <LivePulseDot color={isConnected ? 'green' : 'red'} />
-                            <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
-                                {isConnected ? 'LIVE' : 'CONNECTING'}
+                            <LivePulseDot color={feedStatus === 'live' ? 'green' : feedStatus === 'polling' ? 'gold' : 'red'} />
+                            <span className={feedStatus === 'live' ? 'text-[#39FF14]' : feedStatus === 'polling' ? 'text-[#FFD700]' : 'text-[#FF003C]'}>
+                                {feedStatus === 'live' ? 'LIVE' : feedStatus === 'polling' ? 'POLLING' : 'OFFLINE'}
                             </span>
                         </div>
                     }

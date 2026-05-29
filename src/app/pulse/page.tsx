@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { usePulseStore } from "@/store/pulse.store";
-import { useSocketStore } from "@/store/socket.store";
+import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { PulseColumn } from "@/components/pulse/PulseColumn";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
@@ -142,7 +142,7 @@ export default function PulsePage() {
         setConnected,
         clearItems,
     } = usePulseStore();
-    const { connect, isConnected, latestTokens } = useSocketStore();
+    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>("solana");
@@ -189,17 +189,22 @@ export default function PulsePage() {
                 processResponse(soonRes, "FINAL_STRETCH"),
                 processResponse(bondedRes, "MIGRATED"),
             ]);
+            markFeedOk();
         } catch (err) {
             console.error("Failed to fetch initial token data:", err);
             setError("Failed to load tokens. Retrying...");
         } finally {
             setIsLoading(false);
         }
-    }, [addItem, filters.bagsOnly, solPrice]);
+    }, [addItem, filters.bagsOnly, solPrice, markFeedOk]);
 
     useEffect(() => {
         connect();
         fetchInitialData();
+        // Poll periodically so the feed stays fresh even when the live socket
+        // is silent. fetchInitialData dedupes via processedTokensRef.
+        const id = setInterval(fetchInitialData, 15000);
+        return () => clearInterval(id);
     }, [connect, fetchInitialData]);
 
     useEffect(() => {
@@ -279,6 +284,7 @@ export default function PulsePage() {
 
     const totalTokens =
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
+    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, totalTokens > 0);
 
     return (
         <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
@@ -293,20 +299,22 @@ export default function PulsePage() {
                         </h1>
                     </div>
 
-                    {/* Connection badge */}
+                    {/* Connection badge — 3-state: live socket / REST polling / offline */}
                     <div
                         className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest border ${
-                            isConnected
+                            feedStatus === "live"
                                 ? "border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5"
-                                : "border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5"
+                                : feedStatus === "polling"
+                                  ? "border-[#FFD700]/20 text-[#FFD700] bg-[#FFD700]/5"
+                                  : "border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5"
                         }`}
                     >
-                        {isConnected ? (
-                            <Wifi size={10} />
-                        ) : (
+                        {feedStatus === "offline" ? (
                             <WifiOff size={10} />
+                        ) : (
+                            <Wifi size={10} />
                         )}
-                        {isConnected ? "LIVE" : "OFFLINE"}
+                        {feedStatus === "live" ? "LIVE" : feedStatus === "polling" ? "POLLING" : "OFFLINE"}
                     </div>
 
                     {/* Refresh */}

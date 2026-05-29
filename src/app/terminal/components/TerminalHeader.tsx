@@ -127,7 +127,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <StatItem label="LIQ" value={`$${formatNumber(token.liquidity)}`} />
                 <StatItem label="VOL_24H" value={`$${formatNumber(token.volume24h)}`} />
                 <StatItem label="VOL_5M" value={`$${formatNumber(token.volume5m)}`} />
-                <StatItem label="HOLDERS" value={formatNumber(token.holders)} />
+                <StatItem label="HOLDERS" value={token.holders > 0 ? formatNumber(token.holders) : "—"} />
 
                 {/* Fees - highlighted if has Bags fees */}
                 <div className={`flex flex-col ${token.hasBagsFees ? "px-2 py-1 bg-[#FFD700]/5 border border-[#FFD700]/10 rounded" : ""}`}>
