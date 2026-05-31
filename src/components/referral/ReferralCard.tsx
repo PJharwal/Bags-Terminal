@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { useReferralStore } from '@/store/referral.store';
 import { Copy, Check, Share2, Link2, Rocket, Coins } from 'lucide-react';
-import { BagsLogo } from '@/components/ui/BagsLogo';
 
 export function ReferralCard() {
   const { publicKey, connected } = useBagsWallet();
@@ -37,7 +36,8 @@ export function ReferralCard() {
       {/* Referral Link */}
       <div className="card p-5">
         <div className="flex items-center gap-2 mb-4">
-          <BagsLogo size={16} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/bags-logo-official.png" width={16} height={16} alt="Bags" />
           <span className="label">Your Referral Link</span>
         </div>
 

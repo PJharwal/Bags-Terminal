@@ -1,10 +1,23 @@
 import { ImageResponse } from "next/og";
 import type { NextRequest } from "next/server";
+import { readFileSync } from "fs";
+import { join } from "path";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Bags logo, inlined as JSX (Satori renders inline SVG).
+// Official Bags logo, inlined as a base64 data URI (read once at module load)
+// so Satori can render it without a network fetch.
+const officialLogoSrc = (() => {
+  try {
+    const buf = readFileSync(join(process.cwd(), "public", "bags-logo-official.png"));
+    return `data:image/png;base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+})();
+
+// Fallback inline mark (used for the non-referral / site-wide card).
 function BagsMark({ size = 120 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" fill="none">
@@ -45,9 +58,14 @@ export async function GET(req: NextRequest) {
           fontFamily: "monospace",
         }}
       >
-        {/* Top row: logo + wordmark */}
+        {/* Top row: logo + wordmark. Referral cards use the official logo. */}
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-          <BagsMark size={96} />
+          {shortRef && officialLogoSrc ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={officialLogoSrc} width={96} height={96} alt="" />
+          ) : (
+            <BagsMark size={96} />
+          )}
           <div style={{ display: "flex", flexDirection: "column" }}>
             <span
               style={{
