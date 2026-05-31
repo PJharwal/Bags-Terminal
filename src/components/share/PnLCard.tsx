@@ -12,23 +12,26 @@ interface PnLCardProps {
   pnlPercent: number;
   pnlUsd: number;
   marketCap: number;
+  /** Public token URL; passed to the X share so its OG card unfurls. */
+  shareUrl?: string;
 }
 
 const mono = "'Courier New', Courier, monospace";
 
 export function PnLCard({
   tokenSymbol, tokenName, tokenImage,
-  entryPrice, currentPrice, pnlPercent, pnlUsd, marketCap,
+  entryPrice, currentPrice, pnlPercent, pnlUsd, marketCap, shareUrl,
 }: PnLCardProps) {
   const isPositive = pnlPercent >= 0;
   const accentColor = isPositive ? '#39FF14' : '#FF003C';
   const prefix = isPositive ? '+' : '';
   const absPercent = Math.abs(pnlPercent);
 
-  const tweetText = `${prefix}${pnlPercent.toFixed(1)}% on $${tokenSymbol} ${isPositive ? '🟢' : '🔴'}\n\nEntry: $${entryPrice.toFixed(6)}\nNow: $${currentPrice.toFixed(6)}\nMC: ${formatCurrency(marketCap)}\n\nTracked on @BagsTerminal\nbags.fm`;
+  // URL is passed via shareUrl so X unfurls the token OG card.
+  const tweetText = `${prefix}${pnlPercent.toFixed(1)}% on $${tokenSymbol} ${isPositive ? '🟢' : '🔴'}\n\nEntry: $${entryPrice.toFixed(6)}\nNow: $${currentPrice.toFixed(6)}\nMC: ${formatCurrency(marketCap)}\n\nTracked on BAGS Terminal`;
 
   return (
-    <ShareCardWrapper tweetText={tweetText} filename={`bags-pnl-${tokenSymbol.toLowerCase()}`}>
+    <ShareCardWrapper tweetText={tweetText} filename={`bags-pnl-${tokenSymbol.toLowerCase()}`} shareUrl={shareUrl}>
       <div style={{ fontFamily: mono, position: 'relative', minHeight: 200 }}>
         {/* Background glow effect */}
         <div style={{

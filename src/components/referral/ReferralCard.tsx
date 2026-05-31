@@ -25,7 +25,7 @@ export function ReferralCard() {
 
   const shareOnTwitter = () => {
     const text = encodeURIComponent(
-      `Launch your token on bags.fm with built-in fee sharing! Use my referral link:`
+      `Launch your token on BAGS Terminal with built-in fee sharing! Use my referral link:`
     );
     const url = encodeURIComponent(referralLink);
     window.open(`https://x.com/intent/tweet?text=${text}&url=${url}`, '_blank');
