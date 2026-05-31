@@ -3,6 +3,10 @@ import { create } from 'zustand';
 interface ReferralState {
   referralLink: string;
   copied: boolean;
+  // statsAvailable stays false until a real data source populates stats.
+  // There is no Bags endpoint for a referral count, so the UI shows a neutral
+  // state rather than fabricated zeros.
+  statsAvailable: boolean;
   stats: {
     tokensReferred: number;
     feesEarned: number;
@@ -15,6 +19,7 @@ interface ReferralState {
 export const useReferralStore = create<ReferralState>((set, get) => ({
   referralLink: '',
   copied: false,
+  statsAvailable: false,
   stats: {
     tokensReferred: 0,
     feesEarned: 0,
@@ -35,5 +40,5 @@ export const useReferralStore = create<ReferralState>((set, get) => ({
     setTimeout(() => set({ copied: false }), 2000);
   },
 
-  setStats: (stats) => set({ stats }),
+  setStats: (stats) => set({ stats, statsAvailable: true }),
 }));

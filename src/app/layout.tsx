@@ -7,9 +7,38 @@ import { TurnkeyProvider } from "@/components/turnkey/TurnkeyProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { LiveTicker } from "@/components/ui/LiveTicker";
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bagsterminal.fm";
+const siteDescription =
+  "Chain-abstracted trading terminal on Solana — spot memes, prediction markets, and perps in one interface, built on bags.fm.";
+
 export const metadata: Metadata = {
-  title: "BAGS Terminal",
-  description: "Deployer intelligence for BAGS tokens",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "BAGS Terminal",
+    template: "%s | BAGS Terminal",
+  },
+  description: siteDescription,
+  openGraph: {
+    type: "website",
+    siteName: "BAGS Terminal",
+    title: "BAGS Terminal",
+    description: siteDescription,
+    url: "/",
+    images: [
+      {
+        url: "/api/og",
+        width: 1200,
+        height: 630,
+        alt: "BAGS Terminal — one terminal, every market",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BAGS Terminal",
+    description: siteDescription,
+    images: ["/api/og"],
+  },
 };
 
 export default function RootLayout({

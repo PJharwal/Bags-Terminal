@@ -16,10 +16,12 @@ export function ReferralShareCard({
 }: ReferralShareCardProps) {
   const truncatedWallet = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
 
-  const tweetText = `Earn fees when friends launch tokens on bags.fm!\n\nUse my referral link to launch with built-in fee sharing:\n${referralLink}\n\nbags.fm`;
+  // Link is passed via shareUrl (X unfurls its OG card), so it's omitted here
+  // to avoid the URL appearing twice in the post.
+  const tweetText = `Earn fees when friends launch tokens on bags.fm!\n\nUse my referral link to launch with built-in fee sharing 👇`;
 
   return (
-    <ShareCardWrapper tweetText={tweetText} filename="bags-referral">
+    <ShareCardWrapper tweetText={tweetText} filename="bags-referral" shareUrl={referralLink}>
       <div style={{ fontFamily: mono, position: 'relative', minHeight: 220 }}>
         {/* Background glow - gold referral energy */}
         <div style={{

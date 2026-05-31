@@ -8,7 +8,7 @@ import { BagsLogo } from '@/components/ui/BagsLogo';
 
 export function ReferralCard() {
   const { publicKey, connected } = useBagsWallet();
-  const { referralLink, copied, stats, generateLink, copyLink } = useReferralStore();
+  const { referralLink, copied, stats, statsAvailable, generateLink, copyLink } = useReferralStore();
 
   useEffect(() => {
     if (connected && publicKey) {
@@ -101,15 +101,22 @@ export function ReferralCard() {
       <div className="grid grid-cols-2 gap-4">
         <div className="stat-card p-4">
           <span className="label">Tokens Referred</span>
-          <p className="text-2xl font-bold text-white font-mono mt-1">{stats.tokensReferred}</p>
+          <p className="text-2xl font-bold text-white font-mono mt-1">
+            {statsAvailable ? stats.tokensReferred : '—'}
+          </p>
         </div>
         <div className="stat-card p-4">
           <span className="label">Fees Earned</span>
           <p className="text-2xl font-bold text-[#39FF14] font-mono mt-1">
-            {stats.feesEarned.toFixed(4)} SOL
+            {statsAvailable ? `${stats.feesEarned.toFixed(4)} SOL` : '—'}
           </p>
         </div>
       </div>
+      {!statsAvailable && (
+        <p className="text-[10px] text-[#555] font-mono text-center -mt-2">
+          Referral stats populate once your first referred launch is on-chain.
+        </p>
+      )}
     </div>
   );
 }
