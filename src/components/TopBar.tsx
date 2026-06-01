@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 import { LivePulseDot } from "@/components/ui/LivePulseDot";
+import { TokenSearch } from "@/components/ui/TokenSearch";
 import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 
 const navItems = [
@@ -82,6 +83,9 @@ export default function TopBar() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
+                {/* Global token search — name/symbol or contract address */}
+                <TokenSearch className="hidden sm:block w-[180px] lg:w-[240px]" />
+
                 {/* UTC clock — hidden on narrow */}
                 <span className="hidden xl:inline text-[10px] font-mono tabular-nums text-[#555] tracking-wider">
                     {now
