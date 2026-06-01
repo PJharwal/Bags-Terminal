@@ -1,6 +1,6 @@
 # BAGS Terminal
 
-Real-time Solana token monitoring, trading intelligence, and creator monetization platform built on [bags.fm](https://bags.fm). Streams live token launches, trades, and migrations via WebSocket, with integrated fee-sharing, token launch, and Dexscreener listing flows.
+Chain-abstracted trading terminal on Solana — one wallet, every market. Trade spot meme tokens, prediction markets (Polymarket), and perpetuals from a single interface, with solver-routed cross-chain execution (no manual bridging), plus token launches with built-in fee sharing and creator monetization. Built on [bags.fm](https://bags.fm).
 
 ## Features
 

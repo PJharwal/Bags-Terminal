@@ -13,10 +13,9 @@ import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 const navItems = [
     { href: "/", label: "HOME" },
     { href: "/pulse", label: "PULSE" },
-    { href: "/terminal", label: "TERMINAL" },
     { href: "/trending", label: "TRENDING" },
-    { href: "/deployers", label: "DEPLOYERS" },
-    { href: "/analyze", label: "ANALYZE" },
+    { href: "/perps", label: "PERPS" },
+    { href: "/prediction", label: "PREDICTION" },
     { href: "/launch", label: "LAUNCH" },
     { href: "/creator", label: "CREATOR" },
 ];

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Activity, Search, Users } from 'lucide-react';
+import { TrendingUp, Rocket, BarChart3, Wallet, Activity, Search } from 'lucide-react';
 import { BagsLogo } from '@/components/ui/BagsLogo';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
@@ -205,8 +205,9 @@ export default function HomePage() {
                         transition={{ delay: 0.2 }}
                         className="text-sm sm:text-base text-[#888] font-mono max-w-xl mb-6 leading-relaxed"
                       >
-                        Real-time launch feed, creator fee-sharing, and on-chain
-                        intelligence. Built for traders who move first.
+                        One Solana wallet, every market — spot memes, prediction
+                        markets, and perps from a single interface. No manual
+                        bridging. Built on bags.fm.
                       </motion.p>
 
                       <motion.div
@@ -435,17 +436,17 @@ export default function HomePage() {
                     </motion.div>
                   </Link>
 
-                  <Link href="/terminal">
+                  <Link href="/perps">
                     <motion.div
                       whileHover={{ y: -4 }}
                       whileTap={{ scale: 0.97 }}
                       className="card group p-6 cursor-pointer"
                     >
-                      <Terminal className="text-[#39FF14] mb-3" size={24} />
+                      <TrendingUp className="text-[#FFD700] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
-                        Terminal
+                        Perps
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Browse & trade tokens</div>
+                      <div className="text-xs text-[#666] mt-1">Cross-chain perps · soon</div>
                     </motion.div>
                   </Link>
 
@@ -463,17 +464,17 @@ export default function HomePage() {
                     </motion.div>
                   </Link>
 
-                  <Link href="/deployers">
+                  <Link href="/prediction">
                     <motion.div
                       whileHover={{ y: -4 }}
                       whileTap={{ scale: 0.97 }}
                       className="card group p-6 cursor-pointer"
                     >
-                      <Users className="text-[#FF00FF] mb-3" size={24} />
+                      <BarChart3 className="text-[#00F0FF] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
-                        Deployers
+                        Prediction
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Track deployer wallets</div>
+                      <div className="text-xs text-[#666] mt-1">Polymarket · soon</div>
                     </motion.div>
                   </Link>
 

@@ -222,7 +222,7 @@ function CoverSlide() {
             SOLANA TOKENS
           </h1>
           <p className="text-sm sm:text-base text-[#888] font-mono max-w-xl mx-auto mb-12 leading-relaxed">
-            Real-time monitoring. Creator monetization. Risk intelligence.<br />
+            One Solana wallet, every market — spot, prediction markets &amp; perps.<br />
             Built on bags.fm -- the platform that paid $40M+ to creators.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
@@ -246,7 +246,7 @@ function WhatIsBagsSlide() {
       <SectionTag>WHAT IS BAGS TERMINAL</SectionTag>
       <SlideTitle>THE ALL-IN-ONE <span className="text-[#39FF14]">COMMAND CENTER</span> FOR SOLANA TOKENS</SlideTitle>
       <SlideSubtitle>
-        BAGS Terminal is a real-time Solana token monitoring, trading intelligence, and creator monetization platform built on bags.fm. It gives traders, creators, and deployers everything they need in one interface.
+        BAGS Terminal is a chain-abstracted trading terminal: one Solana wallet, every market. Trade spot meme tokens, prediction markets (Polymarket), and perpetuals from a single interface — solver infrastructure routes execution across chains, so there is no manual bridging. Plus token launches with built-in fee sharing and creator monetization from bags.fm.
       </SlideSubtitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-5 mt-10">
         <motion.div variants={fadeUp} className="card p-6 border-l-2 border-l-[#39FF14]">
@@ -1175,7 +1175,7 @@ function CompetitiveSlide() {
       </motion.div>
       <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-8 p-4 border border-[#39FF14]/20 bg-[#39FF14]/5">
         <p className="text-xs font-mono text-[#39FF14] text-center">
-          BAGS Terminal is the ONLY platform combining creator monetization, risk intelligence, and real-time monitoring in one interface.
+          BAGS Terminal is the only chain-abstracted terminal that unifies spot memes, prediction markets, and perps — with built-in creator monetization — on one Solana wallet.
         </p>
       </motion.div>
     </div>
