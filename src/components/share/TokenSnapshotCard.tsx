@@ -15,6 +15,8 @@ interface TokenSnapshotCardProps {
   liquidity: number;
   lifetimeFees?: number;
   hasBagsFees?: boolean;
+  /** Public token URL; passed to the X share so its OG card unfurls. */
+  shareUrl?: string;
 }
 
 const mono = "'Courier New', Courier, monospace";
@@ -22,16 +24,19 @@ const mono = "'Courier New', Courier, monospace";
 export function TokenSnapshotCard({
   tokenSymbol, tokenName, tokenImage,
   price, priceChange24h, marketCap, volume24h,
-  holders, liquidity, lifetimeFees, hasBagsFees,
+  holders, liquidity, lifetimeFees, hasBagsFees, shareUrl,
 }: TokenSnapshotCardProps) {
   const isPositive = priceChange24h >= 0;
   const changeColor = isPositive ? '#39FF14' : '#FF003C';
   const changePrefix = isPositive ? '+' : '';
 
-  const tweetText = `$${tokenSymbol} on BAGS Terminal 📊\n\nPrice: $${price}\n24h: ${changePrefix}${priceChange24h.toFixed(1)}%\nMC: ${formatCurrency(marketCap)}\nVol: ${formatCurrency(volume24h)}\nHolders: ${formatNumber(holders)}\n${hasBagsFees ? `Fees: ${lifetimeFees?.toFixed(4)} SOL\n` : ''}\nbags.fm`;
+  // URL is passed via shareUrl (X unfurls the token OG card); omit it from the
+  // text. Only include holders when we actually have a count.
+  const holdersLine = holders > 0 ? `\nHolders: ${formatNumber(holders)}` : '';
+  const tweetText = `$${tokenSymbol} on BAGS Terminal 📊\n\nPrice: $${price}\n24h: ${changePrefix}${priceChange24h.toFixed(1)}%\nMC: ${formatCurrency(marketCap)}\nVol: ${formatCurrency(volume24h)}${holdersLine}${hasBagsFees ? `\nFees: ${lifetimeFees?.toFixed(4)} SOL` : ''}`;
 
   return (
-    <ShareCardWrapper tweetText={tweetText} filename={`bags-snapshot-${tokenSymbol.toLowerCase()}`}>
+    <ShareCardWrapper tweetText={tweetText} filename={`bags-snapshot-${tokenSymbol.toLowerCase()}`} shareUrl={shareUrl}>
       <div style={{ fontFamily: mono }}>
         {/* Header: Token + Price + Change */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -89,7 +94,7 @@ export function TokenSnapshotCard({
           {[
             { label: 'MARKET CAP', value: formatCurrency(marketCap) },
             { label: 'VOLUME 24H', value: formatCurrency(volume24h) },
-            { label: 'HOLDERS', value: formatNumber(holders) },
+            { label: 'HOLDERS', value: holders > 0 ? formatNumber(holders) : '—' },
             { label: 'LIQUIDITY', value: formatCurrency(liquidity) },
             { label: '24H CHANGE', value: `${changePrefix}${priceChange24h.toFixed(1)}%`, color: changeColor },
             ...(hasBagsFees && lifetimeFees !== undefined

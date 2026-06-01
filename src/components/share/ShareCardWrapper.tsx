@@ -9,9 +9,11 @@ interface ShareCardWrapperProps {
   tweetText: string;
   filename?: string;
   compact?: boolean;
+  /** When set, the X share includes this URL so its OG card unfurls in-feed. */
+  shareUrl?: string;
 }
 
-export function ShareCardWrapper({ children, tweetText, filename = 'bags-terminal', compact }: ShareCardWrapperProps) {
+export function ShareCardWrapper({ children, tweetText, filename = 'bags-terminal', compact, shareUrl }: ShareCardWrapperProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { captureCard, shareToTwitter, isCapturing } = useShareCard();
 
@@ -86,7 +88,7 @@ export function ShareCardWrapper({ children, tweetText, filename = 'bags-termina
           {isCapturing ? 'Capturing...' : 'Save Image'}
         </button>
         <button
-          onClick={() => shareToTwitter(tweetText)}
+          onClick={() => shareToTwitter(tweetText, shareUrl)}
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono uppercase tracking-widest bg-[#39FF14]/10 border border-[#39FF14]/20 text-[#39FF14] hover:bg-[#39FF14]/20 transition-colors"
         >
           <Share2 size={12} />

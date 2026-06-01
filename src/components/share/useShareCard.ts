@@ -10,18 +10,21 @@ export function useShareCard() {
     setIsCapturing(true);
     try {
       const { toPng } = await import('html-to-image');
+      // 1x1 transparent PNG used when a cross-origin image can't be inlined,
+      // so a single CORS-blocked token logo never aborts the whole capture.
+      const transparentPixel =
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
       const dataUrl = await toPng(ref.current, {
         backgroundColor: '#050505',
         pixelRatio: 2,
         quality: 1,
-        skipFonts: true,
-        style: {
-          // Force styles that image capture can render
-          fontFamily: "'Courier New', Courier, monospace",
-        },
-        filter: (node: HTMLElement) => {
-          // Skip elements that break capture (animations, complex filters)
-          if (node.classList?.contains('animate-spin')) return true;
+        // Let cross-origin images fail soft instead of aborting the render.
+        imagePlaceholder: transparentPixel,
+        filter: (node) => {
+          // Skip spinners / live-animation nodes that capture as a blur.
+          if (node instanceof HTMLElement && node.classList?.contains('animate-spin')) {
+            return false;
+          }
           return true;
         },
       });
@@ -57,9 +60,11 @@ export function useShareCard() {
     }
   }, []);
 
-  const shareToTwitter = useCallback((text: string) => {
-    const encoded = encodeURIComponent(text);
-    window.open(`https://x.com/intent/tweet?text=${encoded}`, '_blank');
+  const shareToTwitter = useCallback((text: string, url?: string) => {
+    const params = new URLSearchParams({ text });
+    // When a URL is provided, X auto-unfurls its Open Graph card in the post.
+    if (url) params.set('url', url);
+    window.open(`https://x.com/intent/tweet?${params.toString()}`, '_blank');
   }, []);
 
   return { captureCard, shareToTwitter, isCapturing };
