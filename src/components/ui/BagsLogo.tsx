@@ -12,7 +12,7 @@ export function BagsLogo({ size = 20, className = '', withText = false }: BagsLo
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`}>
       <Image
-        src="/bags-logo.svg"
+        src="/bags-logo-official.png"
         alt="Bags"
         width={size}
         height={size}

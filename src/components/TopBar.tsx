@@ -52,8 +52,8 @@ export default function TopBar() {
             {/* Logo & Nav */}
             <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-8 h-8 bg-[#EDEDED] flex items-center justify-center group-hover:bg-[#39FF14] transition-all duration-150 group-hover:shadow-[0_0_10px_rgba(57,255,20,0.3)]">
-                        <BagsLogo size={20} />
+                    <div className="w-8 h-8 flex items-center justify-center transition-transform duration-150 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(57,255,20,0.35)]">
+                        <BagsLogo size={30} />
                     </div>
                     <span className="text-sm font-display font-bold tracking-tighter group-hover:text-[#39FF14] transition-colors">
                         BAGS<span className="text-[#888]">_</span>TERM
