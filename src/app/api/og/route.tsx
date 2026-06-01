@@ -246,9 +246,9 @@ export async function GET(req: NextRequest) {
           fontFamily: "monospace",
         }}
       >
-        {/* Top row: logo + wordmark. Referral cards use the official logo. */}
+        {/* Top row: logo + wordmark. Always use the official logo. */}
         <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-          {shortRef && officialLogoSrc ? (
+          {officialLogoSrc ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={officialLogoSrc} width={96} height={96} alt="" />
           ) : (
