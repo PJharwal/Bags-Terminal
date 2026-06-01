@@ -7,6 +7,7 @@ import { useState, useEffect } from "react";
 import { WalletButton } from "@/components/wallet/WalletButton";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 import { LivePulseDot } from "@/components/ui/LivePulseDot";
+import { TokenSearch } from "@/components/ui/TokenSearch";
 import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 
 const navItems = [
@@ -52,8 +53,8 @@ export default function TopBar() {
             {/* Logo & Nav */}
             <div className="flex items-center gap-8">
                 <Link href="/" className="flex items-center gap-3 group">
-                    <div className="w-8 h-8 bg-[#EDEDED] flex items-center justify-center group-hover:bg-[#39FF14] transition-all duration-150 group-hover:shadow-[0_0_10px_rgba(57,255,20,0.3)]">
-                        <BagsLogo size={20} />
+                    <div className="w-8 h-8 flex items-center justify-center transition-transform duration-150 group-hover:scale-110 drop-shadow-[0_0_8px_rgba(57,255,20,0.35)]">
+                        <BagsLogo size={30} />
                     </div>
                     <span className="text-sm font-display font-bold tracking-tighter group-hover:text-[#39FF14] transition-colors">
                         BAGS<span className="text-[#888]">_</span>TERM
@@ -82,6 +83,9 @@ export default function TopBar() {
 
             {/* Right side */}
             <div className="flex items-center gap-3">
+                {/* Global token search — name/symbol or contract address */}
+                <TokenSearch className="hidden sm:block w-[180px] lg:w-[240px]" />
+
                 {/* UTC clock — hidden on narrow */}
                 <span className="hidden xl:inline text-[10px] font-mono tabular-nums text-[#555] tracking-wider">
                     {now
