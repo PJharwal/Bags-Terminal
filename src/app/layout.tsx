@@ -23,10 +23,10 @@ export default function RootLayout({
         <WalletProviderWrapper>
           <TurnkeyProvider>
             <TopBar />
-            <main className="min-h-screen pt-14 flex flex-col">
+            <main className="h-screen pt-14 flex flex-col overflow-hidden">
               <SocketInitializer />
               <LiveTicker />
-              <div className="flex-1">
+              <div className="flex-1 flex flex-col min-h-0">
                 {children}
               </div>
             </main>
