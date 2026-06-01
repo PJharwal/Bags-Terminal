@@ -38,6 +38,12 @@ import {
   LineChart,
   Milestone,
   Crosshair,
+  Zap,
+  Link2,
+  ArrowLeftRight,
+  Network,
+  Repeat,
+  ShieldAlert,
 } from 'lucide-react';
 
 /* ------------------------------------------------------------------ */
@@ -50,7 +56,7 @@ interface Slide {
 }
 
 /* ------------------------------------------------------------------ */
-/* SLIDE REGISTRY — 25 SLIDES                                         */
+/* SLIDE REGISTRY — 32 SLIDES                                         */
 /* ------------------------------------------------------------------ */
 const SLIDES: Slide[] = [
   { id: 'cover', label: 'Cover', section: 'intro' },
@@ -69,6 +75,13 @@ const SLIDES: Slide[] = [
   { id: 'launchpad-flow', label: 'Launch Flow', section: 'launchpad' },
   { id: 'feature-creator', label: 'Creator Dashboard', section: 'product' },
   { id: 'feature-analyze', label: 'Risk Engine', section: 'product' },
+  { id: 'vision-thesis', label: 'Chain Abstraction', section: 'vision' },
+  { id: 'vision-problem', label: 'Fragmentation Tax', section: 'vision' },
+  { id: 'vision-architecture', label: 'One Terminal', section: 'vision' },
+  { id: 'vision-polymarket', label: 'Cross-Chain Polymarket', section: 'vision' },
+  { id: 'vision-perps', label: 'Cross-Chain Perps', section: 'vision' },
+  { id: 'vision-meme', label: 'Cross-Chain Memes', section: 'vision' },
+  { id: 'vision-moat', label: 'Why We Win', section: 'vision' },
   { id: 'kpis', label: 'KPIs', section: 'metrics' },
   { id: 'milestones', label: 'Milestones', section: 'metrics' },
   { id: 'differentiators', label: 'Why Us', section: 'advantage' },
@@ -86,6 +99,7 @@ const SECTIONS: Record<string, string> = {
   solution: 'SOLUTION',
   product: 'PRODUCT',
   launchpad: 'LAUNCHPAD',
+  vision: 'CROSS-CHAIN',
   metrics: 'METRICS',
   advantage: 'ADVANTAGE',
   market: 'MARKET',
@@ -209,11 +223,11 @@ function CoverSlide() {
           </h1>
           <p className="text-sm sm:text-base text-[#888] font-mono max-w-xl mx-auto mb-12 leading-relaxed">
             Real-time monitoring. Creator monetization. Risk intelligence.<br />
-            Built on bags.fm -- the platform that paid $20M+ to creators.
+            Built on bags.fm -- the platform that paid $40M+ to creators.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-3">
             <div className="badge badge-green px-3 py-1.5 text-[10px]">LIVE ON SOLANA</div>
-            <div className="badge badge-gold px-3 py-1.5 text-[10px]">$3B+ VOLUME</div>
+            <div className="badge badge-gold px-3 py-1.5 text-[10px]">$5B+ VOLUME</div>
             <div className="badge badge-blue px-3 py-1.5 text-[10px]">AWARD WINNING</div>
           </div>
         </motion.div>
@@ -307,14 +321,14 @@ function ProblemStatsSlide() {
       </SlideSubtitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
         <StatBox value="$1B+" label="Pump.fun Revenue" accent="red" />
-        <StatBox value="$0" label="Paid to Creators" accent="red" />
+        <StatBox value="&asymp;$0" label="Paid to Creators" accent="red" />
         <StatBox value="<1%" label="Token Survival Rate" accent="red" />
         <StatBox value="294" label="Millionaires / 13.4M wallets" accent="red" />
       </motion.div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
-        <StatBox value="70%" label="Pump.fun Token Share" accent="gold" />
-        <StatBox value="30K/day" label="Tokens Launched" accent="gold" />
-        <StatBox value="$206B" label="Peak Monthly Volume" accent="gold" />
+        <StatBox value="~70%" label="Pump.fun Token Share" accent="gold" />
+        <StatBox value="30K+/day" label="Tokens Launched" accent="gold" />
+        <StatBox value="11.6M" label="Tokens Created In 2025" accent="gold" />
       </motion.div>
     </div>
   );
@@ -434,7 +448,7 @@ function ProblemCreatorsSlide() {
             ))}
           </div>
           <div className="mt-4 pt-4 border-t border-[#39FF14]/10 text-center">
-            <span className="text-xl font-bold font-mono text-[#39FF14] number-glow-green">$20M+</span>
+            <span className="text-xl font-bold font-mono text-[#39FF14] number-glow-green">$40M+</span>
             <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">PAID TO CREATORS SO FAR</div>
           </div>
         </motion.div>
@@ -991,7 +1005,7 @@ function KPIsSlide() {
             color: '#39FF14',
             icon: TrendingUp,
             kpis: [
-              { metric: 'Total Volume Facilitated', value: '$3B+', target: '$10B by Q4' },
+              { metric: 'Total Volume Facilitated', value: '$5B+', target: '$10B by Q4' },
               { metric: 'Monthly Active Creators', value: 'Growing', target: '10K MACs' },
               { metric: 'Tokens Launched via BAGS', value: 'Live', target: '50K total' },
             ],
@@ -1001,7 +1015,7 @@ function KPIsSlide() {
             color: '#FFD700',
             icon: Award,
             kpis: [
-              { metric: 'Total Paid to Creators', value: '$20M+', target: '$100M by 2027' },
+              { metric: 'Total Paid to Creators', value: '$40M+', target: '$100M by 2027' },
               { metric: 'Avg Creator Earnings', value: 'Growing', target: '$500/month' },
               { metric: 'Fee Claim Completion', value: 'High', target: '>90%' },
             ],
@@ -1082,7 +1096,7 @@ function MilestonesSlide() {
           {[
             { date: '2025', title: 'PLATFORM LAUNCH', items: ['bags.fm goes live on Solana', 'Bonding curve + DEX migration engine', 'Creator royalty system (1% perpetual)', 'First $1B in on-chain volume'], color: '#39FF14', done: true },
             { date: 'Q1 2026', title: 'INTELLIGENCE LAYER', items: ['BAGS Terminal ships with Pulse Monitor', 'Real-time WebSocket token feed', 'Risk analysis engine + deployer scoring', 'Creator Dashboard with fee claims'], color: '#39FF14', done: true },
-            { date: 'MAR 2026', title: 'RECOGNITION & GROWTH', items: ['FinTech Breakthrough Award winner', '$3B+ total on-chain volume', '$20M+ paid to creators', '$4M developer fund + hackathon launch'], color: '#FFD700', done: true },
+            { date: 'MAR 2026', title: 'RECOGNITION & GROWTH', items: ['FinTech Breakthrough Award winner', '$5B+ total on-chain volume', '$40M+ paid to creators', '$4M developer fund + hackathon launch'], color: '#FFD700', done: true },
             { date: 'Q2 2026', title: 'ECOSYSTEM EXPANSION', items: ['Bags App Store launch', 'Enhanced API tiers for developers', 'Multi-chain expansion (Base, Ethereum)', 'Advanced deployer scoring v2'], color: '#00F0FF', done: false },
             { date: 'Q3 2026', title: 'PLATFORM FLYWHEEL', items: ['AI-powered risk predictions', 'Social trading features', 'Institutional dashboard', 'Mobile terminal app'], color: '#00F0FF', done: false },
             { date: 'Q4 2026', title: 'SCALE', items: ['$10B+ cumulative volume target', '100+ App Store integrations', 'Cross-chain token launch support', 'DAO governance framework'], color: '#FFD700', done: false },
@@ -1175,9 +1189,9 @@ function MarketSlide() {
       <SlideTitle>A MARKET THAT ONLY <span className="text-[#39FF14]">GROWS</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10">
         <motion.div variants={fadeUp} className="card p-6 text-center">
-          <div className="text-3xl sm:text-4xl font-bold text-[#39FF14] font-mono number-glow-green mb-2">$80B+</div>
+          <div className="text-3xl sm:text-4xl font-bold text-[#39FF14] font-mono number-glow-green mb-2">$30B+</div>
           <div className="text-[10px] uppercase tracking-widest text-[#666] font-mono font-bold mb-3">MEMECOIN MARKET CAP</div>
-          <div className="text-xs text-[#888] font-mono">Growing at 26.7% CAGR through 2035</div>
+          <div className="text-xs text-[#888] font-mono">≈$30&ndash;35B today (CoinGecko, 2026)</div>
         </motion.div>
         <motion.div variants={fadeUp} className="card p-6 text-center">
           <div className="text-3xl sm:text-4xl font-bold text-[#FFD700] font-mono number-glow-gold mb-2">$250B</div>
@@ -1191,7 +1205,7 @@ function MarketSlide() {
         </motion.div>
       </motion.div>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-3 gap-3 mt-4">
-        <StatBox value="$206B" label="Peak Monthly DEX Volume" accent="green" />
+        <StatBox value="$1.5T" label="2025 Solana DEX Volume (+57%)" accent="green" />
         <StatBox value="30K+" label="Tokens Launched Daily" accent="gold" />
         <StatBox value="94.9%" label="Solana Memecoin Share (Peak)" accent="blue" />
       </motion.div>
@@ -1205,8 +1219,8 @@ function TractionSlide() {
       <SectionTag>TRACTION</SectionTag>
       <SlideTitle>ALREADY <span className="text-[#39FF14]">SHIPPING & SCALING</span></SlideTitle>
       <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
-        <StatBox value="$3B+" label="Total On-chain Volume" accent="green" />
-        <StatBox value="$20M+" label="Paid to Creators" accent="gold" />
+        <StatBox value="$5B+" label="Total On-chain Volume" accent="green" />
+        <StatBox value="$40M+" label="Paid to Creators" accent="gold" />
         <StatBox value="$4M" label="Developer Fund" accent="blue" />
         <StatBox value="2026" label="FinTech Award Winner" accent="green" />
       </motion.div>
@@ -1320,16 +1334,16 @@ function ClosingSlide() {
             NEEDS AN <span className="text-[#39FF14]">INTELLIGENCE LAYER</span>
           </h1>
           <p className="text-sm sm:text-base text-[#888] font-mono max-w-2xl mx-auto mb-12 leading-relaxed">
-            30,000 tokens launch daily. $80B+ market. $250B creator economy.
-            Zero transparency. Zero creator monetization. Until now.
+            25,000+ tokens launch daily. ~$240B projected 2026 prediction-market volume. ~$500&ndash;700B in monthly perp-DEX volume.
+            All fragmented across chains &mdash; until one Solana-native, chain-abstracted terminal.
           </p>
           <div className="grid grid-cols-3 gap-4 max-w-lg mx-auto mb-12">
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#39FF14] font-mono number-glow-green">$3B+</div>
+              <div className="text-2xl font-bold text-[#39FF14] font-mono number-glow-green">$5B+</div>
               <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">VOLUME</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#FFD700] font-mono number-glow-gold">$20M+</div>
+              <div className="text-2xl font-bold text-[#FFD700] font-mono number-glow-gold">$40M+</div>
               <div className="text-[9px] text-[#666] font-mono uppercase tracking-widest mt-1">TO CREATORS</div>
             </div>
             <div className="text-center">
@@ -1347,6 +1361,292 @@ function ClosingSlide() {
           </div>
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* CROSS-CHAIN VISION SLIDES (NEW)                                     */
+/* ------------------------------------------------------------------ */
+
+function StatusBadge({ label, color }: { label: string; color: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-widest px-2.5 py-1 border"
+      style={{ color, borderColor: `${color}44`, backgroundColor: `${color}11` }}
+    >
+      <span className="w-1.5 h-1.5 animate-pulse" style={{ backgroundColor: color }} />
+      {label}
+    </span>
+  );
+}
+
+function SourceNote({ children }: { children: React.ReactNode }) {
+  return <p className="text-[9px] text-[#444] font-mono mt-6 tracking-wide">SOURCE — {children}</p>;
+}
+
+function FlowNode({ icon: Icon, label, sub, color }: { icon: React.ElementType; label: string; sub: string; color: string }) {
+  return (
+    <div className="flex flex-col items-center text-center gap-2 flex-1 min-w-0">
+      <div className="w-12 h-12 flex items-center justify-center border bg-black/40" style={{ borderColor: `${color}44` }}>
+        <Icon size={20} style={{ color }} />
+      </div>
+      <div className="text-[11px] font-mono font-bold text-[#EDEDED] uppercase tracking-wide">{label}</div>
+      <div className="text-[9px] font-mono text-[#666] leading-tight">{sub}</div>
+    </div>
+  );
+}
+
+function VisionThesisSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>CROSS-CHAIN VISION</SectionTag>
+      <SlideTitle>ONE TERMINAL. <span className="text-[#FFD700]">EVERY MARKET.</span></SlideTitle>
+      <SlideSubtitle>
+        We are building a chain-abstracted trading terminal. Users keep one Solana wallet and one
+        interface, while solver infrastructure routes execution across ecosystems. They care about
+        opportunities &mdash; not which blockchain they are on.
+      </SlideSubtitle>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10">
+        <motion.div variants={fadeUp} className="card p-6 border-[#FF003C]/20">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle size={16} className="text-[#FF003C]" />
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF003C]">Today &mdash; Fragmented</span>
+          </div>
+          <div className="space-y-3">
+            {['Switch wallets &amp; networks per chain', 'Bridge assets manually, wait, pray', 'Learn a different interface per protocol', '$2.8B+ drained from bridges since 2022'].map((t) => (
+              <div key={t} className="flex items-start gap-2 text-xs font-mono text-[#888]">
+                <span className="text-[#FF003C] mt-0.5">&#10007;</span>
+                <span dangerouslySetInnerHTML={{ __html: t }} />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+        <motion.div variants={fadeUp} className="card p-6 border-[#39FF14]/20">
+          <div className="flex items-center gap-2 mb-4">
+            <Layers size={16} className="text-[#39FF14]" />
+            <span className="text-xs font-mono font-bold uppercase tracking-widest text-[#39FF14]">BAGS &mdash; Abstracted</span>
+          </div>
+          <div className="space-y-3">
+            {['One Solana wallet, one interface', 'Zero manual bridging &mdash; solver-routed', 'Spot, prediction &amp; perps in one terminal', 'Friction removed for retail traders'].map((t) => (
+              <div key={t} className="flex items-start gap-2 text-xs font-mono text-[#888]">
+                <span className="text-[#39FF14] mt-0.5">&#10003;</span>
+                <span dangerouslySetInnerHTML={{ __html: t }} />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      </motion.div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-4 p-4 border border-[#FFD700]/20 bg-[#FFD700]/5">
+        <p className="text-xs font-mono text-[#FFD700] text-center">
+          Intents-based cross-chain execution is the fastest-growing UX layer &mdash; co-proposed as ERC-7683 by Uniswap Labs &amp; Across (Draft EIP, 2024; now ~88% of Across volume). We are building the trading terminal on top of it.
+        </p>
+      </motion.div>
+      <SourceNote>DEXTools, Four Pillars &amp; Chainalysis, 2025&ndash;2026</SourceNote>
+    </div>
+  );
+}
+
+function VisionProblemSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>THE FRICTION</SectionTag>
+      <SlideTitle>USERS PAY A <span className="text-[#FF003C]">FRAGMENTATION TAX</span></SlideTitle>
+      <SlideSubtitle>
+        Every trading platform is ecosystem-specific. To chase an opportunity on another chain, a
+        retail trader becomes their own bridge operator &mdash; and absorbs the risk.
+      </SlideSubtitle>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-10">
+        <StatBox value="$2.8B+" label="Drained From Bridges (since 2022)" accent="red" />
+        <StatBox value="$3.4B" label="Crypto Stolen In 2025" accent="red" />
+        <StatBox value="6+" label="Steps Per Cross-Chain Trade" accent="gold" />
+        <StatBox value="5&minus;15s" label="Solver Flow vs Minutes&ndash;Hours" accent="green" />
+      </motion.div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <motion.div variants={fadeUp} className="card p-5">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest text-[#FF003C] mb-4">The Manual Flow Today</div>
+          <div className="space-y-2.5">
+            {['Fund &amp; secure a new wallet', 'Acquire gas on the destination chain', 'Find a bridge, accept hack risk', 'Wait for confirmations', 'Swap into the right asset', 'Re-learn an unfamiliar UI'].map((t, i) => (
+              <div key={t} className="flex items-center gap-3 text-xs font-mono text-[#888]">
+                <span className="text-[#FF003C] font-bold w-4">{i + 1}</span>
+                <span dangerouslySetInnerHTML={{ __html: t }} />
+              </div>
+            ))}
+          </div>
+        </motion.div>
+        <motion.div variants={fadeUp} className="card p-5 border-[#39FF14]/20">
+          <div className="text-xs font-mono font-bold uppercase tracking-widest text-[#39FF14] mb-4">The BAGS Flow</div>
+          <div className="flex flex-col items-center justify-center h-[calc(100%-2rem)] gap-4">
+            <div className="flex items-center gap-3">
+              <FlowNode icon={Wallet} label="Solana" sub="One wallet" color="#39FF14" />
+              <ArrowRight size={16} className="text-[#666]" />
+              <FlowNode icon={Network} label="Solver" sub="Auto-route" color="#00F0FF" />
+              <ArrowRight size={16} className="text-[#666]" />
+              <FlowNode icon={Target} label="Any Market" sub="Filled" color="#FFD700" />
+            </div>
+            <p className="text-[10px] font-mono text-[#666] text-center">One intent. One confirmation. The terminal abstracts the rest.</p>
+          </div>
+        </motion.div>
+      </motion.div>
+      <SourceNote>Chainalysis 2026 Crypto Crime Report; bridge-exploit tracking 2022&ndash;2025</SourceNote>
+    </div>
+  );
+}
+
+function VisionArchitectureSlide() {
+  const pillars = [
+    { icon: Flame, title: 'Meme Token Trading', desc: 'Fast discovery &amp; one-click execution on Solana launchpad tokens.', status: 'LIVE', color: '#39FF14', stat: '$2.4B 2025 Solana app revenue' },
+    { icon: Target, title: 'Cross-Chain Polymarket', desc: 'Trade prediction markets with Solana funds &mdash; no manual bridge.', status: 'IN TESTING', color: '#00F0FF', stat: '~$10B/mo Polymarket (2026 peak)' },
+    { icon: TrendingUp, title: 'Cross-Chain Perps', desc: 'Perpetual futures via Hyperliquid, settled from Solana UX.', status: 'IN TESTING', color: '#FFD700', stat: '~$500&ndash;700B/mo perp-DEX vol' },
+    { icon: ArrowLeftRight, title: 'Cross-Chain Memes', desc: 'Solana users trade EVM memes &mdash; and vice versa.', status: 'BUILDING', color: '#FF003C', stat: 'Upcoming infrastructure' },
+  ];
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>THE PRODUCT</SectionTag>
+      <SlideTitle>ONE INTERFACE, <span className="text-[#39FF14]">FOUR MARKETS</span></SlideTitle>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-10">
+        {pillars.map((p) => (
+          <motion.div key={p.title} variants={fadeUp} className="card p-6 flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <div className="w-10 h-10 flex items-center justify-center border bg-black/30" style={{ borderColor: `${p.color}33` }}>
+                <p.icon size={18} style={{ color: p.color }} />
+              </div>
+              <StatusBadge label={p.status} color={p.color} />
+            </div>
+            <h3 className="text-sm font-bold uppercase tracking-wide text-[#EDEDED] font-mono">{p.title}</h3>
+            <p className="text-xs text-[#888] leading-relaxed font-mono" dangerouslySetInnerHTML={{ __html: p.desc }} />
+            <div className="mt-auto pt-3 border-t border-white/5 text-[10px] font-mono uppercase tracking-widest" style={{ color: p.color }}>{p.stat}</div>
+          </motion.div>
+        ))}
+      </motion.div>
+      <SourceNote>CryptoPotato, CoinMarketCap &amp; Polymarket data, 2025&ndash;2026</SourceNote>
+    </div>
+  );
+}
+
+function VisionPolymarketSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>PREDICTION MARKETS</SectionTag>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold uppercase tracking-tight text-[#EDEDED] font-[family-name:var(--font-display)] leading-[1.1]">POLYMARKET, <span className="text-[#00F0FF]">ZERO BRIDGING</span></h2>
+        <StatusBadge label="Built &middot; In Testing" color="#00F0FF" />
+      </div>
+      <SlideSubtitle>
+        Infrastructure is built and in end-to-end testing: a Solana-native user trades the world&apos;s
+        largest prediction venue without bridging assets or switching chains.
+      </SlideSubtitle>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="card p-6 mt-8">
+        <div className="flex items-center justify-between gap-2">
+          <FlowNode icon={Wallet} label="Solana Funds" sub="User stays put" color="#39FF14" />
+          <ArrowRight size={18} className="text-[#666] flex-shrink-0" />
+          <FlowNode icon={Network} label="Abstraction Layer" sub="Solver routes" color="#00F0FF" />
+          <ArrowRight size={18} className="text-[#666] flex-shrink-0" />
+          <FlowNode icon={Target} label="Polymarket" sub="Position live" color="#FFD700" />
+        </div>
+      </motion.div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <StatBox value="~$10B" label="Polymarket Vol / Month (Mar 2026)" accent="blue" />
+        <StatBox value="$240B" label="2026 Prediction Vol (Bernstein Est.)" accent="green" />
+        <StatBox value="$2B" label="ICE Strategic Commitment" accent="gold" />
+        <StatBox value="$15B+" label="Polymarket Valuation Target" accent="blue" />
+      </motion.div>
+      <SourceNote>CoinDesk, The Block &amp; Bernstein, Apr 2026 (sector ~$24B/mo with Kalshi)</SourceNote>
+    </div>
+  );
+}
+
+function VisionPerpsSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>DERIVATIVES</SectionTag>
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold uppercase tracking-tight text-[#EDEDED] font-[family-name:var(--font-display)] leading-[1.1]">PERPS WITHOUT <span className="text-[#FFD700]">LEAVING SOLANA</span></h2>
+        <StatusBadge label="Built &middot; In Testing" color="#FFD700" />
+      </div>
+      <SlideSubtitle>
+        Perpetual futures execution via Hyperliquid &mdash; the dominant on-chain venue &mdash; with a
+        Solana-native onboarding and a unified spot-plus-derivatives experience.
+      </SlideSubtitle>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="card p-6 mt-8">
+        <div className="flex items-center justify-between gap-2">
+          <FlowNode icon={Wallet} label="Solana UX" sub="Native onboarding" color="#39FF14" />
+          <ArrowRight size={18} className="text-[#666] flex-shrink-0" />
+          <FlowNode icon={Repeat} label="Abstraction Layer" sub="Margin routed" color="#00F0FF" />
+          <ArrowRight size={18} className="text-[#666] flex-shrink-0" />
+          <FlowNode icon={TrendingUp} label="Hyperliquid" sub="Order filled" color="#FFD700" />
+        </div>
+      </motion.div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <StatBox value="~$185B" label="Hyperliquid 30-Day Vol (Apr 2026)" accent="gold" />
+        <StatBox value="~$700B" label="Perp-DEX Vol / Month (Mar 2026)" accent="green" />
+        <StatBox value="$7.9T" label="2025 Perp-DEX Vol Generated" accent="blue" />
+        <StatBox value="#1" label="On-Chain Perp Venue (OI)" accent="gold" />
+      </motion.div>
+      <SourceNote>DefiLlama &amp; CoinGecko perp-DEX data, Mar&ndash;Apr 2026</SourceNote>
+    </div>
+  );
+}
+
+function VisionMemeSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>MEME LIQUIDITY</SectionTag>
+      <SlideTitle>MEME LIQUIDITY, <span className="text-[#39FF14]">ANY CHAIN</span></SlideTitle>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-8">
+        <motion.div variants={fadeUp} className="card p-6 flex flex-col gap-3 border-[#39FF14]/20">
+          <div className="flex items-center justify-between">
+            <Flame size={20} className="text-[#39FF14]" />
+            <StatusBadge label="Live" color="#39FF14" />
+          </div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-[#EDEDED] font-mono">Solana Meme Trading</h3>
+          <p className="text-xs text-[#888] leading-relaxed font-mono">
+            Fast discovery, seamless execution and a simplified flow built for high-volume meme
+            traders on Solana launchpads &mdash; already shipping in the terminal.
+          </p>
+        </motion.div>
+        <motion.div variants={fadeUp} className="card p-6 flex flex-col gap-3 border-[#FF003C]/20">
+          <div className="flex items-center justify-between">
+            <ArrowLeftRight size={20} className="text-[#FF003C]" />
+            <StatusBadge label="Building" color="#FF003C" />
+          </div>
+          <h3 className="text-sm font-bold uppercase tracking-wide text-[#EDEDED] font-mono">Cross-Chain Meme Trading</h3>
+          <p className="text-xs text-[#888] leading-relaxed font-mono">
+            A Solana user trades memes launched on EVM chains; an EVM user reaches Solana memes &mdash;
+            no manual bridging or chain switching. Infrastructure in progress.
+          </p>
+        </motion.div>
+      </motion.div>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
+        <StatBox value="$1B+" label="Pump.fun Lifetime Revenue" accent="green" />
+        <StatBox value="18,446" label="Tokens Launched In A Day (Peak)" accent="gold" />
+        <StatBox value="$2.4B" label="Solana App Revenue 2025" accent="blue" />
+        <StatBox value="27.1M" label="Solana Monthly Active Addresses" accent="green" />
+      </motion.div>
+      <SourceNote>SolanaFloor, CryptoPotato &amp; AInvest, 2025&ndash;Jan 2026</SourceNote>
+    </div>
+  );
+}
+
+function VisionMoatSlide() {
+  return (
+    <div className="flex flex-col justify-center h-full">
+      <SectionTag>WHY WE WIN</SectionTag>
+      <SlideTitle>WE SELL <span className="text-[#FFD700]">OPPORTUNITY</span>, NOT CHAINS</SlideTitle>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-8">
+        <FeatureCard icon={Link2} title="No Manual Bridging" desc="Solver-routed cross-chain execution. The bridge risk users fear is abstracted away." color="#39FF14" />
+        <FeatureCard icon={Wallet} title="Solana-First Access" desc="One Solana wallet reaches external ecosystems. Native onboarding, zero relearning." color="#00F0FF" />
+        <FeatureCard icon={Layers} title="Unified Interface" desc="Memes, prediction markets and perpetuals in a single terminal &mdash; spot to derivatives." color="#FFD700" />
+        <FeatureCard icon={Zap} title="Retail Friction Removed" desc="One intent, one confirmation, 5&ndash;15s. Built for the high-volume retail trader." color="#39FF14" />
+        <FeatureCard icon={Network} title="Multi-Chain Execution" desc="Infrastructure designed for seamless settlement across Solana, EVM and app-chains." color="#00F0FF" />
+        <FeatureCard icon={ShieldAlert} title="Timing Is Now" desc="Chain abstraction matured in 2026; bridge losses made the demand undeniable." color="#FF003C" />
+      </motion.div>
+      <motion.div variants={fadeUp} initial="hidden" animate="show" className="mt-5 p-4 border border-[#39FF14]/20 bg-[#39FF14]/5">
+        <p className="text-xs font-mono text-[#39FF14] text-center">
+          Combined reachable flow &mdash; ~$240B 2026 prediction-market volume &bull; ~$500&ndash;700B monthly perp-DEX volume &bull; $762M 2025 launchpad revenue (all Solana) &mdash; from one Solana-native terminal.
+        </p>
+      </motion.div>
+      <SourceNote>Bernstein, CoinMarketCap &amp; CryptoSlate market estimates, 2026</SourceNote>
     </div>
   );
 }
@@ -1372,6 +1672,13 @@ function SlideContent({ id }: { id: string }) {
     case 'launchpad-flow': return <LaunchpadFlowSlide />;
     case 'feature-creator': return <FeatureCreatorSlide />;
     case 'feature-analyze': return <FeatureAnalyzeSlide />;
+    case 'vision-thesis': return <VisionThesisSlide />;
+    case 'vision-problem': return <VisionProblemSlide />;
+    case 'vision-architecture': return <VisionArchitectureSlide />;
+    case 'vision-polymarket': return <VisionPolymarketSlide />;
+    case 'vision-perps': return <VisionPerpsSlide />;
+    case 'vision-meme': return <VisionMemeSlide />;
+    case 'vision-moat': return <VisionMoatSlide />;
     case 'kpis': return <KPIsSlide />;
     case 'milestones': return <MilestonesSlide />;
     case 'differentiators': return <DifferentiatorsSlide />;
