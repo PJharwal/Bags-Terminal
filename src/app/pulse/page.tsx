@@ -78,7 +78,7 @@ const processApiTokenData = (
         deployerSuccessRate: 50,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap: marketCapSol * solPrice,
-        liquidity: marketCapSol * solPrice * 0.3,
+        liquidity: 0,
         bondingProgress,
         holders: data.holder_count || 0,
         txCount: data.total_transactions || 0,
@@ -148,14 +148,12 @@ export default function PulsePage() {
     const [network, setNetwork] = useState<Network>("solana");
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [showTrades, setShowTrades] = useState(true);
     const processedTokensRef = useRef<Set<string>>(new Set());
     const refreshingRef = useRef(false);
 
     const fetchInitialData = useCallback(async () => {
         setIsLoading(true);
-        setError(null);
         try {
             const [newRes, soonRes, bondedRes] = await Promise.all([
                 fetch(`${config.baseServerUrl}/api/tokens?limit=20`),
@@ -192,7 +190,6 @@ export default function PulsePage() {
             markFeedOk();
         } catch (err) {
             console.error("Failed to fetch initial token data:", err);
-            setError("Failed to load tokens. Retrying...");
         } finally {
             setIsLoading(false);
         }
@@ -253,8 +250,7 @@ export default function PulsePage() {
                 ),
                 marketCap:
                     parseFloat(token.market_cap_sol || "0") * solPrice,
-                liquidity:
-                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
+                liquidity: 0,
                 bondingProgress,
                 holders: token.holder_count || 0,
                 txCount: 0,
@@ -485,22 +481,6 @@ export default function PulsePage() {
                 </div>
             </div>
 
-            {/* ── ERROR BANNER ────────────────────────────────────── */}
-            {error && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    className="px-5 py-2 bg-[#FF003C]/10 border-b border-[#FF003C]/20 text-[#FF003C] text-[10px] font-mono flex items-center justify-between"
-                >
-                    <span>{error}</span>
-                    <button
-                        onClick={() => setError(null)}
-                        className="text-[#FF003C]/60 hover:text-[#FF003C] text-xs"
-                    >
-                        Dismiss
-                    </button>
-                </motion.div>
-            )}
 
             {/* ── MAIN CONTENT ────────────────────────────────────── */}
             <div

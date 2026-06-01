@@ -99,9 +99,8 @@ export function LiveTradesPanel() {
             <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {displayTrades.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full gap-2 px-4">
-                        <div className="w-5 h-5 border-2 border-white/10 border-t-[#39FF14] rounded-full animate-spin" />
                         <span className="text-[9px] text-[#444] uppercase tracking-widest text-center">
-                            Waiting for trades…
+                            {isConnected ? 'No trades yet' : 'Live trades unavailable'}
                         </span>
                     </div>
                 ) : (
@@ -115,19 +114,6 @@ export function LiveTradesPanel() {
                 )}
             </div>
 
-            {/* Footer stats */}
-            <div className="flex-shrink-0 px-3 py-2 border-t border-white/5 bg-[#080808] flex items-center justify-between text-[9px] font-mono">
-                <span className="text-[#555] uppercase tracking-widest">
-                    STREAM
-                </span>
-                <span className="text-[#666]">
-                    {isConnected ? (
-                        <span className="text-[#39FF14]">● LIVE</span>
-                    ) : (
-                        <span className="text-[#FF003C]">● OFFLINE</span>
-                    )}
-                </span>
-            </div>
         </div>
     );
 }

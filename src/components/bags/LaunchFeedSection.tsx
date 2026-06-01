@@ -142,7 +142,7 @@ export function LaunchFeedSection() {
                         <Rocket size={12} className="text-[#39FF14]" />
                         BAGS LAUNCHES
                     </span>
-                    <span className="badge badge-green text-[8px] px-1.5 py-0.5 badge-live">LIVE</span>
+                    <span className="badge text-[8px] px-1.5 py-0.5 text-[#888] border border-white/10">POLLING</span>
                 </div>
                 {Array.from({ length: 8 }).map((_, i) => (
                     <SkeletonRow key={i} />
@@ -193,7 +193,7 @@ export function LaunchFeedSection() {
                     >
                         <RefreshCw size={10} className={`text-[#555] ${refreshing ? "animate-spin" : ""}`} />
                     </button>
-                    <span className="badge badge-green text-[8px] px-1.5 py-0.5 badge-live">LIVE</span>
+                    <span className="badge text-[8px] px-1.5 py-0.5 text-[#888] border border-white/10">POLLING</span>
                 </div>
             </div>
             <div className="flex-1 overflow-y-auto custom-scrollbar">

@@ -5,8 +5,6 @@ import { useSelectionStore } from "@/store/selection.store";
 import { formatAge } from "@/lib/lifecycle";
 import { useRouter } from "next/navigation";
 import { Users, TrendingUp, ExternalLink } from "lucide-react";
-import { Sparkline, generateSpark } from "@/components/ui/Sparkline";
-import { useMemo } from "react";
 
 interface PulseCardCompactProps {
     item: PulseItem;
@@ -39,16 +37,6 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
     );
     const bondingColor = getBondingColor(item.bondingProgress);
     const imgSrc = item.logoUrl || (item as unknown as { image?: string }).image;
-
-    // Stable sparkline per token
-    const sparkData = useMemo(() => {
-        const seed =
-            item.tokenId
-                .split("")
-                .reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-        const bias = item.bondingProgress > 50 ? 1 : -0.3;
-        return generateSpark(seed, bias, 24);
-    }, [item.tokenId, item.bondingProgress]);
 
     const handleOpenTerminal = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -132,17 +120,6 @@ export function PulseCardCompact({ item, isSelected }: PulseCardCompactProps) {
                             </span>
                         </div>
                     </div>
-                </div>
-
-                {/* Sparkline — hidden on very small screens */}
-                <div className="hidden lg:block flex-shrink-0 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <Sparkline
-                        data={sparkData}
-                        width={44}
-                        height={20}
-                        color={bondingColor}
-                        filled
-                    />
                 </div>
 
                 {/* Hover action */}

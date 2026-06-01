@@ -139,11 +139,6 @@ export default function AnalyzePage() {
               <LivePulseDot color={isConnected ? 'green' : 'red'} />
               {isConnected ? 'LIVE' : 'OFFLINE'}
             </div>
-            {isConnected && (
-              <div className="flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border border-white/10 text-[#888]">
-                {latestTokens.length} TOKENS
-              </div>
-            )}
           </div>
         }
         size="lg"

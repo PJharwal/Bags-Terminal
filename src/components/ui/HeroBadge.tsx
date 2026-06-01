@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { LivePulseDot } from "./LivePulseDot";
-import { useSocketStore } from "@/store/socket.store";
 
 interface BadgeProps {
     label: string;
@@ -33,49 +32,16 @@ function Badge({ label, value, variant = "muted", className = "" }: BadgeProps) 
     );
 }
 
-/**
- * Hero badge row — LIVE MAINNET · v2.6.0 · SLOT 298,412,033
- * Slot number auto-increments to feel real.
- */
 interface HeroBadgeRowProps {
-    version?: string;
-    showSlot?: boolean;
     extras?: React.ReactNode;
     className?: string;
 }
 
-export function HeroBadgeRow({
-    version = "v2.6.0",
-    showSlot = true,
-    extras,
-    className = "",
-}: HeroBadgeRowProps) {
-    const { isConnected } = useSocketStore();
-    // Synthetic slot number that ticks — a visual trust signal
-    const [slot, setSlot] = useState(298_412_033);
-
-    useEffect(() => {
-        if (!isConnected) return;
-        const id = setInterval(() => {
-            setSlot((s) => s + Math.floor(Math.random() * 3) + 1);
-        }, 1800);
-        return () => clearInterval(id);
-    }, [isConnected]);
-
+// Honest, static network badge — no fabricated version/slot/connection chrome.
+export function HeroBadgeRow({ extras, className = "" }: HeroBadgeRowProps) {
     return (
         <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-            <Badge
-                label={isConnected ? "LIVE MAINNET" : "CONNECTING"}
-                variant={isConnected ? "live" : "muted"}
-            />
-            <Badge label={version} variant="muted" />
-            {showSlot && (
-                <Badge
-                    label="SLOT"
-                    value={slot.toLocaleString()}
-                    variant="muted"
-                />
-            )}
+            <Badge label="Solana · Mainnet" variant="muted" />
             {extras}
         </div>
     );

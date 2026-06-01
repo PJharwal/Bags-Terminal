@@ -5,7 +5,7 @@ import { useTerminalStore } from "@/store/terminal.store";
 import { useBagsFees } from "@/hooks/useBagsFees";
 import type { TerminalBottomTab, TradeRow, WalletRow } from "@/lib/types";
 import type { BagsTokenClaimEvent } from "@/lib/bags-types";
-import { ArrowDownRight, ArrowUpRight, Users, TrendingUp, Code, Coins, ExternalLink } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Users, TrendingUp, Coins, ExternalLink } from "lucide-react";
 import { BagsLogo } from "@/components/ui/BagsLogo";
 
 const TABS: { id: TerminalBottomTab; label: string; icon: React.ReactNode }[] = [
@@ -13,7 +13,6 @@ const TABS: { id: TerminalBottomTab; label: string; icon: React.ReactNode }[] = 
     { id: 'holders', label: 'Holders', icon: <Users size={12} /> },
     { id: 'top-traders', label: 'Top Traders', icon: <TrendingUp size={12} /> },
     { id: 'fees', label: 'Fee Claims', icon: <Coins size={12} /> },
-    { id: 'dev-tokens', label: 'Dev Tokens', icon: <Code size={12} /> },
 ];
 
 // Format relative time
@@ -104,7 +103,6 @@ export function TerminalBottomTabs() {
                         onTimeRangeChange={setFeeTimeRange}
                     />
                 )}
-                {activeBottomTab === 'dev-tokens' && <DevTokensTable />}
             </div>
         </div>
     );
@@ -387,15 +385,3 @@ function FeesTable({
     );
 }
 
-// Dev Tokens Table (placeholder)
-function DevTokensTable() {
-    return (
-        <div className="flex items-center justify-center h-32 text-[#666] text-xs font-mono">
-            <div className="text-center">
-                <Code size={24} className="mx-auto mb-2 opacity-50" />
-                <p>Developer wallet activity</p>
-                <p className="text-[10px] text-[#444] mt-1">Coming soon</p>
-            </div>
-        </div>
-    );
-}

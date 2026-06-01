@@ -487,12 +487,9 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
             <div>
               <h2 className="text-xl font-bold font-mono flex items-center gap-2">
                 BAGS Fee-Sharing Tokens
-                <span className="text-[10px] bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">
-                  LIVE DATA
-                </span>
               </h2>
               <p className="text-sm text-[#888]">
-                Tokens deployed on bags.fm with real-time fee earnings
+                Tokens deployed on bags.fm with their latest fee earnings
               </p>
             </div>
           </div>

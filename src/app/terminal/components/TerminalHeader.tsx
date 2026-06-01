@@ -126,7 +126,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <StatItem label="MC" value={`$${formatNumber(token.marketCap)}`} />
                 <StatItem label="LIQ" value={`$${formatNumber(token.liquidity)}`} />
                 <StatItem label="VOL_24H" value={`$${formatNumber(token.volume24h)}`} />
-                <StatItem label="VOL_5M" value={`$${formatNumber(token.volume5m)}`} />
+                <StatItem label="VOL_5M" value={token.volume5m > 0 ? `$${formatNumber(token.volume5m)}` : "—"} />
                 <StatItem label="HOLDERS" value={token.holders > 0 ? formatNumber(token.holders) : "—"} />
 
                 {/* Fees - highlighted if has Bags fees */}
@@ -166,21 +166,6 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                     </div>
                 )}
 
-                {/* Bonding Progress */}
-                <div className="flex flex-col">
-                    <span className="label">BONDING</span>
-                    <div className="flex items-center gap-2">
-                        <div className="progress-bar w-16">
-                            <div
-                                className="progress-bar-fill"
-                                style={{ width: `${token.bondingProgress}%` }}
-                            />
-                        </div>
-                        <span className="text-[10px] font-mono text-[#EDEDED]">
-                            {token.bondingProgress}%
-                        </span>
-                    </div>
-                </div>
             </div>
 
             {/* Right: Actions */}

@@ -61,20 +61,3 @@ export function Sparkline({
         </svg>
     );
 }
-
-/**
- * Generate deterministic-ish sparkline data.
- * seed: any number (use token symbol char code or mc)
- * bias: -1 to 1, influences direction
- * n: number of points
- */
-export function generateSpark(seed: number = 1, bias: number = 0, n: number = 30): number[] {
-    const out: number[] = [];
-    let v = 50 + ((seed * 17) % 30);
-    // Pseudo-random seeded using seed value to be stable across re-renders
-    for (let i = 0; i < n; i++) {
-        v += Math.sin(i * 0.6 + seed) * 4 + (((i * seed) % 7) / 7 - 0.5 + bias * 0.15) * 4;
-        out.push(v);
-    }
-    return out;
-}

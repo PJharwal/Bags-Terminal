@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import type { PulseItem } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
-import { Sparkline, generateSpark } from "./Sparkline";
 
 interface HotCardProps {
     token: PulseItem;
@@ -29,13 +28,6 @@ export function HotCard({ token, index = 0, stagger = true }: HotCardProps) {
         "#FFD700",
     ];
     const hue = hueList[initial.charCodeAt(0) % hueList.length];
-
-    const sparkData = useMemo(() => {
-        const seed = token.tokenId.split("").reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-        const bias =
-            token.bondingProgress >= 85 ? 1 : token.bondingProgress >= 50 ? 0.4 : -0.2;
-        return generateSpark(seed, bias, 20);
-    }, [token.tokenId, token.bondingProgress]);
 
     const trendColor =
         token.bondingProgress >= 85
@@ -92,15 +84,6 @@ export function HotCard({ token, index = 0, stagger = true }: HotCardProps) {
                             )}
                         </div>
                     </div>
-
-                    {/* Sparkline */}
-                    <Sparkline
-                        data={sparkData}
-                        width={56}
-                        height={22}
-                        color={trendColor}
-                        filled
-                    />
 
                     {/* Bonding percent */}
                     <div

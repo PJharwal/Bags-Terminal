@@ -1,13 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { usePulseStore } from "@/store/pulse.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { formatCurrency, formatNumber } from "@/lib/format";
 import { formatAge } from "@/lib/lifecycle";
-import { generateCredibilityMatrix } from "@/lib/credibility";
-import { CredibilityMatrix } from "@/components/credibility/CredibilityMatrix";
 import { motion, AnimatePresence } from "framer-motion";
 import {
     Shield,
@@ -51,11 +48,6 @@ export function PulseDrawer() {
     const [copied, setCopied] = useState(false);
 
     const item = selectedTokenId ? getItemById(selectedTokenId) : null;
-
-    const credibilityMatrix = useMemo(() => {
-        if (!selectedTokenId) return null;
-        return generateCredibilityMatrix(selectedTokenId);
-    }, [selectedTokenId]);
 
     if (!drawerOpen || !item || drawerSource !== "pulse") return null;
 
@@ -149,7 +141,7 @@ export function PulseDrawer() {
                         />
                         <StatBlock
                             label="LIQUIDITY"
-                            value={formatCurrency(item.liquidity)}
+                            value={item.liquidity > 0 ? formatCurrency(item.liquidity) : "—"}
                         />
                         <StatBlock
                             label="HOLDERS"
@@ -226,15 +218,6 @@ export function PulseDrawer() {
                         )}
                     </div>
 
-                    {/* Credibility Matrix */}
-                    {credibilityMatrix && (
-                        <CredibilityMatrix
-                            tokenId={selectedTokenId ?? undefined}
-                            layout="pulse"
-                            matrix={credibilityMatrix}
-                        />
-                    )}
-
                     {/* Deployer Info */}
                     <div>
                         <h3 className="text-[9px] font-bold uppercase tracking-widest text-[#666] mb-2 flex items-center gap-1.5">
@@ -262,14 +245,6 @@ export function PulseDrawer() {
                                         )}
                                     </button>
                                 </div>
-                            </div>
-                            <div className="flex justify-between items-center">
-                                <span className="text-[9px] text-[#555]">
-                                    LAUNCHES
-                                </span>
-                                <span className="text-[10px] font-mono text-[#EDEDED]">
-                                    {item.deployerLaunches || 0}
-                                </span>
                             </div>
                         </div>
                     </div>

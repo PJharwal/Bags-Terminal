@@ -206,12 +206,9 @@ export function PulseColumn({ state, items }: PulseColumnProps) {
                         })}
                     </div>
                 ) : (
-                    <div className="scan-line flex flex-col items-center justify-center h-full gap-2">
-                        <div className="text-[#333] font-mono text-[10px] uppercase tracking-[0.2em]">
-                            NO SIGNAL
-                        </div>
-                        <div className="text-[#222] font-mono text-[8px] tracking-widest">
-                            WAITING…
+                    <div className="flex flex-col items-center justify-center h-full gap-2">
+                        <div className="text-[#444] font-mono text-[10px] uppercase tracking-[0.2em]">
+                            No matching tokens
                         </div>
                     </div>
                 )}

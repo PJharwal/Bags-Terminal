@@ -62,12 +62,12 @@ export function DashboardTabs() {
 
 function ReferralTabContent() {
   const { publicKey } = useBagsWallet();
-  const { referralLink, stats } = useReferralStore();
+  const { referralLink, stats, statsAvailable } = useReferralStore();
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <ReferralCard />
-      {publicKey && (
+      {publicKey && statsAvailable && (
         <ReferralShareCard
           referralLink={referralLink}
           tokensReferred={stats.tokensReferred}

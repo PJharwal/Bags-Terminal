@@ -490,11 +490,8 @@ export default function TrendingPage() {
                         <Coins size={10} /> Fee Sharing
                     </div>
                     <div className="text-2xl font-bold text-[#FFD700]">
-                        {tokensWithFeesCount > 0 ? tokensWithFeesCount : potentialBagsCount}
+                        {tokensWithFeesCount > 0 ? tokensWithFeesCount : '—'}
                     </div>
-                    {potentialBagsCount > 0 && tokensWithFeesCount === 0 && (
-                        <div className="text-[9px] text-[#666] mt-1">potential BAGS tokens</div>
-                    )}
                 </div>
             </div>
 

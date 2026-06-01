@@ -98,7 +98,7 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         deployerSuccessRate: 50,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap,
-        liquidity: marketCap * 0.3, // Estimate
+        liquidity: 0, // Unknown from socket feed — shown as "—"
         bondingProgress,
         holders: token.holder_count || 0,
         txCount: 0,
