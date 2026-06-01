@@ -7,7 +7,9 @@ import { TurnkeyProvider } from "@/components/turnkey/TurnkeyProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { LiveTicker } from "@/components/ui/LiveTicker";
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://bagsterminal.fm";
+// Canonical host is www (apex bagsterminal.fm 307-redirects to www); OG image
+// crawlers often don't follow redirects, so absolute URLs must use www.
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.bagsterminal.fm";
 const siteDescription =
   "Chain-abstracted trading terminal on Solana — spot memes, prediction markets, and perps in one interface, built on bags.fm.";
 
