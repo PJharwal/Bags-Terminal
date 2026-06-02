@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Terminal, TrendingUp, Rocket, BarChart3, Wallet, Activity, Search, Users } from 'lucide-react';
+import { TrendingUp, Rocket, BarChart3, Wallet, Activity, Search } from 'lucide-react';
 import { BagsLogo } from '@/components/ui/BagsLogo';
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
@@ -12,9 +12,6 @@ import { ReferralBanner } from '@/components/referral/ReferralBanner';
 import { useSocketStore } from '@/store/socket.store';
 import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
-import { Sparkline, generateSpark } from '@/components/ui/Sparkline';
-import { useMemo } from 'react';
-import { HeroBadgeRow } from '@/components/ui/HeroBadge';
 import { HotCard } from '@/components/ui/HotCard';
 import { StatCell } from '@/components/ui/StatCell';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -37,14 +34,6 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
   const initial = (token.symbol || '?').replace('$', '').charAt(0).toUpperCase();
   const colors = ['bg-[#FF003C]', 'bg-[#39FF14]', 'bg-[#00F0FF]', 'bg-[#FAFF00]', 'bg-[#FF00FF]', 'bg-[#FF6B35]'];
   const fallbackColor = colors[initial.charCodeAt(0) % colors.length];
-
-  const sparkData = useMemo(() => {
-    const seed = token.tokenId.split('').reduce((a, c) => a + c.charCodeAt(0), 0) || 1;
-    const bias = token.bondingProgress >= 85 ? 1 : token.bondingProgress >= 50 ? 0.3 : -0.2;
-    return generateSpark(seed, bias, 28);
-  }, [token.tokenId, token.bondingProgress]);
-  const sparkColor =
-    token.bondingProgress >= 85 ? '#39FF14' : token.bondingProgress >= 50 ? '#FFD700' : '#00F0FF';
 
   return (
     <Link href={`/terminal/${token.tokenId}`}>
@@ -99,8 +88,7 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
 
         </div>
 
-        {/* Sparkline */}
-        <div className="mt-3 pt-3 border-t border-white/5 flex items-center justify-between">
+        <div className="mt-3 pt-3 border-t border-white/5 flex items-center">
           <span className={`text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded ${
             token.state === 'MIGRATED' ? 'bg-[#39FF14]/20 text-[#39FF14]' :
             token.state === 'FINAL_STRETCH' ? 'bg-[#FAFF00]/20 text-[#FAFF00]' :
@@ -110,7 +98,6 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
              token.state === 'FINAL_STRETCH' ? 'Near Migration' :
              'Bonding'}
           </span>
-          <Sparkline data={sparkData} width={64} height={22} color={sparkColor} filled />
         </div>
       </motion.div>
     </Link>
@@ -121,7 +108,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
   const { items, loadInitialData } = usePulseStore();
-  const { connect, isConnected } = useSocketStore();
+  const { connect } = useSocketStore();
   const { setVisible } = useWalletModal();
 
   useEffect(() => {
@@ -137,6 +124,7 @@ export default function HomePage() {
   // BAGS tokens from pulse (sorted by market cap)
   const allBagsTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED]
     .sort((a, b) => b.marketCap - a.marketCap);
+
 
   const tickerTokens = allBagsTokens.length > 0
     ? [...allBagsTokens, ...allBagsTokens].slice(0, 20)
@@ -176,7 +164,6 @@ export default function HomePage() {
                   <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 lg:gap-10 items-center">
                     {/* Left column */}
                     <div>
-                      <HeroBadgeRow className="mb-5" />
 
                       <motion.h1
                         initial={{ opacity: 0, y: 12 }}
@@ -205,8 +192,9 @@ export default function HomePage() {
                         transition={{ delay: 0.2 }}
                         className="text-sm sm:text-base text-[#888] font-mono max-w-xl mb-6 leading-relaxed"
                       >
-                        Real-time launch feed, creator fee-sharing, and on-chain
-                        intelligence. Built for traders who move first.
+                        One Solana wallet, every market — spot memes, prediction
+                        markets, and perps from a single interface. No manual
+                        bridging. Built on bags.fm.
                       </motion.p>
 
                       <motion.div
@@ -258,9 +246,7 @@ export default function HomePage() {
                           ))
                         ) : (
                           <div className="text-[10px] font-mono text-[#555] px-2 py-6 text-center border border-dashed border-white/5">
-                            {isConnected
-                              ? 'Scanning for live tokens…'
-                              : 'Connecting to feed…'}
+                            No live tokens yet
                           </div>
                         )}
                       </div>
@@ -273,32 +259,22 @@ export default function HomePage() {
             {/* Stats strip */}
             <section className="px-4 sm:px-6 pb-10">
               <div className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5">
+                <div className="grid grid-cols-3 gap-3 sm:gap-5">
                   <StatCell
                     label="24H VOLUME"
                     value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
-                    delta={12.4}
                     accent="green"
                     size="lg"
                   />
                   <StatCell
                     label="ACTIVE LAUNCHES"
                     value={allBagsTokens.length.toString()}
-                    delta={4.1}
                     accent="default"
                     size="lg"
                   />
                   <StatCell
-                    label="FEES EARNED (24H)"
-                    value="2,840 SOL"
-                    delta={8.2}
-                    accent="gold"
-                    size="lg"
-                  />
-                  <StatCell
-                    label="UNIQUE TRADERS"
+                    label="HOLDERS"
                     value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
-                    delta={-2.1}
                     accent="blue"
                     size="lg"
                   />
@@ -310,17 +286,7 @@ export default function HomePage() {
             <section className="py-10 px-4 sm:px-6 border-t border-white/5">
               <div className="max-w-7xl mx-auto">
                 <SectionHeader
-                  kicker="LIVE FEED"
                   title="BAGS TOKENS"
-                  subtitle="Streaming from backend.solshift.fun · auto-reconnect"
-                  right={
-                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                      <LivePulseDot color={isConnected ? 'green' : 'red'} />
-                      <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
-                        {isConnected ? 'LIVE' : 'CONNECTING'}
-                      </span>
-                    </div>
-                  }
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {allBagsTokens.length > 0 ? (
@@ -329,7 +295,7 @@ export default function HomePage() {
                     ))
                   ) : (
                     <div className="col-span-full text-center py-12 text-[#666] font-mono text-xs">
-                      {isConnected ? 'Waiting for tokens...' : 'Connect to discover tokens'}
+                      No tokens to display
                     </div>
                   )}
                 </div>
@@ -340,7 +306,7 @@ export default function HomePage() {
             <section className="py-10 px-4 sm:px-6 border-t border-white/5">
               <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[
-                  { icon: '✦', title: 'CREATOR ECONOMY', desc: 'Fee-share up to 100 wallets. Auto-claim via v3.', color: '#39FF14' },
+                  { icon: '✦', title: 'CREATOR ECONOMY', desc: 'Fee-share with up to 100 wallets, with automatic claiming.', color: '#39FF14' },
                   { icon: '◎', title: 'PULSE MONITOR', desc: 'Every mint, trade, migration. Live WebSocket.', color: '#00F0FF' },
                   { icon: '◈', title: 'DEPLOYER INTEL', desc: 'Success rates, cluster detection, rug scoring.', color: '#FFD700' },
                 ].map((f, i) => (
@@ -376,7 +342,6 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="mb-6"
                 >
-                  <HeroBadgeRow className="mb-3" />
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-[family-name:var(--font-display)] font-bold tracking-tight mb-1">
                     WELCOME BACK
                   </h1>
@@ -388,29 +353,20 @@ export default function HomePage() {
                 </motion.div>
 
                 {/* Stats strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-5 mb-6">
+                <div className="grid grid-cols-3 gap-3 sm:gap-5 mb-6">
                   <StatCell
                     label="24H VOLUME"
                     value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
-                    delta={12.4}
                     accent="green"
                   />
                   <StatCell
                     label="LIVE TOKENS"
                     value={allBagsTokens.length.toString()}
-                    delta={4.1}
                     accent="default"
-                  />
-                  <StatCell
-                    label="FEES (24H)"
-                    value="2,840 SOL"
-                    delta={8.2}
-                    accent="gold"
                   />
                   <StatCell
                     label="HOLDERS"
                     value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
-                    delta={-2.1}
                     accent="blue"
                   />
                 </div>
@@ -435,17 +391,17 @@ export default function HomePage() {
                     </motion.div>
                   </Link>
 
-                  <Link href="/terminal">
+                  <Link href="/perps">
                     <motion.div
                       whileHover={{ y: -4 }}
                       whileTap={{ scale: 0.97 }}
                       className="card group p-6 cursor-pointer"
                     >
-                      <Terminal className="text-[#39FF14] mb-3" size={24} />
+                      <TrendingUp className="text-[#FFD700] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
-                        Terminal
+                        Perps
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Browse & trade tokens</div>
+                      <div className="text-xs text-[#666] mt-1">Cross-chain perps · soon</div>
                     </motion.div>
                   </Link>
 
@@ -463,17 +419,17 @@ export default function HomePage() {
                     </motion.div>
                   </Link>
 
-                  <Link href="/deployers">
+                  <Link href="/prediction">
                     <motion.div
                       whileHover={{ y: -4 }}
                       whileTap={{ scale: 0.97 }}
                       className="card group p-6 cursor-pointer"
                     >
-                      <Users className="text-[#FF00FF] mb-3" size={24} />
+                      <BarChart3 className="text-[#00F0FF] mb-3" size={24} />
                       <div className="font-mono font-bold text-white group-hover:text-[#39FF14] transition-colors">
-                        Deployers
+                        Prediction
                       </div>
-                      <div className="text-xs text-[#666] mt-1">Track deployer wallets</div>
+                      <div className="text-xs text-[#666] mt-1">Polymarket · soon</div>
                     </motion.div>
                   </Link>
 
@@ -527,7 +483,7 @@ export default function HomePage() {
               <section className="py-8 px-4 sm:px-6 border-t border-white/5">
                 <div className="max-w-7xl mx-auto">
                   <SectionHeader
-                    kicker="◆ LP LIVE"
+                    kicker="◆ ON DEX"
                     title="MIGRATED TOKENS"
                     subtitle="Graduated from bonding curve — now trading on Raydium / PumpSwap"
                     right={
@@ -556,14 +512,6 @@ export default function HomePage() {
                   kicker="↗ TRENDING"
                   title="BAGS LAUNCHES"
                   subtitle="Highest bonding curve progress — closest to DEX migration"
-                  right={
-                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                      <LivePulseDot color={isConnected ? 'green' : 'red'} />
-                      <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
-                        {isConnected ? 'STREAMING' : 'OFFLINE'}
-                      </span>
-                    </div>
-                  }
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -573,7 +521,7 @@ export default function HomePage() {
                     ))
                   ) : (
                     <div className="col-span-full text-center py-8 text-[#666] font-mono text-xs">
-                      {isConnected ? 'Waiting for tokens...' : 'Connecting to live feed...'}
+                      No launches to display
                     </div>
                   )}
                 </div>
@@ -588,7 +536,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-3 text-xs font-mono text-[#444]">
             <BagsLogo size={16} />
-            BAGS TERMINAL // SYSTEM V3.0.0
+            BAGS TERMINAL
           </div>
           <div className="flex gap-6 text-xs font-mono text-[#888]">
             <a href="https://docs.bags.fm" target="_blank" rel="noopener noreferrer" className="hover:text-[#39FF14] transition-all duration-200 hover:underline underline-offset-4">DOCS</a>

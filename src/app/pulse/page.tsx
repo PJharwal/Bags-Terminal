@@ -59,11 +59,11 @@ const processApiTokenData = (
             data.creator?.slice(0, 4) + "..." + data.creator?.slice(-4) ||
             "unknown",
         deployerName: "deployer",
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap: marketCapSol * solPrice,
-        liquidity: marketCapSol * solPrice * 0.3,
+        liquidity: 0,
         bondingProgress,
         holders: data.holder_count || 0,
         txCount: data.total_transactions || 0,
@@ -119,7 +119,7 @@ export default function PulsePage() {
         setConnected,
         clearItems,
     } = usePulseStore();
-    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>("solana");
@@ -185,64 +185,8 @@ export default function PulsePage() {
         setConnected(isConnected);
     }, [isConnected, setConnected]);
 
-    useEffect(() => {
-        if (latestTokens.length > 0) {
-            const token = latestTokens[0];
-            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
-            if (processedTokensRef.current.has(token.mint)) return;
-
-            processedTokensRef.current.add(token.mint);
-
-            let state: PulseState = "NEW";
-            let bondingProgress = 0;
-
-            if (token.status === "migrated") {
-                state = "MIGRATED";
-                bondingProgress = 100;
-            } else if (token.market_cap_sol) {
-                const mcSol = parseFloat(token.market_cap_sol);
-                bondingProgress = Math.min(
-                    99,
-                    Math.floor((mcSol / 85) * 100),
-                );
-                if (bondingProgress >= 85) {
-                    state = "FINAL_STRETCH";
-                }
-            }
-
-            const item: PulseItem = {
-                tokenId: token.mint,
-                symbol: `$${token.symbol}`,
-                name: token.name,
-                deployer:
-                    token.creator?.slice(0, 4) +
-                    "..." +
-                    token.creator?.slice(-4),
-                deployerName: "deployer",
-                deployerLaunches: 1,
-                deployerSuccessRate: 50,
-                ageSeconds: Math.max(
-                    0,
-                    Math.floor(Date.now() / 1000 - token.creation_timestamp),
-                ),
-                marketCap:
-                    parseFloat(token.market_cap_sol || "0") * solPrice,
-                liquidity:
-                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
-                bondingProgress,
-                holders: token.holder_count || 0,
-                txCount: 0,
-                volume24h: 0,
-                state,
-                riskFlags: [],
-                updatedAt: Date.now(),
-                logoUrl: token.logo_url || undefined,
-                protocolSource: token.protocol_source,
-            };
-
-            addItem(item);
-        }
-    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
+    // Socket-driven new tokens are handled by socket.store → addTokenFromSocket
+    // (single source of truth, deduped via getItemById). No second add path here.
 
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;

@@ -22,9 +22,9 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
 
     const marketCap = token.marketCap || 0;
     const volume24h = token.volume24h || 0;
-    const liquidity = token.liquidity || (marketCap * 0.15);
-    const txCount = Math.floor(volume24h / 80) || 25;
-    const holders = Math.floor(marketCap / 250) || 50;
+    const liquidity = token.liquidity || 0;
+    const txCount = 0;
+    const holders = 0;
 
     return {
         tokenId: token.address,
@@ -32,8 +32,8 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         name: token.name,
         deployer: 'Unknown',
         deployerName: 'deployer',
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: 0,
         marketCap,
         liquidity,
@@ -99,11 +99,11 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         name: token.name,
         deployer: token.creator?.slice(0, 4) + '...' + token.creator?.slice(-4),
         deployerName: 'deployer',
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap,
-        liquidity: marketCap * 0.3, // Estimate
+        liquidity: 0,
         bondingProgress,
         holders: token.holder_count || 0,
         txCount: 0,
@@ -169,13 +169,16 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
-    addItem: (item) => set((state) => ({
-        items: {
-            ...state.items,
-            [item.state]: [item, ...state.items[item.state]].slice(0, 20),
-        },
-        lastUpdate: Date.now(),
-    })),
+    addItem: (item) => set((state) => {
+        // Idempotent: drop any existing entry with the same tokenId from EVERY
+        // column before inserting, so a token can never appear twice.
+        const newItems = { ...state.items };
+        for (const k of Object.keys(newItems) as PulseState[]) {
+            newItems[k] = newItems[k].filter((i) => i.tokenId !== item.tokenId);
+        }
+        newItems[item.state] = [item, ...newItems[item.state]].slice(0, 20);
+        return { items: newItems, lastUpdate: Date.now() };
+    }),
 
     // Add token from socket event
     addTokenFromSocket: (token: NewTokenEvent) => {
@@ -219,8 +222,8 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         // Calculate trade volume in USD and update aggregate volume + liquidity estimate
         const tradeVolUsd = parseFloat(trade.sol_amount || '0') * SOL_PRICE_FALLBACK;
         const volume24h = (existing.volume24h || 0) + tradeVolUsd;
-        const liquidity = existing.liquidity || (marketCap * 0.15);
-        const holders = existing.holders || Math.floor(marketCap / 250) || 50;
+        const liquidity = existing.liquidity || 0;
+        const holders = existing.holders || 0;
 
         updateItem(trade.mint, {
             marketCap,

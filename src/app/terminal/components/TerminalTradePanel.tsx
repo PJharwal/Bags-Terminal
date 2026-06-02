@@ -413,7 +413,7 @@ export function TerminalTradePanel() {
                 {/* Connection Status */}
                 {!socketConnected && isAuthenticated && (
                     <div className="p-2 bg-[#FF003C]/10 border border-[#FF003C]/30 text-[10px] text-[#FF003C] font-mono text-center">
-                        Trade server disconnected
+                        {config.buysellServerUrl ? "Trade server disconnected" : "Trading not configured"}
                     </div>
                 )}
 
@@ -692,7 +692,7 @@ export function TerminalTradePanel() {
                         <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> Creating Wallet...</span>
                     </button>
                 ) : (
-                    <button onClick={handleTrade} disabled={isProcessing || !activeToken || (isBuy ? !solAmount : !sellAmount)}
+                    <button onClick={handleTrade} disabled={isProcessing || !activeToken || !socketConnected || (isBuy ? !solAmount : !sellAmount)}
                         className={`w-full py-3 text-sm font-bold uppercase tracking-wider text-black transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${socketReady ? "bg-[#FFD700]" : isBuy ? "bg-[#39FF14]" : "bg-[#FF003C]"}`}>
                         {isProcessing ? (
                             <span className="flex items-center justify-center gap-2"><Loader2 size={14} className="animate-spin" /> {getButtonText()}</span>
