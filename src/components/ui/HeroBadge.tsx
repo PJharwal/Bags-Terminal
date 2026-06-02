@@ -37,11 +37,10 @@ interface HeroBadgeRowProps {
     className?: string;
 }
 
-// Honest, static network badge — no fabricated version/slot/connection chrome.
 export function HeroBadgeRow({ extras, className = "" }: HeroBadgeRowProps) {
+    if (!extras) return null;
     return (
         <div className={`flex flex-wrap items-center gap-2 ${className}`}>
-            <Badge label="Solana · Mainnet" variant="muted" />
             {extras}
         </div>
     );

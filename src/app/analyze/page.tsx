@@ -9,10 +9,8 @@ import { useSocketStore } from "@/store/socket.store";
 import { gmgnService, GMGNHolder, GMGNTrader } from "@/services/gmgn.service";
 import { Search, Loader2, AlertCircle } from "lucide-react";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 export default function AnalyzePage() {
-  const isConnected = useSocketStore((state) => state.isConnected);
   const connect = useSocketStore((state) => state.connect);
   const latestTokens = useSocketStore((state) => state.latestTokens);
 
@@ -131,16 +129,6 @@ export default function AnalyzePage() {
         kicker="⟁ INTELLIGENCE"
         title="ANALYZE MODULE"
         subtitle="Deep token audit · sniper / bundler / cluster detection · holder + trader analysis"
-        right={
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest border ${
-              isConnected ? 'border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5' : 'border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5'
-            }`}>
-              <LivePulseDot color={isConnected ? 'green' : 'red'} />
-              {isConnected ? 'LIVE' : 'OFFLINE'}
-            </div>
-          </div>
-        }
         size="lg"
       />
 

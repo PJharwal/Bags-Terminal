@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useState, useRef } from "react";
 import { usePulseStore } from "@/store/pulse.store";
-import { useSocketStore, getFeedStatus } from "@/store/socket.store";
+import { useSocketStore } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { PulseColumn } from "@/components/pulse/PulseColumn";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
@@ -11,8 +11,6 @@ import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
 import { motion } from "framer-motion";
 import {
-    Wifi,
-    WifiOff,
     Activity,
     Zap,
     ShieldAlert,
@@ -123,7 +121,7 @@ const COLUMNS: {
     },
     {
         state: "MIGRATED",
-        label: "LIVE ON DEX",
+        label: "ON DEX",
         icon: ArrowUpRight,
         color: "#00F0FF",
         emptyMsg: "No migrated tokens",
@@ -142,7 +140,7 @@ export default function PulsePage() {
         setConnected,
         clearItems,
     } = usePulseStore();
-    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, isConnected, latestTokens, markFeedOk } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>("solana");
@@ -280,7 +278,6 @@ export default function PulsePage() {
 
     const totalTokens =
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
-    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, totalTokens > 0);
 
     return (
         <div className="h-[calc(100vh-92px)] flex flex-col bg-[#050505] text-[#EDEDED] overflow-hidden relative font-mono">
@@ -293,24 +290,6 @@ export default function PulsePage() {
                         <h1 className="text-sm font-display font-bold tracking-tight uppercase">
                             PULSE
                         </h1>
-                    </div>
-
-                    {/* Connection badge — 3-state: live socket / REST polling / offline */}
-                    <div
-                        className={`flex items-center gap-1.5 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest border ${
-                            feedStatus === "live"
-                                ? "border-[#39FF14]/20 text-[#39FF14] bg-[#39FF14]/5"
-                                : feedStatus === "polling"
-                                  ? "border-[#FFD700]/20 text-[#FFD700] bg-[#FFD700]/5"
-                                  : "border-[#FF003C]/20 text-[#FF003C] bg-[#FF003C]/5"
-                        }`}
-                    >
-                        {feedStatus === "offline" ? (
-                            <WifiOff size={10} />
-                        ) : (
-                            <Wifi size={10} />
-                        )}
-                        {feedStatus === "live" ? "LIVE" : feedStatus === "polling" ? "POLLING" : "OFFLINE"}
                     </div>
 
                     {/* Refresh */}
@@ -386,7 +365,7 @@ export default function PulsePage() {
                             }`}
                         >
                             <Radio size={10} />
-                            LIVE FEED
+                            ALL
                         </button>
                         <button
                             onClick={() => setActiveTab("bags")}

@@ -9,10 +9,9 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { usePulseStore } from '@/store/pulse.store';
 import { ReferralBanner } from '@/components/referral/ReferralBanner';
-import { useSocketStore, getFeedStatus } from '@/store/socket.store';
+import { useSocketStore } from '@/store/socket.store';
 import { formatCurrency } from '@/lib/format';
 import type { PulseItem } from '@/lib/types';
-import { HeroBadgeRow } from '@/components/ui/HeroBadge';
 import { HotCard } from '@/components/ui/HotCard';
 import { StatCell } from '@/components/ui/StatCell';
 import { SectionHeader } from '@/components/ui/SectionHeader';
@@ -109,7 +108,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
   const { items, loadInitialData } = usePulseStore();
-  const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+  const { connect } = useSocketStore();
   const { setVisible } = useWalletModal();
 
   useEffect(() => {
@@ -120,19 +119,12 @@ export default function HomePage() {
     loadInitialData();
   }, [connect, loadInitialData]);
 
-  // Signal the status pill that REST data is present (polling-ok).
-  useEffect(() => {
-    const total = items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
-    if (total > 0) markFeedOk();
-  }, [items, markFeedOk]);
-
   if (!mounted) return null;
 
   // BAGS tokens from pulse (sorted by market cap)
   const allBagsTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED]
     .sort((a, b) => b.marketCap - a.marketCap);
 
-  const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, allBagsTokens.length > 0);
 
   const tickerTokens = allBagsTokens.length > 0
     ? [...allBagsTokens, ...allBagsTokens].slice(0, 20)
@@ -172,7 +164,6 @@ export default function HomePage() {
                   <div className="relative grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-8 lg:gap-10 items-center">
                     {/* Left column */}
                     <div>
-                      <HeroBadgeRow className="mb-5" />
 
                       <motion.h1
                         initial={{ opacity: 0, y: 12 }}
@@ -295,16 +286,7 @@ export default function HomePage() {
             <section className="py-10 px-4 sm:px-6 border-t border-white/5">
               <div className="max-w-7xl mx-auto">
                 <SectionHeader
-                  kicker="LIVE FEED"
                   title="BAGS TOKENS"
-                  right={
-                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                      <LivePulseDot color={feedStatus === 'live' ? 'green' : feedStatus === 'polling' ? 'gold' : 'red'} />
-                      <span className={feedStatus === 'live' ? 'text-[#39FF14]' : feedStatus === 'polling' ? 'text-[#FFD700]' : 'text-[#FF003C]'}>
-                        {feedStatus === 'live' ? 'LIVE' : feedStatus === 'polling' ? 'POLLING' : 'OFFLINE'}
-                      </span>
-                    </div>
-                  }
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {allBagsTokens.length > 0 ? (
@@ -360,7 +342,6 @@ export default function HomePage() {
                   animate={{ opacity: 1, y: 0 }}
                   className="mb-6"
                 >
-                  <HeroBadgeRow className="mb-3" />
                   <h1 className="text-2xl sm:text-3xl lg:text-4xl font-[family-name:var(--font-display)] font-bold tracking-tight mb-1">
                     WELCOME BACK
                   </h1>
@@ -502,7 +483,7 @@ export default function HomePage() {
               <section className="py-8 px-4 sm:px-6 border-t border-white/5">
                 <div className="max-w-7xl mx-auto">
                   <SectionHeader
-                    kicker="◆ LP LIVE"
+                    kicker="◆ ON DEX"
                     title="MIGRATED TOKENS"
                     subtitle="Graduated from bonding curve — now trading on Raydium / PumpSwap"
                     right={
@@ -531,14 +512,6 @@ export default function HomePage() {
                   kicker="↗ TRENDING"
                   title="BAGS LAUNCHES"
                   subtitle="Highest bonding curve progress — closest to DEX migration"
-                  right={
-                    <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                      <LivePulseDot color={isConnected ? 'green' : 'red'} />
-                      <span className={isConnected ? 'text-[#39FF14]' : 'text-[#FF003C]'}>
-                        {isConnected ? 'STREAMING' : 'OFFLINE'}
-                      </span>
-                    </div>
-                  }
                 />
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">

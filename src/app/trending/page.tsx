@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { usePulseStore } from "@/store/pulse.store";
-import { useSocketStore, getFeedStatus } from "@/store/socket.store";
+import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency } from "@/lib/format";
 import { useSolPrice } from "@/hooks/useSolPrice";
 import { useFeeData } from "@/hooks/useFeeData";
@@ -13,7 +13,6 @@ import type { PulseItem } from "@/lib/types";
 import BagsTokensSection from "@/components/bags/BagsTokensSection";
 import FeeLeadersSection from "@/components/bags/FeeLeadersSection";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { LivePulseDot } from "@/components/ui/LivePulseDot";
 
 // View modes for the page
 type ViewMode = "all" | "bags" | "leaders";
@@ -301,7 +300,7 @@ export default function TrendingPage() {
     const [view, setView] = useState<"grid" | "table">("grid");
     const [tokensWithFees, setTokensWithFees] = useState<Set<string>>(new Set());
     const { items, loadInitialData, isInitialLoading } = usePulseStore();
-    const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, isConnected, markFeedOk } = useSocketStore();
     const { price: solPrice } = useSolPrice();
 
     useEffect(() => {
@@ -345,7 +344,6 @@ export default function TrendingPage() {
     const potentialBagsCount = allBagsTokens.filter(t => isBagsToken(t.tokenId)).length;
 
     const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
-    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, allBagsTokens.length > 0);
 
     // Signal global status pill that REST data is present.
     useEffect(() => {
@@ -361,18 +359,10 @@ export default function TrendingPage() {
                     title={viewMode === "leaders" ? "TOP EARNERS" : viewMode === "bags" ? "BAGS TOKENS" : "TRENDING NOW"}
                     subtitle={
                         viewMode === "all"
-                            ? `Real-time tokens with fee sharing data${allBagsTokens.length > 0 ? ` · ${allBagsTokens.length} tokens` : ''}`
+                            ? `Tokens with fee-sharing data${allBagsTokens.length > 0 ? ` · ${allBagsTokens.length} tokens` : ''}`
                             : viewMode === "leaders"
                                 ? 'Top tokens ranked by lifetime fees earned on BAGS'
                                 : 'BAGS tokens with fee-sharing from bags.fm'
-                    }
-                    right={
-                        <div className="flex items-center gap-2 text-[10px] font-mono font-bold uppercase tracking-widest">
-                            <LivePulseDot color={feedStatus === 'live' ? 'green' : feedStatus === 'polling' ? 'gold' : 'red'} />
-                            <span className={feedStatus === 'live' ? 'text-[#39FF14]' : feedStatus === 'polling' ? 'text-[#FFD700]' : 'text-[#FF003C]'}>
-                                {feedStatus === 'live' ? 'LIVE' : feedStatus === 'polling' ? 'POLLING' : 'OFFLINE'}
-                            </span>
-                        </div>
                     }
                     size="lg"
                 />

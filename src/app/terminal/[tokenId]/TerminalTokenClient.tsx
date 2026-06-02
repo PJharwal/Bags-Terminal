@@ -24,7 +24,7 @@ export default function TerminalPage() {
     const tokenId = params.tokenId as string;
 
     const { activeToken, isLoading, error, loadToken, addTrade } = useTerminalStore();
-    const { latestTrades, connect, isConnected } = useSocketStore();
+    const { latestTrades, connect } = useSocketStore();
     const { price: solPrice } = useSolPrice();
 
     // Connect to socket and load token data on mount
@@ -132,14 +132,6 @@ export default function TerminalPage() {
                     <ArrowLeft size={12} />
                     BACK
                 </button>
-            </div>
-
-            {/* Connection Status */}
-            <div className="absolute top-[70px] right-4 z-20">
-                <div className={`${isConnected ? 'badge-green' : 'badge-red'} flex items-center gap-2 text-[10px] font-mono`}>
-                    <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-[#39FF14] animate-pulse' : 'bg-[#FF003C]'}`} />
-                    {isConnected ? 'LIVE' : 'OFFLINE'}
-                </div>
             </div>
 
             {/* Terminal Header */}

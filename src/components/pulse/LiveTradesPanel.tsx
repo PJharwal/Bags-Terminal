@@ -3,7 +3,6 @@
 import React, { useRef, useEffect } from "react";
 import { useSocketStore } from "@/store/socket.store";
 import { useRouter } from "next/navigation";
-import { LivePulseDot } from "@/components/ui/LivePulseDot";
 import { formatCurrency } from "@/lib/format";
 import type { TradeEvent } from "@/types/socket";
 
@@ -85,9 +84,8 @@ export function LiveTradesPanel() {
             {/* Header */}
             <div className="flex-shrink-0 flex items-center justify-between px-3 py-2 border-b border-white/5 bg-[#080808]">
                 <div className="flex items-center gap-2">
-                    <LivePulseDot color={isConnected ? "green" : "red"} />
                     <span className="text-[10px] font-bold uppercase tracking-widest text-[#EDEDED]">
-                        LIVE TRADES
+                        TRADES
                     </span>
                 </div>
                 <span className="text-[9px] font-mono text-[#666] tabular-nums">

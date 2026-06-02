@@ -339,7 +339,7 @@ export async function GET(req: NextRequest) {
               }}
             >
               <span style={{ fontSize: "22px", color: "#9aa0a6" }}>
-                LIVE · SOLANA MAINNET
+                Solana
               </span>
             </div>
           )}
