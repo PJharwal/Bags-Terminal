@@ -5,7 +5,6 @@ import { tokenService, type Token } from '@/services/token.service';
 import { SOL_PRICE_FALLBACK } from '@/lib/constants';
 
 
-// Convert token service Token to PulseItem format
 const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
     // Estimate state based on market cap (simple heuristic)
     let state: PulseState = 'NEW';
@@ -21,6 +20,12 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         bondingProgress = Math.min(84, Math.floor(token.marketCap / 50000 * 85));
     }
 
+    const marketCap = token.marketCap || 0;
+    const volume24h = token.volume24h || 0;
+    const liquidity = token.liquidity || (marketCap * 0.15);
+    const txCount = Math.floor(volume24h / 80) || 25;
+    const holders = Math.floor(marketCap / 250) || 50;
+
     return {
         tokenId: token.address,
         symbol: `$${token.symbol}`,
@@ -30,12 +35,12 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         deployerLaunches: 1,
         deployerSuccessRate: 50,
         ageSeconds: 0,
-        marketCap: token.marketCap,
-        liquidity: token.liquidity,
+        marketCap,
+        liquidity,
         bondingProgress,
-        holders: 0,
-        txCount: 0,
-        volume24h: token.volume24h,
+        holders,
+        txCount,
+        volume24h,
         state,
         riskFlags: [],
         updatedAt: Date.now(),
@@ -167,7 +172,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     addItem: (item) => set((state) => ({
         items: {
             ...state.items,
-            [item.state]: [item, ...state.items[item.state]].slice(0, 50),
+            [item.state]: [item, ...state.items[item.state]].slice(0, 20),
         },
         lastUpdate: Date.now(),
     })),
@@ -211,9 +216,18 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
             bondingProgress = parseFloat(trade.bonding_curve_percent);
         }
 
+        // Calculate trade volume in USD and update aggregate volume + liquidity estimate
+        const tradeVolUsd = parseFloat(trade.sol_amount || '0') * SOL_PRICE_FALLBACK;
+        const volume24h = (existing.volume24h || 0) + tradeVolUsd;
+        const liquidity = existing.liquidity || (marketCap * 0.15);
+        const holders = existing.holders || Math.floor(marketCap / 250) || 50;
+
         updateItem(trade.mint, {
             marketCap,
             bondingProgress,
+            volume24h,
+            liquidity,
+            holders,
             txCount: existing.txCount + 1,
             updatedAt: Date.now(),
         });
@@ -250,7 +264,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
 
         if (itemToMove) {
             const updatedItem = { ...itemToMove, state: newState, updatedAt: Date.now(), ...(newState === 'MIGRATED' ? { bondingProgress: 100 } : {}) };
-            newItems[newState] = [updatedItem, ...newItems[newState]];
+            newItems[newState] = [updatedItem, ...newItems[newState]].slice(0, 20);
         }
 
         return { items: newItems, lastUpdate: Date.now() };
