@@ -132,15 +132,12 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 };
 
 // Filter types
-export type DisplayMode = 'cards' | 'compact' | 'table';
 export type TierFilter = 'all' | 'high' | 'medium' | 'low';
 
-interface PulseFilters {
-    displayMode: DisplayMode;
+export interface PulseFilters {
     tierFilter: TierFilter;
     hideRisky: boolean;
     minMarketCap: number;
-    bagsOnly: boolean; // Filter for BAGS tokens
 }
 
 interface PulseStore {
@@ -210,11 +207,6 @@ export function filterPulseItems(
         filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
     }
 
-    // BAGS-only filter
-    if (filters.bagsOnly) {
-        filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
-    }
-
     return filtered;
 }
 
@@ -229,11 +221,9 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     isInitialLoading: false,
     lastUpdate: Date.now(),
     filters: {
-        displayMode: 'compact',
         tierFilter: 'all',
         hideRisky: false,
         minMarketCap: 0,
-        bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
     addItem: (item) => {

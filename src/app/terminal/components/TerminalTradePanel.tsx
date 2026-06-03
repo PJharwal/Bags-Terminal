@@ -190,6 +190,22 @@ export function TerminalTradePanel() {
         fetchGMGNInfo();
     }, [activeToken?.tokenId, resetPrepare]);
 
+    // Honor ?buy=<amount> deep-link (e.g. the Pulse quick-buy button): select
+    // the Buy tab and prefill the SOL amount once per token. Read from the URL
+    // directly (client-only) to avoid a useSearchParams Suspense boundary.
+    const presetAppliedRef = useRef<string | null>(null);
+    useEffect(() => {
+        if (typeof window === "undefined" || !activeToken?.tokenId) return;
+        if (presetAppliedRef.current === activeToken.tokenId) return;
+        const raw = new URLSearchParams(window.location.search).get("buy");
+        if (!raw) return;
+        const amt = parseFloat(raw);
+        if (!Number.isFinite(amt) || amt <= 0) return;
+        presetAppliedRef.current = activeToken.tokenId;
+        setAction("buy");
+        setSolAmount(String(amt));
+    }, [activeToken?.tokenId]);
+
     // Fetch token balance
     useEffect(() => {
         if (!activeToken?.tokenId || !turnkeyAddress || !isAuthenticated) { setTokenBalance(0); return; }

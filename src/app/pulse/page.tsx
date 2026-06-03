@@ -5,23 +5,14 @@ import { useShallow } from "zustand/react/shallow";
 import { resolveTokenImage } from "@/lib/image";
 import { usePulseStore, filterPulseItems, estimateBondingProgress } from "@/store/pulse.store";
 import { useSocketStore, getFeedStatus } from "@/store/socket.store";
-import { useSelectionStore } from "@/store/selection.store";
 import { AxiomPulseColumn } from "@/components/pulse/AxiomPulseColumn";
 import { AxiomPulseToolbar } from "@/components/pulse/AxiomPulseToolbar";
-import { PulseDrawer } from "@/components/pulse/PulseDrawer";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
 import { motion } from "framer-motion";
 import type { PulseItem, PulseState, RiskFlag } from "@/lib/types";
 import type { RawTokenData } from "@/lib/bags-types";
 import { useSolPrice } from "@/hooks/useSolPrice";
-
-type Network = "solana" | "base" | "ethereum";
-
-const isBagsToken = (mint: string | undefined): boolean => {
-    if (!mint) return false;
-    return mint.toLowerCase().endsWith("bags");
-};
 
 const processApiTokenData = (
     data: RawTokenData,
@@ -78,39 +69,6 @@ const processApiTokenData = (
     };
 };
 
-/* ------------------------------------------------------------------ */
-/* COLUMN CONFIG                                                       */
-/* ------------------------------------------------------------------ */
-const COLUMNS: {
-    state: PulseState;
-    label: string;
-    color: string;
-    emptyMsg: string;
-    emptyBagsMsg: string;
-}[] = [
-    {
-        state: "NEW",
-        label: "New Pairs",
-        color: "#526fff",
-        emptyMsg: "Waiting for new tokens...",
-        emptyBagsMsg: "Waiting for BAGS tokens...",
-    },
-    {
-        state: "FINAL_STRETCH",
-        label: "Final Stretch",
-        color: "#7c8cff",
-        emptyMsg: "No tokens graduating",
-        emptyBagsMsg: "No graduating BAGS tokens",
-    },
-    {
-        state: "MIGRATED",
-        label: "Migrated",
-        color: "#39FF14",
-        emptyMsg: "No migrated tokens",
-        emptyBagsMsg: "No migrated BAGS tokens",
-    },
-];
-
 export default function PulsePage() {
     const {
         items,
@@ -135,9 +93,7 @@ export default function PulsePage() {
     const connect = useSocketStore((s) => s.connect);
     const isConnected = useSocketStore((s) => s.isConnected);
     const markFeedOk = useSocketStore((s) => s.markFeedOk);
-    const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
-    const [network, setNetwork] = useState<Network>("solana");
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -166,7 +122,6 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
                     const item = processApiTokenData(t, state, solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
@@ -187,7 +142,7 @@ export default function PulsePage() {
         } finally {
             setIsLoading(false);
         }
-    }, [addItem, filters.bagsOnly, solPrice, markFeedOk]);
+    }, [addItem, solPrice, markFeedOk]);
 
     // One-time backfill on open (seeds all three columns, incl. Final Stretch /
     // Migrated which the socket rarely emits). After this the socket drives all
@@ -216,7 +171,6 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
                     reconcileItem(processApiTokenData(t, state, solPrice));
                 });
             };
@@ -229,7 +183,7 @@ export default function PulsePage() {
         } catch {
             // Best-effort; the socket remains the primary live source.
         }
-    }, [filters.bagsOnly, solPrice, reconcileItem, markFeedOk]);
+    }, [solPrice, reconcileItem, markFeedOk]);
 
     useEffect(() => {
         const id = setInterval(reconcileColumns, 30000);
@@ -256,13 +210,11 @@ export default function PulsePage() {
         }
     }, [clearItems, fetchInitialData]);
 
+    // Live Feed = the three filtered columns; BAGS Creations = the dedicated
+    // LaunchFeedSection (rendered below). The tab only switches the view.
     const handleTabChange = useCallback((tab: "live" | "bags") => {
         setActiveTab(tab);
-        setFilters({ bagsOnly: tab === "bags" });
-    }, [setFilters]);
-
-    const totalTokens =
-        items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
+    }, []);
 
     // Derive feed status on a throttled tick (read via getState) instead of
     // subscribing to lastEventAt, which would re-render the page on every
@@ -300,14 +252,18 @@ export default function PulsePage() {
         [items.MIGRATED, filters],
     );
 
+    // Reflect what's actually visible (post-filter), not the raw store total.
+    const totalTokens =
+        newItems.length + finalStretchItems.length + migratedItems.length;
+
     return (
         <div className="flex-1 flex flex-col overflow-hidden bg-[#06070b]">
             {/* Axiom-style toolbar */}
             <AxiomPulseToolbar
                 activeTab={activeTab}
                 onTabChange={handleTabChange}
-                activeChain={network}
-                onChainChange={setNetwork}
+                filters={filters}
+                onFilterChange={setFilters}
                 feedStatus={feedStatus}
                 totalTokens={totalTokens}
                 isLoading={isLoading}
@@ -332,11 +288,7 @@ export default function PulsePage() {
             )}
 
             {/* Main content - 3 column layout */}
-            <div
-                className={`flex-1 flex overflow-hidden min-h-0 px-2 lg:px-5 gap-1 ${
-                    drawerOpen ? "pb-[50px] justify-center" : ""
-                }`}
-            >
+            <div className="flex-1 flex overflow-hidden min-h-0 px-2 lg:px-5 gap-1">
                 {activeTab === "bags" ? (
                     <LaunchFeedSection />
                 ) : (
@@ -365,8 +317,6 @@ export default function PulsePage() {
                     </>
                 )}
             </div>
-
-            <PulseDrawer />
         </div>
     );
 }
