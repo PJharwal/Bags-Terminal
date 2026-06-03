@@ -7,13 +7,13 @@ import {
   RiUserLine,
   RiFlashlightFill,
   RiFileCopyFill,
-  RiSpyFill,
-  RiCrosshair2Fill,
-  RiUserStarFill,
   RiWaterFlashFill,
-  RiShieldCheckFill,
 } from "@remixicon/react";
 import type { PulseItem } from "@/lib/types";
+
+// Single source of truth for the card's one-tap buy size. Routes to the token's
+// terminal page with this amount pre-filled (BUY_PRESETS[0] in the trade panel).
+const QUICK_BUY_SOL = 0.1;
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
@@ -81,14 +81,6 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const bondingProgress = token.bondingProgress || 0;
-  const netChange = token.marketCap > 0 ? 0 : 0;
-  const netColor = netChange >= 0 ? "#16a34a" : "#ef4444";
-  const netSign = netChange >= 0 ? "+" : "";
-
-  const greenPct = 50;
-  const redPct = 50;
-
   const cardContent = (
     <div
       onClick={() => router.push('/terminal/' + token.tokenId)}
@@ -117,11 +109,7 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
               </span>
             </div>
           )}
-          <div className="absolute bottom-[-3px] right-[-3px] w-[18px] h-[18px] bg-black rounded-full border-[1.5px] border-[#2a2a35] flex items-center justify-center">
-            <span className="text-[7px] font-bold text-[#6b6b7a]">S</span>
-          </div>
         </div>
-        <div className="h-[8px] w-[42px] mx-auto mt-1.5 rounded bg-[#1a1a1f]" />
       </div>
 
       {/* Content */}
@@ -193,9 +181,9 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
           </div>
         </div>
 
-        {/* Row 3: Liquidity · Net change | TX count · Buy/Sell bar */}
+        {/* Row 3: Liquidity (when known) · TX count | Quick-buy */}
         <div className="flex items-center justify-between w-full gap-2 -mt-0.5">
-          <div className="flex items-center gap-[6px] text-[9.8px] overflow-hidden min-w-0">
+          <div className="flex items-center gap-[10px] text-[9.8px] overflow-hidden min-w-0">
             {token.liquidity > 0 && (
               <span className="flex items-center gap-[2px] shrink-0">
                 <RiWaterFlashFill className="w-3 h-3 text-[#52c5ff]" />
@@ -204,59 +192,25 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
                 </span>
               </span>
             )}
-            <span className="shrink-0" style={{ color: netColor }}>
-              <span className="text-[#777a8c]">N</span>{" "}
-              <span className="font-semibold">
-                {netSign}
-                {Math.min(Math.abs(netChange), 9999).toFixed(2)}%
+            {token.txCount > 0 && (
+              <span className="flex items-center gap-[2px] shrink-0">
+                <span className="text-[#777a8c]">TX</span>
+                <span className="text-[#fcfcfc] font-semibold">
+                  {formatCompactNumber(token.txCount)}
+                </span>
               </span>
-            </span>
-          </div>
-          <div className="flex items-center gap-[6px] text-[9px] shrink-0">
-            <span className="flex items-center gap-[2px] shrink-0 min-w-[40px] justify-end">
-              <span className="text-[#777a8c]">TX</span>
-              <span className="text-[#fcfcfc] font-semibold">
-                {formatCompactNumber(token.txCount)}
-              </span>
-            </span>
-            <div className="flex w-[60px] sm:w-[70px] h-[4px] rounded-[2px] overflow-hidden shrink-0">
-              <div className="bg-[#16a34a]" style={{ width: `${greenPct}%` }} />
-              <div className="bg-[#ef4444]" style={{ width: `${redPct}%` }} />
-            </div>
-          </div>
-        </div>
-
-        {/* Row 4: Holder stats · Quick-buy */}
-        <div className="flex items-center justify-between gap-2 -mt-0.7">
-          <div className="flex items-center gap-[7px] flex-nowrap overflow-hidden min-w-0 text-[9px]">
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiUserLine className="w-[10px] h-[10px] text-[#16a34a]" />
-              <span className="text-[#16a34a] font-semibold">0%</span>
-            </span>
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiUserStarFill className="w-[10px] h-[10px] text-[#fbbf24]" />
-              <span className="text-[#fbbf24] font-semibold">0%</span>
-            </span>
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiCrosshair2Fill className="w-[10px] h-[10px] text-[#ef4444]" />
-              <span className="text-[#ef4444] font-semibold">0%</span>
-            </span>
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiShieldCheckFill className="w-[10px] h-[10px] text-[#52c5ff]" />
-              <span className="text-[#52c5ff] font-semibold">0%</span>
-            </span>
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiSpyFill className="w-[10px] h-[10px] text-[#a855f7]" />
-              <span className="text-[#a855f7] font-semibold">0%</span>
-            </span>
+            )}
           </div>
 
           <button
-            onClick={(e) => e.stopPropagation()}
-            className="px-1 py-[1px] rounded-xl text-[10px] font-semibold bg-[#526fff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[54px] justify-center shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              router.push(`/terminal/${token.tokenId}?buy=${QUICK_BUY_SOL}`);
+            }}
+            className="px-2 py-[2px] rounded-xl text-[10px] font-semibold bg-[#526fff] hover:bg-[#6b82ff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[58px] justify-center shrink-0 transition-colors"
           >
             <RiFlashlightFill className="w-3 h-3 text-black" />
-            <span className="text-black">0.1 SOL</span>
+            <span className="text-black">{QUICK_BUY_SOL} SOL</span>
           </button>
         </div>
       </div>
