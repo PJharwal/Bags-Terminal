@@ -61,7 +61,7 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
     } else if (token.market_cap_sol) {
         // Estimate bonding progress from market cap
         const mcSol = parseFloat(token.market_cap_sol);
-        bondingProgress = Math.min(99, Math.floor(mcSol / 850 * 100)); // ~85 SOL = 100%
+        bondingProgress = Math.min(99, Math.floor((mcSol / 85) * 100)); // ~85 SOL = 100%
         if (bondingProgress >= 85) {
             state = 'FINAL_STRETCH';
         }
@@ -169,13 +169,20 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
-    addItem: (item) => set((state) => ({
-        items: {
-            ...state.items,
-            [item.state]: [item, ...state.items[item.state]].slice(0, 20),
-        },
-        lastUpdate: Date.now(),
-    })),
+    addItem: (item) => set((state) => {
+        // Remove item from all states if it already exists to prevent duplication
+        const cleanedItems = { ...state.items };
+        for (const stateKey of Object.keys(cleanedItems) as PulseState[]) {
+            cleanedItems[stateKey] = cleanedItems[stateKey].filter((i) => i.tokenId !== item.tokenId);
+        }
+        // Prepend new item and limit size
+        cleanedItems[item.state] = [item, ...cleanedItems[item.state]].slice(0, 20);
+
+        return {
+            items: cleanedItems,
+            lastUpdate: Date.now(),
+        };
+    }),
 
     // Add token from socket event
     addTokenFromSocket: (token: NewTokenEvent) => {

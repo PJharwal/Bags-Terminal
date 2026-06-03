@@ -79,35 +79,7 @@ const processApiTokenData = (
 /* ------------------------------------------------------------------ */
 /* COLUMN CONFIG                                                       */
 /* ------------------------------------------------------------------ */
-const COLUMNS: {
-    state: PulseState;
-    label: string;
-    color: string;
-    emptyMsg: string;
-    emptyBagsMsg: string;
-}[] = [
-    {
-        state: "NEW",
-        label: "New Pairs",
-        color: "#526fff",
-        emptyMsg: "Waiting for new tokens...",
-        emptyBagsMsg: "Waiting for BAGS tokens...",
-    },
-    {
-        state: "FINAL_STRETCH",
-        label: "Final Stretch",
-        color: "#7c8cff",
-        emptyMsg: "No tokens graduating",
-        emptyBagsMsg: "No graduating BAGS tokens",
-    },
-    {
-        state: "MIGRATED",
-        label: "Migrated",
-        color: "#39FF14",
-        emptyMsg: "No migrated tokens",
-        emptyBagsMsg: "No migrated BAGS tokens",
-    },
-];
+
 
 export default function PulsePage() {
     const {
@@ -119,13 +91,14 @@ export default function PulsePage() {
         setConnected,
         clearItems,
     } = usePulseStore();
-    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>("solana");
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mobileColumn, setMobileColumn] = useState<PulseState>("NEW");
     const processedTokensRef = useRef<Set<string>>(new Set());
     const refreshingRef = useRef(false);
 
@@ -185,64 +158,7 @@ export default function PulsePage() {
         setConnected(isConnected);
     }, [isConnected, setConnected]);
 
-    useEffect(() => {
-        if (latestTokens.length > 0) {
-            const token = latestTokens[0];
-            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
-            if (processedTokensRef.current.has(token.mint)) return;
 
-            processedTokensRef.current.add(token.mint);
-
-            let state: PulseState = "NEW";
-            let bondingProgress = 0;
-
-            if (token.status === "migrated") {
-                state = "MIGRATED";
-                bondingProgress = 100;
-            } else if (token.market_cap_sol) {
-                const mcSol = parseFloat(token.market_cap_sol);
-                bondingProgress = Math.min(
-                    99,
-                    Math.floor((mcSol / 85) * 100),
-                );
-                if (bondingProgress >= 85) {
-                    state = "FINAL_STRETCH";
-                }
-            }
-
-            const item: PulseItem = {
-                tokenId: token.mint,
-                symbol: `$${token.symbol}`,
-                name: token.name,
-                deployer:
-                    token.creator?.slice(0, 4) +
-                    "..." +
-                    token.creator?.slice(-4),
-                deployerName: "deployer",
-                deployerLaunches: 1,
-                deployerSuccessRate: 50,
-                ageSeconds: Math.max(
-                    0,
-                    Math.floor(Date.now() / 1000 - token.creation_timestamp),
-                ),
-                marketCap:
-                    parseFloat(token.market_cap_sol || "0") * solPrice,
-                liquidity:
-                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
-                bondingProgress,
-                holders: token.holder_count || 0,
-                txCount: 0,
-                volume24h: 0,
-                state,
-                riskFlags: [],
-                updatedAt: Date.now(),
-                logoUrl: token.logo_url || undefined,
-                protocolSource: token.protocol_source,
-            };
-
-            addItem(item);
-        }
-    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
 
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;
@@ -266,7 +182,7 @@ export default function PulsePage() {
     const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, totalTokens > 0);
 
     return (
-        <div className="flex-1 flex flex-col overflow-hidden bg-[#06070b]">
+        <div className="h-[calc(100vh-92px)] flex flex-col overflow-hidden bg-[#06070b]">
             {/* Axiom-style toolbar */}
             <AxiomPulseToolbar
                 activeTab={activeTab}
@@ -296,37 +212,75 @@ export default function PulsePage() {
                 </motion.div>
             )}
 
+            {/* Mobile sub-tab bar */}
+            {activeTab === "live" && (
+                <div className="flex md:hidden bg-[#101114] border-b border-[#1d1f26] p-1 gap-1 shrink-0">
+                    <button
+                        onClick={() => setMobileColumn("NEW")}
+                        className={`flex-1 py-1.5 text-center text-xs font-semibold rounded transition-colors border-none cursor-pointer ${
+                            mobileColumn === "NEW" ? "bg-[#14f195] text-black" : "text-neutral-400 hover:text-white bg-transparent"
+                        }`}
+                    >
+                        New Pairs
+                    </button>
+                    <button
+                        onClick={() => setMobileColumn("FINAL_STRETCH")}
+                        className={`flex-1 py-1.5 text-center text-xs font-semibold rounded transition-colors border-none cursor-pointer ${
+                            mobileColumn === "FINAL_STRETCH" ? "bg-[#14f195] text-black" : "text-neutral-400 hover:text-white bg-transparent"
+                        }`}
+                    >
+                        Final Stretch
+                    </button>
+                    <button
+                        onClick={() => setMobileColumn("MIGRATED")}
+                        className={`flex-1 py-1.5 text-center text-xs font-semibold rounded transition-colors border-none cursor-pointer ${
+                            mobileColumn === "MIGRATED" ? "bg-[#14f195] text-black" : "text-neutral-400 hover:text-white bg-transparent"
+                        }`}
+                    >
+                        Migrated
+                    </button>
+                </div>
+            )}
+
             {/* Main content - 3 column layout */}
             <div
-                className={`flex-1 flex overflow-hidden min-h-0 px-2 lg:px-5 gap-1 ${
-                    drawerOpen ? "pb-[50px] justify-center" : ""
+                className={`flex-1 flex overflow-hidden min-h-0 border-t border-[#1d1f26] ${
+                    drawerOpen ? "pb-[50px]" : ""
                 }`}
             >
                 {activeTab === "bags" ? (
-                    <LaunchFeedSection />
+                    <div className="flex-1 px-2 lg:px-5">
+                        <LaunchFeedSection />
+                    </div>
                 ) : (
                     <>
-                        <AxiomPulseColumn
-                            title="New Pairs"
-                            tokens={getFilteredItems("NEW")}
-                            isLoading={isLoading}
-                            color="#526fff"
-                            className="flex-1"
-                        />
-                        <AxiomPulseColumn
-                            title="Final Stretch"
-                            tokens={getFilteredItems("FINAL_STRETCH")}
-                            isLoading={isLoading}
-                            color="#7c8cff"
-                            className="flex-1"
-                        />
-                        <AxiomPulseColumn
-                            title="Migrated"
-                            tokens={getFilteredItems("MIGRATED")}
-                            isLoading={isLoading}
-                            color="#39FF14"
-                            className="flex-1"
-                        />
+                        <div className={`${mobileColumn === "NEW" ? "flex" : "hidden"} md:flex flex-1 min-h-0`}>
+                            <AxiomPulseColumn
+                                title="New Pairs"
+                                tokens={getFilteredItems("NEW")}
+                                isLoading={isLoading}
+                                color="#526fff"
+                                className="flex-1"
+                            />
+                        </div>
+                        <div className={`${mobileColumn === "FINAL_STRETCH" ? "flex" : "hidden"} md:flex flex-1 min-h-0`}>
+                            <AxiomPulseColumn
+                                title="Final Stretch"
+                                tokens={getFilteredItems("FINAL_STRETCH")}
+                                isLoading={isLoading}
+                                color="#7c8cff"
+                                className="flex-1"
+                            />
+                        </div>
+                        <div className={`${mobileColumn === "MIGRATED" ? "flex" : "hidden"} md:flex flex-1 min-h-0`}>
+                            <AxiomPulseColumn
+                                title="Migrated"
+                                tokens={getFilteredItems("MIGRATED")}
+                                isLoading={isLoading}
+                                color="#39FF14"
+                                className="flex-1"
+                            />
+                        </div>
                     </>
                 )}
             </div>

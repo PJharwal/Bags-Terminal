@@ -124,19 +124,18 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
               <span className="text-[10px] text-[#777a8c] shrink-0 font-semibold">
                 {token.symbol}
               </span>
-              <div className="relative flex items-center shrink-0">
-                <button
-                  onClick={handleCopy}
-                  className="bg-none border-none cursor-pointer p-0 flex items-center ml-[2px] shrink-0"
-                >
-                  {copied ? (
-                    <RiCheckLine className="w-[12px] h-[12px] text-[#777a8c]" />
-                  ) : (
-                    <RiFileCopyFill className="w-[12px] h-[12px] text-[#777a8c] hover:text-[#fcfcfc] transition-colors" />
-                  )}
-                </button>
+              <div
+                onClick={handleCopy}
+                className="relative flex items-center gap-1 shrink-0 px-1 py-[1px] bg-[#16161e] border border-[#23242e] rounded text-[9px] text-[#777a8c] hover:text-[#fcfcfc] hover:border-[#38394e] cursor-pointer transition-all font-mono"
+              >
+                <span>{token.tokenId ? `${token.tokenId.slice(0, 4)}...${token.tokenId.slice(-4)}` : ""}</span>
+                {copied ? (
+                  <RiCheckLine className="w-[10.5px] h-[10.5px] text-[#16a34a]" />
+                ) : (
+                  <RiFileCopyFill className="w-[10.5px] h-[10.5px]" />
+                )}
                 {copied && (
-                  <span className="absolute left-full ml-1 text-[10px] text-[#777a8c] font-semibold whitespace-nowrap pointer-events-none">
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-[2px] bg-black text-[8px] text-white rounded shadow border border-[#2a2a35] pointer-events-none">
                     Copied!
                   </span>
                 )}
