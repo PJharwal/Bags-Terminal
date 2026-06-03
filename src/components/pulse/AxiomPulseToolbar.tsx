@@ -17,13 +17,10 @@ import {
   RiBookmark3Line,
   RiListCheck,
   RiWalletLine,
-  RiArrowLeftSLine,
-  RiArrowRightSLine,
   RiCoinLine,
-  RiCircleFill,
 } from "@remixicon/react";
 import { SolanaLogo } from "@/components/ui/SolanaLogo";
-import type { PulseState } from "@/lib/types";
+import { usePulseStore } from "@/store/pulse.store";
 
 interface AxiomPulseToolbarProps {
   activeTab?: "live" | "bags";
@@ -53,6 +50,8 @@ export function AxiomPulseToolbar({
   onRefresh,
 }: AxiomPulseToolbarProps) {
   const [showMobileSettings, setShowMobileSettings] = useState(false);
+  const [showDisplayDropdown, setShowDisplayDropdown] = useState(false);
+  const { filters, setFilters } = usePulseStore();
 
   return (
     <div className="bg-[#06070b] border-b border-[#1a1b23]">
@@ -129,11 +128,74 @@ export function AxiomPulseToolbar({
               <RiQuestionLine className="w-4 h-4" />
             </button>
 
-            <button className="flex items-center gap-1 px-2.5 py-1 bg-[#22242d] border border-[#27272a] hover:border-[#3f3f46] rounded-full text-white text-[10px] font-bold cursor-pointer transition-colors whitespace-nowrap">
-              <RiListCheck className="w-3.5 h-3.5 text-white" />
-              <span className="mr-1">Display</span>
-              <RiArrowDownSLine className="w-3.5 h-3.5 text-white" />
-            </button>
+            <div className="relative">
+              <button
+                onClick={() => setShowDisplayDropdown(!showDisplayDropdown)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors cursor-pointer whitespace-nowrap ${
+                  showDisplayDropdown || filters.hideRisky || filters.minMarketCap > 0
+                    ? "bg-[#14f195] text-black border-[#14f195]"
+                    : "bg-[#22242d] border-[#27272a] hover:border-[#3f3f46] text-white"
+                }`}
+              >
+                <RiListCheck className="w-3.5 h-3.5" />
+                <span className="mr-1">Display</span>
+                <RiArrowDownSLine className="w-3.5 h-3.5" />
+              </button>
+
+              {showDisplayDropdown && (
+                <div className="absolute right-0 mt-2 w-56 rounded-md bg-[#101114] border border-[#1d1f26] shadow-lg z-50 p-3 flex flex-col gap-3">
+                  <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Filters</div>
+                  
+                  {/* Hide Risky Toggle */}
+                  <label className="flex items-center justify-between cursor-pointer text-xs text-white">
+                    <span>Hide Risky Pairs</span>
+                    <input 
+                      type="checkbox"
+                      checked={filters.hideRisky}
+                      onChange={(e) => setFilters({ hideRisky: e.target.checked })}
+                      className="accent-[#14f195] cursor-pointer"
+                    />
+                  </label>
+                  
+                  <div className="w-full h-[1px] bg-[#1d1f26]" />
+                  
+                  {/* Min Market Cap selector */}
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[11px] text-neutral-400">Min Market Cap</span>
+                    <div className="grid grid-cols-2 gap-1">
+                      {[
+                        { label: "All", value: 0 },
+                        { label: "> $50K", value: 50000 },
+                        { label: "> $100K", value: 100000 },
+                        { label: "> $500K", value: 500000 },
+                      ].map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => setFilters({ minMarketCap: opt.value })}
+                          className={`py-1 text-[10px] rounded border transition-colors cursor-pointer ${
+                            filters.minMarketCap === opt.value
+                              ? "bg-[#14f195] text-black border-[#14f195] font-semibold"
+                              : "bg-[#16161e] text-white border-[#27272a] hover:border-neutral-500"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="w-full h-[1px] bg-[#1d1f26]" />
+
+                  {/* Reset Button */}
+                  <button
+                    onClick={() => setFilters({ hideRisky: false, minMarketCap: 0, tierFilter: "all" })}
+                    className="w-full py-1 text-[10px] font-bold bg-[#ef4444] text-white rounded hover:bg-red-600 transition-colors border-none cursor-pointer"
+                  >
+                    Reset All Filters
+                  </button>
+                </div>
+              )}
+            </div>
 
             <div className="flex items-center gap-2">
               <button
@@ -225,7 +287,9 @@ export function AxiomPulseToolbar({
             }`}
           >
             {!showMobileSettings && (
-              <span className="text-[11px] text-white font-medium">P1</span>
+              <span className="text-[11px] text-white font-medium">
+                {filters.tierFilter === "all" ? "P1" : filters.tierFilter === "medium" ? "P2" : "P3"}
+              </span>
             )}
             {showMobileSettings ? (
               <RiArrowUpSLine className="w-3.5 h-3.5 text-[#526fff]" />
@@ -257,10 +321,17 @@ export function AxiomPulseToolbar({
                 </button>
               </div>
 
-              <button className="flex items-center gap-2 px-2.5 py-0.5 bg-[#22242d] rounded-full border border-[#2a2a38]">
-                <RiEqualizer3Line className="w-3.5 h-3.5 text-white" />
-                <span className="text-[11px] text-white font-bold">Filter</span>
-                <RiArrowDownSLine className="w-3.5 h-3.5 text-white" />
+              <button
+                onClick={() => setShowDisplayDropdown(!showDisplayDropdown)}
+                className={`flex items-center gap-2 px-2.5 py-0.5 rounded-full border cursor-pointer transition-colors ${
+                  showDisplayDropdown || filters.hideRisky || filters.minMarketCap > 0
+                    ? "bg-[#14f195] text-black border-[#14f195]"
+                    : "bg-[#22242d] border-[#2a2a38] text-white"
+                }`}
+              >
+                <RiEqualizer3Line className="w-3.5 h-3.5" />
+                <span className="text-[11px] font-bold">Filter</span>
+                <RiArrowDownSLine className="w-3.5 h-3.5" />
               </button>
             </div>
 
@@ -274,11 +345,74 @@ export function AxiomPulseToolbar({
                 <div className="w-[1px] h-2.5 bg-[#2a2a38]" />
                 <span className="text-white text-[10px] font-bold">0</span>
               </div>
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-[#16161e] rounded-full border border-[#2a2a38]">
-                <span className="text-[10px] text-white font-medium">P1</span>
+              
+              <div
+                onClick={() => {
+                  const nextTier = filters.tierFilter === "all" ? "medium" : filters.tierFilter === "medium" ? "high" : "all";
+                  setFilters({ tierFilter: nextTier });
+                }}
+                className="flex items-center gap-1 px-2 py-0.5 bg-[#16161e] rounded-full border border-[#2a2a38] cursor-pointer"
+              >
+                <span className="text-[10px] text-white font-medium">
+                  {filters.tierFilter === "all" ? "P1" : filters.tierFilter === "medium" ? "P2" : "P3"}
+                </span>
                 <RiArrowDownSLine className="w-2.5 h-2.5 text-[#6b6b7a]" />
               </div>
             </div>
+
+            {showDisplayDropdown && (
+              <div className="mt-2 w-full rounded-md bg-[#101114] border border-[#1d1f26] p-3 flex flex-col gap-3">
+                <div className="text-[11px] font-bold text-neutral-400 uppercase tracking-wider">Filters</div>
+                
+                {/* Hide Risky Toggle */}
+                <label className="flex items-center justify-between cursor-pointer text-xs text-white">
+                  <span>Hide Risky Pairs</span>
+                  <input 
+                    type="checkbox"
+                    checked={filters.hideRisky}
+                    onChange={(e) => setFilters({ hideRisky: e.target.checked })}
+                    className="accent-[#14f195] cursor-pointer"
+                  />
+                </label>
+                
+                <div className="w-full h-[1px] bg-[#1d1f26]" />
+                
+                {/* Min Market Cap selector */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] text-neutral-400">Min Market Cap</span>
+                  <div className="grid grid-cols-2 gap-1">
+                    {[
+                      { label: "All", value: 0 },
+                      { label: "> $50K", value: 50000 },
+                      { label: "> $100K", value: 100000 },
+                      { label: "> $500K", value: 500000 },
+                    ].map((opt) => (
+                      <button
+                        key={opt.value}
+                        onClick={() => setFilters({ minMarketCap: opt.value })}
+                        className={`py-1 text-[10px] rounded border transition-colors cursor-pointer ${
+                          filters.minMarketCap === opt.value
+                            ? "bg-[#14f195] text-black border-[#14f195] font-semibold"
+                            : "bg-[#16161e] text-white border-[#27272a] hover:border-neutral-500"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="w-full h-[1px] bg-[#1d1f26]" />
+
+                {/* Reset Button */}
+                <button
+                  onClick={() => setFilters({ hideRisky: false, minMarketCap: 0, tierFilter: "all" })}
+                  className="w-full py-1 text-[10px] font-bold bg-[#ef4444] text-white rounded hover:bg-red-600 transition-colors border-none cursor-pointer"
+                >
+                  Reset All Filters
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

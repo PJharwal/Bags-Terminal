@@ -1,12 +1,13 @@
 "use client";
 
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   RiEqualizer3Line,
   RiFlashlightFill,
 } from "@remixicon/react";
 import { AxiomPulseCard } from "./AxiomPulseCard";
+import { usePulseStore } from "@/store/pulse.store";
 import type { PulseItem } from "@/lib/types";
 
 interface AxiomPulseColumnProps {
@@ -67,6 +68,7 @@ export function AxiomPulseColumn({
   className,
 }: AxiomPulseColumnProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const { filters, setFilters } = usePulseStore();
 
   const estimateSize = useCallback(() => 85, []);
 
@@ -79,10 +81,10 @@ export function AxiomPulseColumn({
 
   return (
     <div
-      className={`w-full flex flex-col h-full min-h-0 bg-[#101114] border-r border-[#1d1f26] ${className || ""}`}
+      className={`w-full flex flex-col h-full min-h-0 bg-[#101114] border-r last:border-r-0 border-[#1d1f26] ${className || ""}`}
     >
       {/* Column header */}
-      <div className="hidden lg:flex items-center justify-between px-2 py-1.5 border-b border-[#1d1f26] bg-[#101114] sticky top-0 z-10 mb-0.5">
+      <div className="hidden md:flex items-center justify-between px-2 py-1.5 border-b border-[#1d1f26] bg-[#101114] sticky top-0 z-10 mb-0.5">
         <h2 className="text-[12.5px] font-semibold text-white m-0">
           {title}
         </h2>
@@ -99,21 +101,36 @@ export function AxiomPulseColumn({
             <div className="w-[10px] h-[10px] rounded-full" style={{ backgroundColor: color }} />
             <div className="w-[1px] h-3 bg-[#2a2a35]" />
 
-            {["P1", "P2", "P3"].map((preset, index) => (
-              <button
-                key={preset}
-                className={`p-0 px-[1px] text-[10px] font-medium border-none cursor-pointer bg-transparent ${
-                  index === 0 ? "text-[#526fff]" : "text-white"
-                }`}
-              >
-                {preset}
-              </button>
-            ))}
+            {["P1", "P2", "P3"].map((preset) => {
+              const isActive = (preset === "P1" && filters.tierFilter === "all") ||
+                               (preset === "P2" && filters.tierFilter === "medium") ||
+                               (preset === "P3" && filters.tierFilter === "high");
+              return (
+                <button
+                  key={preset}
+                  onClick={() => {
+                    const nextTier = preset === "P1" ? "all" : preset === "P2" ? "medium" : "high";
+                    setFilters({ tierFilter: nextTier });
+                  }}
+                  className={`p-0 px-1 text-[10px] font-bold border-none cursor-pointer bg-transparent transition-colors ${
+                    isActive ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
+                  }`}
+                >
+                  {preset}
+                </button>
+              );
+            })}
           </div>
 
-          <button className="relative p-1 bg-none border-none text-white cursor-pointer flex items-center hover:text-[#526fff] transition-colors">
+          <button
+            onClick={() => setFilters({ hideRisky: !filters.hideRisky })}
+            className={`relative p-1 bg-none border-none cursor-pointer flex items-center transition-colors ${
+              filters.hideRisky ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
+            }`}
+            title="Toggle Risky Filters"
+          >
             <RiEqualizer3Line className="w-[12px] h-[12px]" />
-            <span className="absolute -top-0 -right-0.5 h-1 w-1 rounded-full bg-[#526fff]" />
+            <span className={`absolute -top-0 -right-0.5 h-1 w-1 rounded-full ${filters.hideRisky ? "bg-[#14f195]" : "bg-[#526fff]"}`} />
           </button>
         </div>
       </div>
