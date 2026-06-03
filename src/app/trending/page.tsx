@@ -96,7 +96,7 @@ const BagsTokenCard = ({ token, onFeeDataLoaded }: { token: PulseItem; onFeeData
                                 />
                             </div>
                             <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                                {token.bondingProgress}%
+                                {(token.bondingProgress || 0).toFixed(1)}%
                             </span>
                         </div>
                     </div>
@@ -235,7 +235,7 @@ const TokenTableRow = ({ token, index, onFeeDataLoaded }: { token: PulseItem; in
                         />
                     </div>
                     <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                        {token.bondingProgress}%
+                        {(token.bondingProgress || 0).toFixed(1)}%
                     </span>
                 </div>
             </td>

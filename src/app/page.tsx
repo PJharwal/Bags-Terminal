@@ -23,7 +23,7 @@ const TickerToken = ({ token }: { token: PulseItem }) => (
     <span className="text-[#39FF14] font-bold">{token.symbol}</span>
     <span className="text-[#888] mx-2">MC {formatCurrency(token.marketCap)}</span>
     <span className={token.bondingProgress >= 85 ? 'text-white' : 'text-[#444]'}>
-      {token.bondingProgress}%
+      {(token.bondingProgress || 0).toFixed(1)}%
     </span>
   </span>
 );
@@ -76,7 +76,7 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
                 />
               </div>
               <span className={`text-xs font-mono ${token.bondingProgress >= 85 ? 'text-[#39FF14]' : 'text-[#666]'}`}>
-                {token.bondingProgress}%
+                {(token.bondingProgress || 0).toFixed(1)}%
               </span>
             </div>
           </div>

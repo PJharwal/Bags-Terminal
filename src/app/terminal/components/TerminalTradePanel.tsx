@@ -396,7 +396,7 @@ export function TerminalTradePanel() {
     const walletLabel = (name: string) => (name === "omnera" ? "Trading" : name);
 
     return (
-        <div className="flex flex-col h-full bg-[#0A0A0A] border-l border-white/10">
+        <div className="flex flex-col">
             {/* Mode Tabs */}
             <div className="flex border-b border-white/10">
                 <button
