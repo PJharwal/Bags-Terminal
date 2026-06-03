@@ -49,8 +49,15 @@ export function PulseDrawer() {
     const { getItemById } = usePulseStore();
     const router = useRouter();
     const [copied, setCopied] = useState(false);
+    const [imgFailed, setImgFailed] = useState(false);
 
     const item = selectedTokenId ? getItemById(selectedTokenId) : null;
+    // Reset the failed flag when the logo changes (adjust during render, no effect).
+    const [renderedLogo, setRenderedLogo] = useState(item?.logoUrl);
+    if (renderedLogo !== item?.logoUrl) {
+        setRenderedLogo(item?.logoUrl);
+        setImgFailed(false);
+    }
 
     const credibilityMatrix = useMemo(() => {
         if (!selectedTokenId) return null;
@@ -91,10 +98,11 @@ export function PulseDrawer() {
                         <div className="flex items-center gap-3">
                             {/* Token image */}
                             <div className="w-10 h-10 bg-[#111] border border-white/10 flex items-center justify-center overflow-hidden flex-shrink-0">
-                                {item.logoUrl ? (
+                                {item.logoUrl && !imgFailed ? (
                                     <img
                                         src={item.logoUrl}
                                         alt={item.symbol}
+                                        onError={() => setImgFailed(true)}
                                         className="w-full h-full object-cover"
                                     />
                                 ) : (

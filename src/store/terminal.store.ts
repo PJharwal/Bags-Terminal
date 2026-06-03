@@ -300,6 +300,10 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
     // Add a trade from socket event
     addTrade: (trade) => {
         const { trades } = get();
+        // Dedup by id (the tx signature) — the socket can re-deliver the same
+        // trade (reconnect replay / double emit), which would otherwise add a
+        // duplicate row and a duplicate React key.
+        if (trades.some((t) => t.id === trade.id)) return;
         set({
             trades: [trade, ...trades].slice(0, 100),
         });

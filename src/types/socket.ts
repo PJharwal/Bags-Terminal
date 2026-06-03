@@ -62,6 +62,25 @@ export interface MigrationEvent {
   total_trades?: number;
 }
 
+// ----- Metadata Updated Event (from metadata:all room) -----
+// GMGN-shaped: keyed by `address` (the mint), with the resolved logo at
+// info.data[0].logo. Emitted after a token's off-chain metadata is indexed,
+// which is how logos for just-created tokens (logo_url empty at creation) arrive.
+export interface MetadataEvent {
+  address: string;
+  chain?: string;
+  info?: {
+    code?: number;
+    data?: Array<{
+      address?: string;
+      name?: string;
+      symbol?: string;
+      logo?: string | null;
+      holder_count?: number;
+    }>;
+  };
+}
+
 export type SocketRoom =
   | "new_tokens:all"
   | "trades:all"

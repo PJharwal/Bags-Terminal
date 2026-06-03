@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import { config } from '@/config/env';
-import { NewTokenEvent, TradeEvent, MigrationEvent, SocketRoom } from '@/types/socket';
+import { NewTokenEvent, TradeEvent, MigrationEvent, MetadataEvent, SocketRoom } from '@/types/socket';
 import { usePulseStore } from './pulse.store';
+import { SOL_MINT_ADDRESS } from '@/lib/constants';
 
 // BAGS token filter - only tokens with CA ending in 'bags'
 const isBagsToken = (mint: string): boolean => {
@@ -65,6 +66,7 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       get().subscribe('new_tokens:all');
       get().subscribe('trades:all');
       get().subscribe('migrations:all');
+      get().subscribe('metadata:all');
     });
 
     newSocket.on('disconnect', () => {
@@ -103,6 +105,10 @@ export const useSocketStore = create<SocketState>((set, get) => ({
 
     // Handle trade events
     newSocket.on('trade', (trade: TradeEvent) => {
+      // Drop wrapped-SOL "trades" — they are quote-side noise (mint = wSOL),
+      // ~75% of the firehose, and never correspond to a real token card.
+      if (trade.mint === SOL_MINT_ADDRESS) return;
+
       // Add to all trades
       set((state) => ({
         latestTrades: [trade, ...state.latestTrades].slice(0, 100),
@@ -116,8 +122,9 @@ export const useSocketStore = create<SocketState>((set, get) => ({
         }));
       }
 
-      // Update ALL trades in pulse store for UI display
-      usePulseStore.getState().updateFromTrade(trade);
+      // Queue for the pulse store — updates are coalesced per animation frame
+      // so a 250+/s firehose becomes at most ~60 store writes/s.
+      usePulseStore.getState().queueTrade(trade);
     });
 
     // Handle migration events
@@ -125,6 +132,13 @@ export const useSocketStore = create<SocketState>((set, get) => ({
       // Update pulse store - transition to MIGRATED state for all tokens
       set({ lastEventAt: Date.now() });
       usePulseStore.getState().transitionItem(migration.mint, 'MIGRATED');
+    });
+
+    // Handle metadata updates — backfills logos (and name/holders) for tokens
+    // that were created before their off-chain metadata was indexed.
+    newSocket.on('metadata_updated', (meta: MetadataEvent) => {
+      set({ lastEventAt: Date.now() });
+      usePulseStore.getState().applyMetadata(meta);
     });
 
     // Ping/pong for connection health - clear any existing interval first

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback, useMemo } from "react";
+import { useRef, useCallback, memo } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   RiEqualizer3Line,
@@ -59,7 +59,7 @@ function AxiomPulseColumnSkeleton() {
   );
 }
 
-export function AxiomPulseColumn({
+function AxiomPulseColumnComponent({
   title,
   tokens,
   isLoading = false,
@@ -68,7 +68,8 @@ export function AxiomPulseColumn({
 }: AxiomPulseColumnProps) {
   const parentRef = useRef<HTMLDivElement>(null);
 
-  const estimateSize = useCallback(() => 85, []);
+  // Initial estimate only — actual heights are measured per-row below.
+  const estimateSize = useCallback(() => 92, []);
 
   const virtualizer = useVirtualizer({
     count: tokens.length,
@@ -144,12 +145,13 @@ export function AxiomPulseColumn({
               return (
                 <div
                   key={token.tokenId}
+                  data-index={virtualRow.index}
+                  ref={virtualizer.measureElement}
                   style={{
                     position: "absolute",
                     top: 0,
                     left: 0,
                     width: "100%",
-                    height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
                 >
@@ -163,3 +165,5 @@ export function AxiomPulseColumn({
     </div>
   );
 }
+
+export const AxiomPulseColumn = memo(AxiomPulseColumnComponent);
