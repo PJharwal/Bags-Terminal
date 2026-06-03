@@ -7,6 +7,7 @@ import {
   RiFlashlightFill,
 } from "@remixicon/react";
 import { AxiomPulseCard } from "./AxiomPulseCard";
+import { usePulseStore } from "@/store/pulse.store";
 import type { PulseItem } from "@/lib/types";
 
 interface AxiomPulseColumnProps {
@@ -67,6 +68,7 @@ function AxiomPulseColumnComponent({
   className,
 }: AxiomPulseColumnProps) {
   const parentRef = useRef<HTMLDivElement>(null);
+  const { filters, setFilters } = usePulseStore();
 
   // Initial estimate only — actual heights are measured per-row below.
   const estimateSize = useCallback(() => 92, []);
@@ -80,20 +82,55 @@ function AxiomPulseColumnComponent({
 
   return (
     <div
-      className={`w-full flex flex-col h-full min-h-0 bg-[#101114] border-r border-[#1d1f26] ${className || ""}`}
+      className={`w-full flex flex-col h-full min-h-0 bg-[#101114] border-r last:border-r-0 border-[#1d1f26] ${className || ""}`}
     >
       {/* Column header */}
-      <div className="hidden lg:flex items-center justify-between px-2 py-1.5 border-b border-[#1d1f26] bg-[#101114] sticky top-0 z-10 mb-0.5">
+      <div className="hidden md:flex items-center justify-between px-2 py-1.5 border-b border-[#1d1f26] bg-[#101114] sticky top-0 z-10 mb-0.5">
         <h2 className="text-[12.5px] font-semibold text-white m-0">
           {title}
         </h2>
 
-        <div className="flex items-center gap-1.5 px-2 py-[3px] border border-[#2a2a35] rounded-full bg-transparent">
-          <RiFlashlightFill className="w-3 h-3 text-[#6b6b7a]" />
-          <span className="text-[10px] text-white tabular-nums">
-            {tokens.length}
-          </span>
-          <div className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: color }} />
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 px-2 py-[3px] border border-[#2a2a35] rounded-full bg-transparent">
+            <div className="flex items-center gap-[3px]">
+              <RiFlashlightFill className="w-3 h-3 text-[#6b6b7a]" />
+              <span className="text-[10px] text-white mr-4">
+                {tokens.length}
+              </span>
+            </div>
+
+            <div className="w-[10px] h-[10px] rounded-full" style={{ backgroundColor: color }} />
+            <div className="w-[1px] h-3 bg-[#2a2a35]" />
+
+            {["P1", "P2", "P3"].map((preset) => {
+              const isActive = (preset === "P1" && filters.tierFilter === "all") ||
+                (preset === "P2" && filters.tierFilter === "medium") ||
+                (preset === "P3" && filters.tierFilter === "high");
+              return (
+                <button
+                  key={preset}
+                  onClick={() => {
+                    const nextTier = preset === "P1" ? "all" : preset === "P2" ? "medium" : "high";
+                    setFilters({ tierFilter: nextTier });
+                  }}
+                  className={`p-0 px-1 text-[10px] font-bold border-none cursor-pointer bg-transparent transition-colors ${isActive ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
+                    }`}
+                >
+                  {preset}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            onClick={() => setFilters({ hideRisky: !filters.hideRisky })}
+            className={`relative p-1 bg-none border-none cursor-pointer flex items-center transition-colors ${filters.hideRisky ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
+              }`}
+            title="Toggle Risky Filters"
+          >
+            <RiEqualizer3Line className="w-[12px] h-[12px]" />
+            <span className={`absolute -top-0 -right-0.5 h-1 w-1 rounded-full ${filters.hideRisky ? "bg-[#14f195]" : "bg-[#526fff]"}`} />
+          </button>
         </div>
       </div>
 
@@ -108,7 +145,10 @@ function AxiomPulseColumnComponent({
         ) : tokens.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-[#6b6b7a] space-y-2">
             <RiEqualizer3Line className="w-8 h-8 opacity-50" />
-            <span className="text-[13px] font-medium">No matching tokens</span>
+            <span className="text-[13px] font-medium">No matching Results</span>
+            <button className="text-[#526fff] text-[11px] hover:underline cursor-pointer">
+              Adjust Filters
+            </button>
           </div>
         ) : (
           <div

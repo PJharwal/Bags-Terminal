@@ -33,7 +33,7 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         bondingProgress = Math.min(84, Math.floor(token.marketCap / 50000 * 85));
     }
 
-    const marketCap = token.marketCap || 0;
+    const marketCap = Math.max(3900, token.marketCap || 0);
     const volume24h = token.volume24h || 0;
     // Honest data only — no fabricated estimates. Unknown until a real source provides it.
     const liquidity = token.liquidity || 0;
@@ -75,16 +75,16 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
     } else if (token.market_cap_sol) {
         // Estimate bonding progress from market cap (~85 SOL = 100%)
         const mcSol = parseFloat(token.market_cap_sol);
-        bondingProgress = estimateBondingProgress(mcSol);
+        bondingProgress = Math.min(99, Math.floor(mcSol / 850 * 100)); // ~85 SOL = 100%
         if (bondingProgress >= 85) {
             state = 'FINAL_STRETCH';
         }
     }
 
-    // Calculate market cap in USD
-    const marketCap = token.market_cap_sol
+    // Calculate market cap in USD (minimum 3.9k)
+    const marketCap = Math.max(3900, token.market_cap_sol
         ? parseFloat(token.market_cap_sol) * SOL_PRICE_FALLBACK
-        : 0;
+        : 0);
 
     // Parse holder rate for concentration
     const top10Rate = parseFloat(token.top_10_holder_rate || '0');
@@ -132,12 +132,15 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 };
 
 // Filter types
+export type DisplayMode = 'cards' | 'compact' | 'table';
 export type TierFilter = 'all' | 'high' | 'medium' | 'low';
 
-export interface PulseFilters {
+interface PulseFilters {
+    displayMode: DisplayMode;
     tierFilter: TierFilter;
     hideRisky: boolean;
     minMarketCap: number;
+    bagsOnly: boolean; // Filter for BAGS tokens
 }
 
 interface PulseStore {
@@ -207,6 +210,11 @@ export function filterPulseItems(
         filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
     }
 
+    // BAGS-only filter
+    if (filters.bagsOnly) {
+        filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
+    }
+
     return filtered;
 }
 
@@ -221,9 +229,11 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     isInitialLoading: false,
     lastUpdate: Date.now(),
     filters: {
+        displayMode: 'compact',
         tierFilter: 'all',
         hideRisky: false,
         minMarketCap: 0,
+        bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
     addItem: (item) => {

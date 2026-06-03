@@ -15,10 +15,6 @@ import {
 } from "@remixicon/react";
 import type { PulseItem } from "@/lib/types";
 
-// Single source of truth for the card's one-tap buy size. Routes to the token's
-// terminal page with this amount pre-filled (BUY_PRESETS[0] in the trade panel).
-const QUICK_BUY_SOL = 0.1;
-
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(2)}M`;
@@ -44,6 +40,37 @@ function formatTimeAgo(ageSeconds: number): string {
   const days = Math.floor(hours / 24);
   return `${days}d`;
 }
+
+const PumpIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-[11px] h-[11px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <g transform="rotate(-45 12 12)">
+      {/* Top half: green */}
+      <path d="M12,2 C9.2,2 7,4.2 7,7 L7,12 L17,12 L17,7 C17,4.2 14.8,2 12,2 Z" fill="#14f195" />
+      {/* Bottom half: cyan */}
+      <path d="M7,12 L7,17 C7,19.8 9.2,22 12,22 C14.8,22 17,19.8 17,17 L17,12 L7,12 Z" fill="#00ffcc" />
+      {/* Line divider */}
+      <line x1="7" y1="12" x2="17" y2="12" stroke="#000000" strokeWidth="2" />
+    </g>
+  </svg>
+);
+
+const RaydiumIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-[11px] h-[11px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      d="M5.5 3h6.5c3.3 0 6 2.7 6 6 0 2.4-1.4 4.5-3.5 5.4l4.5 6.6H14.5l-4-6H8v6H5.5V3zm2.5 2.5v5.5h4c1.9 0 3.5-1.6 3.5-3.5S13.9 5.5 12 5.5H8z"
+      fill="#00f0ff"
+    />
+  </svg>
+);
+
+const MeteoraIcon = () => (
+  <svg viewBox="0 0 24 24" className="w-[11px] h-[11px]" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M3 18L8 6H11L6 18H3Z" fill="#14f195" />
+    <path d="M9 18L13 8.4L15 6H12L8 15.6L9 18Z" fill="#00ffcc" />
+    <path d="M21 18L16 6H13L18 18H21Z" fill="#14f195" />
+    <path d="M15 18L11 8.4L9 6H12L16 15.6L15 18Z" fill="#00ffcc" />
+  </svg>
+);
 
 const RING_COLORS = ["#16a34a", "#ef4444", "#fbbf24"];
 const getRingColor = (tokenId: string): string =>
@@ -78,6 +105,45 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
     [token.marketCap],
   );
 
+  const renderProtocolIcon = () => {
+    const src = (token.protocolSource || "").toLowerCase();
+    if (src.includes("pump")) {
+      return (
+        <div title="Pump.fun" className="flex items-center justify-center w-full h-full">
+          <PumpIcon />
+        </div>
+      );
+    }
+    if (src.includes("meteora")) {
+      return (
+        <div title="Meteora" className="flex items-center justify-center w-full h-full">
+          <MeteoraIcon />
+        </div>
+      );
+    }
+    if (src.includes("raydium")) {
+      return (
+        <div title="Raydium" className="flex items-center justify-center w-full h-full">
+          <RaydiumIcon />
+        </div>
+      );
+    }
+    
+    // Fallback based on state
+    if (token.state === "MIGRATED") {
+      return (
+        <div title="Raydium" className="flex items-center justify-center w-full h-full">
+          <RaydiumIcon />
+        </div>
+      );
+    }
+    return (
+      <div title="Pump.fun" className="flex items-center justify-center w-full h-full">
+        <PumpIcon />
+      </div>
+    );
+  };
+
   const handleCopy = (e: React.MouseEvent) => {
     e.stopPropagation();
     navigator.clipboard.writeText(token.tokenId);
@@ -85,11 +151,11 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Fields we have no live source for yet — shown as 0 / neutral (not mock data)
-  // so the card keeps its full layout instead of looking empty.
-  const netChange = 0;
+  const bondingProgress = token.bondingProgress || 0;
+  const netChange = token.marketCap > 0 ? 0 : 0;
   const netColor = netChange >= 0 ? "#16a34a" : "#ef4444";
   const netSign = netChange >= 0 ? "+" : "";
+
   const greenPct = 50;
   const redPct = 50;
 
@@ -122,7 +188,7 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
             </div>
           )}
           <div className="absolute bottom-[-3px] right-[-3px] w-[18px] h-[18px] bg-black rounded-full border-[1.5px] border-[#2a2a35] flex items-center justify-center">
-            <span className="text-[7px] font-bold text-[#6b6b7a]">S</span>
+            {renderProtocolIcon()}
           </div>
         </div>
         <div className="h-[8px] w-[42px] mx-auto mt-1.5 rounded bg-[#1a1a1f]" />
@@ -140,19 +206,18 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
               <span className="text-[10px] text-[#777a8c] shrink-0 font-semibold">
                 {token.symbol}
               </span>
-              <div className="relative flex items-center shrink-0">
-                <button
-                  onClick={handleCopy}
-                  className="bg-none border-none cursor-pointer p-0 flex items-center ml-[2px] shrink-0"
-                >
-                  {copied ? (
-                    <RiCheckLine className="w-[12px] h-[12px] text-[#777a8c]" />
-                  ) : (
-                    <RiFileCopyFill className="w-[12px] h-[12px] text-[#777a8c] hover:text-[#fcfcfc] transition-colors" />
-                  )}
-                </button>
+              <div
+                onClick={handleCopy}
+                className="relative flex items-center gap-1 shrink-0 px-1 py-[1px] bg-[#16161e] border border-[#23242e] rounded text-[9px] text-[#777a8c] hover:text-[#fcfcfc] hover:border-[#38394e] cursor-pointer transition-all font-mono"
+              >
+                <span>{token.tokenId ? `${token.tokenId.slice(0, 4)}...${token.tokenId.slice(-4)}` : ""}</span>
+                {copied ? (
+                  <RiCheckLine className="w-[10.5px] h-[10.5px] text-[#16a34a]" />
+                ) : (
+                  <RiFileCopyFill className="w-[10.5px] h-[10.5px]" />
+                )}
                 {copied && (
-                  <span className="absolute left-full ml-1 text-[10px] text-[#777a8c] font-semibold whitespace-nowrap pointer-events-none">
+                  <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-1.5 py-[2px] bg-black text-[8px] text-white rounded shadow border border-[#2a2a35] pointer-events-none">
                     Copied!
                   </span>
                 )}
@@ -200,12 +265,14 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
         {/* Row 3: Liquidity · Net change | TX count · Buy/Sell bar */}
         <div className="flex items-center justify-between w-full gap-2 -mt-0.5">
           <div className="flex items-center gap-[6px] text-[9.8px] overflow-hidden min-w-0">
-            <span className="flex items-center gap-[2px] shrink-0">
-              <RiWaterFlashFill className="w-3 h-3 text-[#52c5ff]" />
-              <span className="text-white font-semibold">
-                ${formatCompactNumber(token.liquidity)}
+            {token.liquidity > 0 && (
+              <span className="flex items-center gap-[2px] shrink-0">
+                <RiWaterFlashFill className="w-3 h-3 text-[#52c5ff]" />
+                <span className="text-white font-semibold">
+                  ${formatCompactNumber(token.liquidity)}
+                </span>
               </span>
-            </span>
+            )}
             <span className="shrink-0" style={{ color: netColor }}>
               <span className="text-[#777a8c]">N</span>{" "}
               <span className="font-semibold">
@@ -254,14 +321,11 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
           </div>
 
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              router.push(`/terminal/${token.tokenId}?buy=${QUICK_BUY_SOL}`);
-            }}
-            className="px-2 py-[2px] rounded-xl text-[10px] font-semibold bg-[#526fff] hover:bg-[#6b82ff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[58px] justify-center shrink-0 transition-colors"
+            onClick={(e) => e.stopPropagation()}
+            className="px-1 py-[1px] rounded-xl text-[10px] font-semibold bg-[#526fff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[54px] justify-center shrink-0"
           >
             <RiFlashlightFill className="w-3 h-3 text-black" />
-            <span className="text-black">{QUICK_BUY_SOL} SOL</span>
+            <span className="text-black">0.1 SOL</span>
           </button>
         </div>
       </div>
