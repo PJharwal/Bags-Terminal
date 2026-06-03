@@ -1,8 +1,21 @@
 import { create } from 'zustand';
 import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
-import type { NewTokenEvent, TradeEvent } from '@/types/socket';
+import type { NewTokenEvent, TradeEvent, MetadataEvent } from '@/types/socket';
+import { resolveTokenImage } from '@/lib/image';
 import { tokenService, type Token } from '@/services/token.service';
 import { SOL_PRICE_FALLBACK } from '@/lib/constants';
+import { LAMPORTS_PER_SOL } from '@/lib/bags-types';
+
+// Bonding curve graduates at ~85 SOL market cap. Single source of truth for
+// estimating progress from market cap so the socket, trade, and REST paths
+// agree (the socket path previously divided by 850 — 10x too low). Caps at 99:
+// actual migration to 100% comes from a real migration event / bonding_curve
+// _percent, never from a market-cap estimate.
+export const BONDING_CAP_SOL = 85;
+export function estimateBondingProgress(mcSol: number): number {
+    if (!Number.isFinite(mcSol) || mcSol <= 0) return 0;
+    return Math.min(99, Math.floor((mcSol / BONDING_CAP_SOL) * 100));
+}
 
 
 const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
@@ -22,9 +35,10 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
 
     const marketCap = token.marketCap || 0;
     const volume24h = token.volume24h || 0;
-    const liquidity = token.liquidity || (marketCap * 0.15);
-    const txCount = Math.floor(volume24h / 80) || 25;
-    const holders = Math.floor(marketCap / 250) || 50;
+    // Honest data only — no fabricated estimates. Unknown until a real source provides it.
+    const liquidity = token.liquidity || 0;
+    const txCount = 0;
+    const holders = 0;
 
     return {
         tokenId: token.address,
@@ -32,8 +46,8 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         name: token.name,
         deployer: 'Unknown',
         deployerName: 'deployer',
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: 0,
         marketCap,
         liquidity,
@@ -44,7 +58,7 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         state,
         riskFlags: [],
         updatedAt: Date.now(),
-        logoUrl: token.logo,
+        logoUrl: resolveTokenImage(token.logo),
         protocolSource: 'pumpfun',
     };
 };
@@ -59,9 +73,9 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         state = 'MIGRATED';
         bondingProgress = 100;
     } else if (token.market_cap_sol) {
-        // Estimate bonding progress from market cap
+        // Estimate bonding progress from market cap (~85 SOL = 100%)
         const mcSol = parseFloat(token.market_cap_sol);
-        bondingProgress = Math.min(99, Math.floor(mcSol / 850 * 100)); // ~85 SOL = 100%
+        bondingProgress = estimateBondingProgress(mcSol);
         if (bondingProgress >= 85) {
             state = 'FINAL_STRETCH';
         }
@@ -99,11 +113,11 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         name: token.name,
         deployer: token.creator?.slice(0, 4) + '...' + token.creator?.slice(-4),
         deployerName: 'deployer',
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap,
-        liquidity: marketCap * 0.3, // Estimate
+        liquidity: 0,
         bondingProgress,
         holders: token.holder_count || 0,
         txCount: 0,
@@ -112,7 +126,7 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         riskFlags,
         updatedAt: Date.now(),
         // Store original data for reference
-        logoUrl: token.logo_url || undefined,
+        logoUrl: resolveTokenImage(token.logo_url),
         protocolSource: token.protocol_source,
     };
 };
@@ -139,7 +153,10 @@ interface PulseStore {
     // Actions
     addItem: (item: PulseItem) => void;
     addTokenFromSocket: (token: NewTokenEvent) => void;
-    updateFromTrade: (trade: TradeEvent) => void;
+    queueTrade: (trade: TradeEvent) => void;
+    flushTrades: () => void;
+    reconcileItem: (item: PulseItem) => void;
+    applyMetadata: (meta: MetadataEvent) => void;
     updateItem: (tokenId: string, updates: Partial<PulseItem>) => void;
     transitionItem: (tokenId: string, newState: PulseState) => void;
     removeItem: (tokenId: string) => void;
@@ -149,6 +166,56 @@ interface PulseStore {
     getFilteredItems: (state: PulseState) => PulseItem[];
     setConnected: (connected: boolean) => void;
     loadInitialData: () => Promise<void>;
+}
+
+// --- Trade batching -------------------------------------------------------
+// Coalesce the high-frequency trade firehose (250+/s) into at most one store
+// update per animation frame. Additive fields (volume, tx count) accumulate so
+// nothing is lost when many trades for the same token land in one frame.
+interface BufferedTrade {
+    marketCap?: number;
+    bondingProgress?: number;
+    volumeUsdDelta: number;
+    txDelta: number;
+}
+let tradeBuffer = new Map<string, BufferedTrade>();
+let flushScheduled = false;
+
+// Pure filter used by both the store selector and the pulse page. Kept as a
+// single source of truth so filtering can't diverge between call sites.
+export function filterPulseItems(
+    list: PulseItem[],
+    filters: PulseFilters,
+): PulseItem[] {
+    let filtered = [...list];
+
+    // Apply tier filter
+    if (filters.tierFilter !== 'all') {
+        filtered = filtered.filter(item => {
+            if (filters.tierFilter === 'high') return item.marketCap >= 500000;
+            if (filters.tierFilter === 'medium') return item.marketCap >= 100000 && item.marketCap < 500000;
+            return item.marketCap < 100000;
+        });
+    }
+
+    // Hide risky tokens
+    if (filters.hideRisky) {
+        filtered = filtered.filter(item =>
+            !item.riskFlags.some(f => f.severity === 'critical')
+        );
+    }
+
+    // Min market cap filter
+    if (filters.minMarketCap > 0) {
+        filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
+    }
+
+    // BAGS-only filter
+    if (filters.bagsOnly) {
+        filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
+    }
+
+    return filtered;
 }
 
 export const usePulseStore = create<PulseStore>((set, get) => ({
@@ -169,13 +236,62 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
     },
 
-    addItem: (item) => set((state) => ({
-        items: {
-            ...state.items,
-            [item.state]: [item, ...state.items[item.state]].slice(0, 20),
-        },
-        lastUpdate: Date.now(),
-    })),
+    addItem: (item) => {
+        // Idempotent: never insert a token that already lives in any column.
+        // Prevents duplicate React keys (and the same token showing up in two
+        // columns) when REST polling and socket events race to add it. Bail
+        // before set() so a duplicate is a true no-op (no re-render).
+        const { items } = get();
+        const isDuplicate = (Object.keys(items) as PulseState[]).some(
+            (key) => items[key].some((i) => i.tokenId === item.tokenId),
+        );
+        if (isDuplicate) return;
+
+        set((state) => ({
+            items: {
+                ...state.items,
+                [item.state]: [item, ...state.items[item.state]].slice(0, 20),
+            },
+            lastUpdate: Date.now(),
+        }));
+    },
+
+    // Reconcile a REST-fetched token: add it if missing, or move it to the
+    // column the server now says it belongs to. Used by the silent 30s Final
+    // Stretch / Migrated re-sync. Store-based idempotency means no duplicates,
+    // and a token evicted by the 20-cap can be re-added.
+    reconcileItem: (item) => {
+        const { getItemById, addItem, transitionItem } = get();
+        const existing = getItemById(item.tokenId);
+        if (!existing) {
+            addItem(item);
+        } else if (existing.state !== item.state) {
+            transitionItem(item.tokenId, item.state);
+        }
+    },
+
+    // Backfill an existing card from a metadata_updated event — the logo for a
+    // just-created token (logo_url empty at creation) arrives here moments later.
+    applyMetadata: (meta: MetadataEvent) => {
+        const row = meta.info?.data?.[0];
+        const mint = meta.address || row?.address;
+        if (!row || !mint) return;
+        const existing = get().getItemById(mint);
+        if (!existing) return;
+
+        const updates: Partial<PulseItem> = {};
+        const logo = resolveTokenImage(row.logo);
+        if (logo) updates.logoUrl = logo;
+        if (row.name && (!existing.name || existing.name === 'Unknown')) {
+            updates.name = row.name;
+        }
+        if (typeof row.holder_count === 'number' && row.holder_count > existing.holders) {
+            updates.holders = row.holder_count;
+        }
+        if (Object.keys(updates).length > 0) {
+            get().updateItem(mint, updates);
+        }
+    },
 
     // Add token from socket event
     addTokenFromSocket: (token: NewTokenEvent) => {
@@ -198,46 +314,124 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         console.log('Added token:', token.symbol, token.mint);
     },
 
-    // Update token from trade event
-    updateFromTrade: (trade: TradeEvent) => {
-        const { getItemById, updateItem, transitionItem } = get();
-
-        const existing = getItemById(trade.mint);
-        if (!existing) return;
-
-        // Calculate new market cap
-        const marketCap = trade.market_cap_sol
-            ? parseFloat(trade.market_cap_sol) * SOL_PRICE_FALLBACK
-            : existing.marketCap;
-
-        // Calculate bonding progress
-        let bondingProgress = existing.bondingProgress;
+    // Queue a trade for the next animation-frame flush. Trades for tokens that
+    // aren't currently shown are ignored at flush time (update-only policy).
+    queueTrade: (trade: TradeEvent) => {
+        const buf: BufferedTrade =
+            tradeBuffer.get(trade.mint) ?? { volumeUsdDelta: 0, txDelta: 0 };
+        if (trade.market_cap_sol) {
+            const mcSol = parseFloat(trade.market_cap_sol);
+            if (Number.isFinite(mcSol)) {
+                buf.marketCap = mcSol * SOL_PRICE_FALLBACK;
+                // M2: derive progress from market cap when the trade omits
+                // bonding_curve_percent, so tokens still advance NEW->FINAL_STRETCH.
+                if (!trade.bonding_curve_percent) {
+                    buf.bondingProgress = estimateBondingProgress(mcSol);
+                }
+            }
+        }
         if (trade.bonding_curve_percent) {
-            bondingProgress = parseFloat(trade.bonding_curve_percent);
+            const pct = parseFloat(trade.bonding_curve_percent);
+            if (Number.isFinite(pct)) buf.bondingProgress = pct;
         }
+        // sol_amount is in lamports (1 SOL = 1e9 lamports) — convert to SOL
+        // before pricing, otherwise one small trade reads as billions.
+        const solAmount = parseFloat(trade.sol_amount || '0') / LAMPORTS_PER_SOL;
+        if (Number.isFinite(solAmount)) {
+            buf.volumeUsdDelta += solAmount * SOL_PRICE_FALLBACK;
+        }
+        buf.txDelta += 1;
+        tradeBuffer.set(trade.mint, buf);
 
-        // Calculate trade volume in USD and update aggregate volume + liquidity estimate
-        const tradeVolUsd = parseFloat(trade.sol_amount || '0') * SOL_PRICE_FALLBACK;
-        const volume24h = (existing.volume24h || 0) + tradeVolUsd;
-        const liquidity = existing.liquidity || (marketCap * 0.15);
-        const holders = existing.holders || Math.floor(marketCap / 250) || 50;
+        if (!flushScheduled) {
+            flushScheduled = true;
+            const run = () => {
+                flushScheduled = false;
+                get().flushTrades();
+            };
+            if (typeof requestAnimationFrame !== 'undefined') {
+                requestAnimationFrame(run);
+            } else {
+                setTimeout(run, 16);
+            }
+        }
+    },
 
-        updateItem(trade.mint, {
-            marketCap,
-            bondingProgress,
-            volume24h,
-            liquidity,
-            holders,
-            txCount: existing.txCount + 1,
-            updatedAt: Date.now(),
+    // Apply all buffered trades in a single store update. Only the columns that
+    // actually change get a new array reference, so untouched columns (and
+    // their memoized React subtrees) don't re-render.
+    flushTrades: () => {
+        if (tradeBuffer.size === 0) return;
+        const buffer = tradeBuffer;
+        tradeBuffer = new Map();
+
+        set((state) => {
+            const keys: PulseState[] = ['NEW', 'FINAL_STRETCH', 'MIGRATED'];
+            const working: Record<PulseState, PulseItem[]> = {
+                NEW: state.items.NEW,
+                FINAL_STRETCH: state.items.FINAL_STRETCH,
+                MIGRATED: state.items.MIGRATED,
+            };
+            const changed = new Set<PulseState>();
+            const cloneCol = (k: PulseState) => {
+                if (!changed.has(k)) {
+                    working[k] = working[k].slice();
+                    changed.add(k);
+                }
+            };
+
+            buffer.forEach((buf, mint) => {
+                // Locate the token (update-only: skip if not currently shown).
+                let col: PulseState | null = null;
+                let idx = -1;
+                for (const k of keys) {
+                    const i = working[k].findIndex((it) => it.tokenId === mint);
+                    if (i !== -1) {
+                        col = k;
+                        idx = i;
+                        break;
+                    }
+                }
+                if (col === null) return;
+
+                const prev = working[col][idx];
+                const marketCap = buf.marketCap ?? prev.marketCap;
+                const bondingProgress = buf.bondingProgress ?? prev.bondingProgress;
+                const updated: PulseItem = {
+                    ...prev,
+                    marketCap,
+                    bondingProgress,
+                    volume24h: (prev.volume24h || 0) + buf.volumeUsdDelta,
+                    liquidity: prev.liquidity || 0,
+                    holders: prev.holders || 0,
+                    txCount: prev.txCount + buf.txDelta,
+                    updatedAt: Date.now(),
+                };
+
+                // Determine target column from bonding progress.
+                let target: PulseState = col;
+                if (bondingProgress >= 100 && col !== 'MIGRATED') target = 'MIGRATED';
+                else if (bondingProgress >= 85 && col === 'NEW') target = 'FINAL_STRETCH';
+
+                if (target === col) {
+                    cloneCol(col);
+                    working[col][idx] = updated;
+                } else {
+                    cloneCol(col);
+                    working[col].splice(idx, 1);
+                    cloneCol(target);
+                    const moved: PulseItem = {
+                        ...updated,
+                        state: target,
+                        ...(target === 'MIGRATED' ? { bondingProgress: 100 } : {}),
+                    };
+                    working[target] = [moved, ...working[target]].slice(0, 20);
+                }
+            });
+
+            if (changed.size === 0) return state;
+            return { items: working, lastUpdate: Date.now() };
         });
-
-        // Handle state transitions
-        if (bondingProgress >= 100 && existing.state !== 'MIGRATED') {
-            transitionItem(trade.mint, 'MIGRATED');
-        } else if (bondingProgress >= 85 && existing.state === 'NEW') {
-            transitionItem(trade.mint, 'FINAL_STRETCH');
-        }
     },
 
     updateItem: (tokenId, updates) => set((state) => {
@@ -298,35 +492,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
 
     getFilteredItems: (state) => {
         const { items, filters } = get();
-        let filtered = [...items[state]];
-
-        // Apply tier filter
-        if (filters.tierFilter !== 'all') {
-            filtered = filtered.filter(item => {
-                if (filters.tierFilter === 'high') return item.marketCap >= 500000;
-                if (filters.tierFilter === 'medium') return item.marketCap >= 100000 && item.marketCap < 500000;
-                return item.marketCap < 100000;
-            });
-        }
-
-        // Hide risky tokens
-        if (filters.hideRisky) {
-            filtered = filtered.filter(item =>
-                !item.riskFlags.some(f => f.severity === 'critical')
-            );
-        }
-
-        // Min market cap filter
-        if (filters.minMarketCap > 0) {
-            filtered = filtered.filter(item => item.marketCap >= filters.minMarketCap);
-        }
-
-        // BAGS-only filter
-        if (filters.bagsOnly) {
-            filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
-        }
-
-        return filtered;
+        return filterPulseItems(items[state], filters);
     },
 
     setConnected: (connected) => set({ isConnected: connected }),

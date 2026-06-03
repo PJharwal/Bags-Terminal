@@ -56,7 +56,7 @@ export default function TerminalPage() {
                     amount: tokenAmount,
                     priceUsd: priceUsd,
                     total: solAmount * solPrice,
-                    timestamp: latestTrade.block_time || Date.now(),
+                    timestamp: latestTrade.block_time ? latestTrade.block_time * 1000 : Date.now(),
                 };
                 addTrade(trade);
             }

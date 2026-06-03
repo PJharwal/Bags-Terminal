@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useState, useRef } from "react";
-import { usePulseStore } from "@/store/pulse.store";
+import { useEffect, useCallback, useState, useRef, useMemo } from "react";
+import { useShallow } from "zustand/react/shallow";
+import { resolveTokenImage } from "@/lib/image";
+import { usePulseStore, filterPulseItems, estimateBondingProgress } from "@/store/pulse.store";
 import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { AxiomPulseColumn } from "@/components/pulse/AxiomPulseColumn";
@@ -33,7 +35,7 @@ const processApiTokenData = (
         ? parseFloat(data.bonding_curve_percent)
         : targetState === "MIGRATED"
           ? 100
-          : Math.min(99, Math.floor((marketCapSol / 85) * 100));
+          : estimateBondingProgress(marketCapSol);
 
     const top10Rate = parseFloat(data.top_10_holder_rate || "0");
     const riskFlags: RiskFlag[] = [];
@@ -59,11 +61,11 @@ const processApiTokenData = (
             data.creator?.slice(0, 4) + "..." + data.creator?.slice(-4) ||
             "unknown",
         deployerName: "deployer",
-        deployerLaunches: 1,
-        deployerSuccessRate: 50,
+        deployerLaunches: 0,
+        deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
         marketCap: marketCapSol * solPrice,
-        liquidity: marketCapSol * solPrice * 0.3,
+        liquidity: 0,
         bondingProgress,
         holders: data.holder_count || 0,
         txCount: data.total_transactions || 0,
@@ -71,7 +73,7 @@ const processApiTokenData = (
         state: targetState,
         riskFlags,
         updatedAt: Date.now(),
-        logoUrl: data.logo_url || data.image_uri || undefined,
+        logoUrl: resolveTokenImage(data.logo_url || data.image_uri),
         protocolSource: data.protocol_source || "unknown",
     };
 };
@@ -112,14 +114,27 @@ const COLUMNS: {
 export default function PulsePage() {
     const {
         items,
-        getFilteredItems,
         filters,
         setFilters,
         addItem,
         setConnected,
         clearItems,
-    } = usePulseStore();
-    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+        reconcileItem,
+    } = usePulseStore(
+        useShallow((s) => ({
+            items: s.items,
+            filters: s.filters,
+            setFilters: s.setFilters,
+            addItem: s.addItem,
+            setConnected: s.setConnected,
+            clearItems: s.clearItems,
+            reconcileItem: s.reconcileItem,
+        })),
+    );
+    // Selector-scoped so the page doesn't re-render on the trade firehose.
+    const connect = useSocketStore((s) => s.connect);
+    const isConnected = useSocketStore((s) => s.isConnected);
+    const markFeedOk = useSocketStore((s) => s.markFeedOk);
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
     const [network, setNetwork] = useState<Network>("solana");
@@ -174,75 +189,60 @@ export default function PulsePage() {
         }
     }, [addItem, filters.bagsOnly, solPrice, markFeedOk]);
 
+    // One-time backfill on open (seeds all three columns, incl. Final Stretch /
+    // Migrated which the socket rarely emits). After this the socket drives all
+    // live updates.
     useEffect(() => {
         connect();
         fetchInitialData();
-        const id = setInterval(fetchInitialData, 15000);
-        return () => clearInterval(id);
     }, [connect, fetchInitialData]);
+
+    // Silent 30s reconcile of the two columns the socket barely feeds (Final
+    // Stretch, Migrated). Merges server truth without skeletons and without
+    // touching New Pairs; reconcileItem is idempotent, so no flicker/duplicates.
+    const reconcileColumns = useCallback(async () => {
+        try {
+            const [soonRes, bondedRes] = await Promise.all([
+                fetch(
+                    `${config.baseServerUrl}/api/tokens?status=graduating&hours=6`,
+                ),
+                fetch(
+                    `${config.baseServerUrl}/api/tokens?status=migrated&limit=20`,
+                ),
+            ]);
+
+            const merge = async (res: Response, state: PulseState) => {
+                if (!res.ok) return;
+                const data = await res.json();
+                const tokens = Array.isArray(data) ? data : data.tokens || [];
+                tokens.forEach((t: RawTokenData) => {
+                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
+                    reconcileItem(processApiTokenData(t, state, solPrice));
+                });
+            };
+
+            await Promise.all([
+                merge(soonRes, "FINAL_STRETCH"),
+                merge(bondedRes, "MIGRATED"),
+            ]);
+            markFeedOk();
+        } catch {
+            // Best-effort; the socket remains the primary live source.
+        }
+    }, [filters.bagsOnly, solPrice, reconcileItem, markFeedOk]);
+
+    useEffect(() => {
+        const id = setInterval(reconcileColumns, 30000);
+        return () => clearInterval(id);
+    }, [reconcileColumns]);
 
     useEffect(() => {
         setConnected(isConnected);
     }, [isConnected, setConnected]);
 
-    useEffect(() => {
-        if (latestTokens.length > 0) {
-            const token = latestTokens[0];
-            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
-            if (processedTokensRef.current.has(token.mint)) return;
-
-            processedTokensRef.current.add(token.mint);
-
-            let state: PulseState = "NEW";
-            let bondingProgress = 0;
-
-            if (token.status === "migrated") {
-                state = "MIGRATED";
-                bondingProgress = 100;
-            } else if (token.market_cap_sol) {
-                const mcSol = parseFloat(token.market_cap_sol);
-                bondingProgress = Math.min(
-                    99,
-                    Math.floor((mcSol / 85) * 100),
-                );
-                if (bondingProgress >= 85) {
-                    state = "FINAL_STRETCH";
-                }
-            }
-
-            const item: PulseItem = {
-                tokenId: token.mint,
-                symbol: `$${token.symbol}`,
-                name: token.name,
-                deployer:
-                    token.creator?.slice(0, 4) +
-                    "..." +
-                    token.creator?.slice(-4),
-                deployerName: "deployer",
-                deployerLaunches: 1,
-                deployerSuccessRate: 50,
-                ageSeconds: Math.max(
-                    0,
-                    Math.floor(Date.now() / 1000 - token.creation_timestamp),
-                ),
-                marketCap:
-                    parseFloat(token.market_cap_sol || "0") * solPrice,
-                liquidity:
-                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
-                bondingProgress,
-                holders: token.holder_count || 0,
-                txCount: 0,
-                volume24h: 0,
-                state,
-                riskFlags: [],
-                updatedAt: Date.now(),
-                logoUrl: token.logo_url || undefined,
-                protocolSource: token.protocol_source,
-            };
-
-            addItem(item);
-        }
-    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
+    // NOTE: socket-driven token inserts are handled exclusively by the socket
+    // store (addTokenFromSocket). The page must NOT also add them here or the
+    // same token gets inserted twice (duplicate keys + cross-column dupes).
 
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;
@@ -263,7 +263,42 @@ export default function PulsePage() {
 
     const totalTokens =
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
-    const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, totalTokens > 0);
+
+    // Derive feed status on a throttled tick (read via getState) instead of
+    // subscribing to lastEventAt, which would re-render the page on every
+    // socket event.
+    const [feedStatus, setFeedStatus] = useState<"live" | "polling" | "offline">(
+        "offline",
+    );
+    useEffect(() => {
+        const tick = () => {
+            const { lastEventAt, lastFeedOkAt } = useSocketStore.getState();
+            const live = usePulseStore.getState().items;
+            const hasData =
+                live.NEW.length + live.FINAL_STRETCH.length + live.MIGRATED.length >
+                0;
+            setFeedStatus(getFeedStatus({ lastEventAt, lastFeedOkAt }, hasData));
+        };
+        tick();
+        const id = setInterval(tick, 2000);
+        return () => clearInterval(id);
+    }, []);
+
+    // Compute the filtered, per-column lists once per data change. Memoizing
+    // keeps array identity stable across unrelated re-renders so the columns /
+    // virtualizer don't churn on every socket event.
+    const newItems = useMemo(
+        () => filterPulseItems(items.NEW, filters),
+        [items.NEW, filters],
+    );
+    const finalStretchItems = useMemo(
+        () => filterPulseItems(items.FINAL_STRETCH, filters),
+        [items.FINAL_STRETCH, filters],
+    );
+    const migratedItems = useMemo(
+        () => filterPulseItems(items.MIGRATED, filters),
+        [items.MIGRATED, filters],
+    );
 
     return (
         <div className="flex-1 flex flex-col overflow-hidden bg-[#06070b]">
@@ -308,22 +343,22 @@ export default function PulsePage() {
                     <>
                         <AxiomPulseColumn
                             title="New Pairs"
-                            tokens={getFilteredItems("NEW")}
-                            isLoading={isLoading}
+                            tokens={newItems}
+                            isLoading={isLoading && newItems.length === 0}
                             color="#526fff"
                             className="flex-1"
                         />
                         <AxiomPulseColumn
                             title="Final Stretch"
-                            tokens={getFilteredItems("FINAL_STRETCH")}
-                            isLoading={isLoading}
+                            tokens={finalStretchItems}
+                            isLoading={isLoading && finalStretchItems.length === 0}
                             color="#7c8cff"
                             className="flex-1"
                         />
                         <AxiomPulseColumn
                             title="Migrated"
-                            tokens={getFilteredItems("MIGRATED")}
-                            isLoading={isLoading}
+                            tokens={migratedItems}
+                            isLoading={isLoading && migratedItems.length === 0}
                             color="#39FF14"
                             className="flex-1"
                         />

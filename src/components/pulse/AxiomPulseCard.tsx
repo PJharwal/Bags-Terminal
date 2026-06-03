@@ -58,6 +58,15 @@ interface AxiomPulseCardProps {
 function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const [imgFailed, setImgFailed] = useState(false);
+  // Reset the failed flag when the logo changes (e.g. backfilled via
+  // metadata_updated) so the new image gets a fresh attempt. Adjusting state
+  // during render per React's "you might not need an effect" guidance.
+  const [renderedLogo, setRenderedLogo] = useState(token.logoUrl);
+  if (renderedLogo !== token.logoUrl) {
+    setRenderedLogo(token.logoUrl);
+    setImgFailed(false);
+  }
 
   const ringColor = getRingColor(token.tokenId);
   const mcColor = useMemo(
@@ -92,10 +101,13 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
             className="absolute inset-[-2px] rounded-lg border-[1.5px]"
             style={{ borderColor: ringColor }}
           />
-          {token.logoUrl ? (
+          {token.logoUrl && !imgFailed ? (
             <img
               src={token.logoUrl}
               alt={token.name}
+              loading="lazy"
+              decoding="async"
+              onError={() => setImgFailed(true)}
               className="absolute inset-[1px] rounded-[6px] w-[calc(100%-2px)] h-[calc(100%-2px)] object-cover"
             />
           ) : (

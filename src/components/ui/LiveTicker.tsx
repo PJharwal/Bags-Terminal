@@ -3,9 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePulseStore } from "@/store/pulse.store";
-import { useSocketStore } from "@/store/socket.store";
 import { formatCurrency } from "@/lib/format";
-import { LivePulseDot } from "./LivePulseDot";
 
 /**
  * Global live ticker strip.
@@ -14,7 +12,6 @@ import { LivePulseDot } from "./LivePulseDot";
  */
 export function LiveTicker() {
     const { items } = usePulseStore();
-    const { isConnected } = useSocketStore();
 
     const tokens = [
         ...items.MIGRATED,
@@ -25,10 +22,7 @@ export function LiveTicker() {
     if (tokens.length === 0) {
         return (
             <div className="h-9 border-b border-white/5 bg-[#060606] flex items-center px-6 gap-3 text-[10px] font-mono uppercase tracking-widest">
-                <LivePulseDot color={isConnected ? "green" : "red"} />
-                <span className="text-[#555]">
-                    {isConnected ? "LIVE FEED · WAITING FOR TOKENS…" : "CONNECTING…"}
-                </span>
+                <span className="text-[#555]">No live tokens yet</span>
             </div>
         );
     }
@@ -38,14 +32,6 @@ export function LiveTicker() {
 
     return (
         <div className="relative h-9 border-b border-white/5 bg-[#060606] overflow-hidden flex items-center">
-            {/* Left label */}
-            <div className="flex-shrink-0 flex items-center gap-2 px-4 h-full border-r border-white/5 bg-[#050505] z-10">
-                <LivePulseDot color="green" />
-                <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-[#39FF14]">
-                    LIVE
-                </span>
-            </div>
-
             {/* Marquee */}
             <div className="flex-1 overflow-hidden">
                 <div className="marquee-track">
