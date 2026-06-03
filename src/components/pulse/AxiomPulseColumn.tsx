@@ -88,34 +88,12 @@ function AxiomPulseColumnComponent({
           {title}
         </h2>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2 py-[3px] border border-[#2a2a35] rounded-full bg-transparent">
-            <div className="flex items-center gap-[3px]">
-              <RiFlashlightFill className="w-3 h-3 text-[#6b6b7a]" />
-              <span className="text-[10px] text-white mr-4">
-                {tokens.length}
-              </span>
-            </div>
-
-            <div className="w-[10px] h-[10px] rounded-full" style={{ backgroundColor: color }} />
-            <div className="w-[1px] h-3 bg-[#2a2a35]" />
-
-            {["P1", "P2", "P3"].map((preset, index) => (
-              <button
-                key={preset}
-                className={`p-0 px-[1px] text-[10px] font-medium border-none cursor-pointer bg-transparent ${
-                  index === 0 ? "text-[#526fff]" : "text-white"
-                }`}
-              >
-                {preset}
-              </button>
-            ))}
-          </div>
-
-          <button className="relative p-1 bg-none border-none text-white cursor-pointer flex items-center hover:text-[#526fff] transition-colors">
-            <RiEqualizer3Line className="w-[12px] h-[12px]" />
-            <span className="absolute -top-0 -right-0.5 h-1 w-1 rounded-full bg-[#526fff]" />
-          </button>
+        <div className="flex items-center gap-1.5 px-2 py-[3px] border border-[#2a2a35] rounded-full bg-transparent">
+          <RiFlashlightFill className="w-3 h-3 text-[#6b6b7a]" />
+          <span className="text-[10px] text-white tabular-nums">
+            {tokens.length}
+          </span>
+          <div className="w-[8px] h-[8px] rounded-full" style={{ backgroundColor: color }} />
         </div>
       </div>
 
@@ -130,10 +108,7 @@ function AxiomPulseColumnComponent({
         ) : tokens.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-[#6b6b7a] space-y-2">
             <RiEqualizer3Line className="w-8 h-8 opacity-50" />
-            <span className="text-[13px] font-medium">No matching Results</span>
-            <button className="text-[#526fff] text-[11px] hover:underline cursor-pointer">
-              Adjust Filters
-            </button>
+            <span className="text-[13px] font-medium">No matching tokens</span>
           </div>
         ) : (
           <div
