@@ -10,7 +10,7 @@ import { TerminalChart } from "../components/TerminalChart";
 import { TerminalTradePanel } from "../components/TerminalTradePanel";
 import { TerminalBottomTabs } from "../components/TerminalBottomTabs";
 import { TerminalToolbar } from "../components/TerminalToolbar";
-import { CredibilityMatrix } from "@/components/credibility/CredibilityMatrix";
+import { VerticalSplitPanel } from "@/components/ui/VerticalSplitPanel";
 import { FeeEarnersPanel } from "@/components/terminal/FeeEarnersPanel";
 import { LaunchConfigPanel } from "@/components/terminal/LaunchConfigPanel";
 import { ArrowLeft, Loader2, Share2 } from "lucide-react";
@@ -150,28 +150,25 @@ export default function TerminalPage() {
                 {/* Left Toolbar */}
                 <TerminalToolbar />
 
-                {/* Center: Chart */}
+                {/* Center: Chart & Bottom Tabs (Split Layout) */}
                 <div className="flex-1 flex flex-col min-w-0">
-                    {/* Chart Area */}
-                    <div className="flex-1 min-h-0">
-                        <TerminalChart tokenMint={tokenId} />
-                    </div>
-
-                    {/* Bottom Tabs */}
-                    <div className="h-[200px] min-h-[200px]">
-                        <TerminalBottomTabs />
-                    </div>
+                    <VerticalSplitPanel
+                        topPanel={<TerminalChart tokenMint={tokenId} />}
+                        bottomPanel={<TerminalBottomTabs />}
+                        initialTopHeight={450}
+                        minTopHeight={150}
+                        minBottomHeight={150}
+                    />
                 </div>
 
-                {/* Right: Trade Panel + Credibility + Fee Earners */}
-                <div className="w-[300px] min-w-[300px] flex flex-col overflow-y-auto custom-scrollbar">
+                {/* Right: Trade Panel + Config + Fee Earners */}
+                <div className="w-[300px] min-w-[300px] flex flex-col overflow-y-auto custom-scrollbar border-l border-white/10 bg-[#0A0A0A]">
                     <TerminalTradePanel />
-                    <div className="p-2">
+                    <div className="p-4 border-t border-white/10">
                         <LaunchConfigPanel token={activeToken} />
                     </div>
-                    <CredibilityMatrix tokenId={tokenId} layout="terminal" />
                     {activeToken.hasBagsFees && (
-                        <div className="p-2">
+                        <div className="p-4 border-t border-white/10">
                             <FeeEarnersPanel
                                 feeEarners={activeToken.feeEarners}
                                 lifetimeFees={activeToken.lifetimeFees}
@@ -199,7 +196,7 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
             : `/terminal/${token.tokenId}`;
 
     return (
-        <div className="p-2 border-t border-white/5">
+        <div className="p-4 border-t border-white/10">
             <button
                 onClick={() => setOpen(!open)}
                 className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-mono uppercase tracking-widest text-[#888] hover:text-[#39FF14] transition-colors"

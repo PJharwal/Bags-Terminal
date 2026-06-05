@@ -52,7 +52,7 @@ export function LiveTicker() {
                                     {formatCurrency(t.marketCap)}
                                 </span>
                                 <span style={{ color }}>
-                                    {t.bondingProgress}%
+                                    {(t.bondingProgress || 0).toFixed(1)}%
                                 </span>
                             </Link>
                         );
