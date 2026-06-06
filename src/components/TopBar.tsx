@@ -12,6 +12,7 @@ const navItems = [
     { href: "/", label: "HOME" },
     { href: "/pulse", label: "PULSE" },
     { href: "/trending", label: "TRENDING" },
+    { href: "/kols", label: "KOLS" },
     { href: "/perps", label: "PERPS" },
     { href: "/prediction", label: "PREDICTION" },
     { href: "/launch", label: "LAUNCH" },

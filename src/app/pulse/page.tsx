@@ -8,6 +8,7 @@ import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { AxiomPulseColumn } from "@/components/pulse/AxiomPulseColumn";
 import { AxiomPulseToolbar } from "@/components/pulse/AxiomPulseToolbar";
+import { QuickBuyProvider } from "@/components/pulse/QuickBuyProvider";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
@@ -87,7 +88,7 @@ export default function PulsePage() {
     const {
         items,
         filters,
-        setFilters,
+        setFiltersAll,
         addItem,
         setConnected,
         clearItems,
@@ -127,7 +128,7 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
+                    if (filters.NEW.bagsOnly && !isBagsToken(t.mint)) return;
                     const item = processApiTokenData(t, state, solPrice);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
@@ -148,7 +149,7 @@ export default function PulsePage() {
         } finally {
             setIsLoading(false);
         }
-    }, [addItem, filters.bagsOnly, solPrice, markFeedOk]);
+    }, [addItem, filters.NEW.bagsOnly, solPrice, markFeedOk]);
 
     // One-time backfill on open (seeds all three columns, incl. Final Stretch /
     // Migrated which the socket rarely emits). After this the socket drives all
@@ -177,7 +178,7 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
+                    if (filters.NEW.bagsOnly && !isBagsToken(t.mint)) return;
                     reconcileItem(processApiTokenData(t, state, solPrice));
                 });
             };
@@ -190,7 +191,7 @@ export default function PulsePage() {
         } catch {
             // Best-effort; the socket remains the primary live source.
         }
-    }, [filters.bagsOnly, solPrice, reconcileItem, markFeedOk]);
+    }, [filters.NEW.bagsOnly, solPrice, reconcileItem, markFeedOk]);
 
     useEffect(() => {
         const id = setInterval(reconcileColumns, 30000);
@@ -204,7 +205,7 @@ export default function PulsePage() {
     useEffect(() => {
         if (latestTokens.length > 0) {
             const token = latestTokens[0];
-            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
+            if (filters.NEW.bagsOnly && !isBagsToken(token.mint)) return;
             if (processedTokensRef.current.has(token.mint)) return;
 
             processedTokensRef.current.add(token.mint);
@@ -260,7 +261,7 @@ export default function PulsePage() {
 
             addItem(item);
         }
-    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
+    }, [latestTokens, addItem, filters.NEW.bagsOnly, solPrice]);
 
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;
@@ -276,8 +277,8 @@ export default function PulsePage() {
 
     const handleTabChange = useCallback((tab: "live" | "bags") => {
         setActiveTab(tab);
-        setFilters({ bagsOnly: tab === "bags" });
-    }, [setFilters]);
+        setFiltersAll({ bagsOnly: tab === "bags" });
+    }, [setFiltersAll]);
 
     const totalTokens =
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
@@ -306,19 +307,20 @@ export default function PulsePage() {
     // keeps array identity stable across unrelated re-renders so the columns /
     // virtualizer don't churn on every socket event.
     const newItems = useMemo(
-        () => filterPulseItems(items.NEW, filters),
-        [items.NEW, filters],
+        () => filterPulseItems(items.NEW, filters.NEW),
+        [items.NEW, filters.NEW],
     );
     const finalStretchItems = useMemo(
-        () => filterPulseItems(items.FINAL_STRETCH, filters),
-        [items.FINAL_STRETCH, filters],
+        () => filterPulseItems(items.FINAL_STRETCH, filters.FINAL_STRETCH),
+        [items.FINAL_STRETCH, filters.FINAL_STRETCH],
     );
     const migratedItems = useMemo(
-        () => filterPulseItems(items.MIGRATED, filters),
-        [items.MIGRATED, filters],
+        () => filterPulseItems(items.MIGRATED, filters.MIGRATED),
+        [items.MIGRATED, filters.MIGRATED],
     );
 
     return (
+        <QuickBuyProvider>
         <div className="h-[calc(100vh-92px)] flex flex-col overflow-hidden bg-[#06070b]">
             {/* Axiom-style toolbar */}
             <AxiomPulseToolbar
@@ -388,6 +390,7 @@ export default function PulsePage() {
                 ) : (
                     <>
                         <AxiomPulseColumn
+                            state="NEW"
                             title="New Pairs"
                             tokens={getFilteredItems("NEW")}
                             isLoading={isLoading}
@@ -395,6 +398,7 @@ export default function PulsePage() {
                             className="flex-1"
                         />
                         <AxiomPulseColumn
+                            state="FINAL_STRETCH"
                             title="Final Stretch"
                             tokens={getFilteredItems("FINAL_STRETCH")}
                             isLoading={isLoading}
@@ -402,6 +406,7 @@ export default function PulsePage() {
                             className="flex-1"
                         />
                         <AxiomPulseColumn
+                            state="MIGRATED"
                             title="Migrated"
                             tokens={getFilteredItems("MIGRATED")}
                             isLoading={isLoading}
@@ -414,5 +419,6 @@ export default function PulsePage() {
 
             <PulseDrawer />
         </div>
+        </QuickBuyProvider>
     );
 }

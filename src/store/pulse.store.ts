@@ -135,19 +135,69 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 export type DisplayMode = 'cards' | 'compact' | 'table';
 export type TierFilter = 'all' | 'high' | 'medium' | 'low';
 
-interface PulseFilters {
+// Numeric min/max range — null means unbounded on that end.
+export interface FilterRange {
+    min: number | null;
+    max: number | null;
+}
+
+export interface PulseFilters {
     displayMode: DisplayMode;
     tierFilter: TierFilter;
     hideRisky: boolean;
     minMarketCap: number;
     bagsOnly: boolean; // Filter for BAGS tokens
+    launchpad: 'all' | 'pumpfun' | 'letsbonk' | 'bags';
+    // --- Advanced filters (Pulse filter popover) ---
+    search: string;         // comma-separated keywords; keep if name/symbol matches ANY
+    exclude: string;        // comma-separated keywords; drop if name/symbol matches ANY
+    protocols: string[];    // protocolSource substrings to include; [] = all
+    mcap: FilterRange;      // USD
+    volume: FilterRange;    // USD (24h)
+    liquidity: FilterRange; // USD
+    holders: FilterRange;   // count
+    txns: FilterRange;      // count
+    ageSec: FilterRange;    // seconds
+}
+
+// Fresh default advanced-filter values (new range objects each call).
+export function defaultAdvancedFilters() {
+    return {
+        launchpad: 'all' as const,
+        search: '',
+        exclude: '',
+        protocols: [] as string[],
+        mcap: { min: null, max: null } as FilterRange,
+        volume: { min: null, max: null } as FilterRange,
+        liquidity: { min: null, max: null } as FilterRange,
+        holders: { min: null, max: null } as FilterRange,
+        txns: { min: null, max: null } as FilterRange,
+        ageSec: { min: null, max: null } as FilterRange,
+    };
+}
+
+const isRangeSet = (r?: FilterRange) => !!r && (r.min != null || r.max != null);
+
+// True when any filter deviates from defaults (drives the filter-icon dot).
+export function hasActiveFilters(f: PulseFilters): boolean {
+    return (
+        f.hideRisky ||
+        f.bagsOnly ||
+        f.tierFilter !== 'all' ||
+        f.minMarketCap > 0 ||
+        (f.launchpad && f.launchpad !== 'all') ||
+        !!f.search ||
+        !!f.exclude ||
+        (f.protocols?.length ?? 0) > 0 ||
+        [f.mcap, f.volume, f.liquidity, f.holders, f.txns, f.ageSec].some(isRangeSet)
+    );
 }
 
 interface PulseStore {
     items: Record<PulseState, PulseItem[]>;
     isConnected: boolean;
     lastUpdate: number;
-    filters: PulseFilters;
+    filters: Record<PulseState, PulseFilters>;
     isInitialLoading: boolean;
 
     // Actions
@@ -162,7 +212,8 @@ interface PulseStore {
     removeItem: (tokenId: string) => void;
     clearItems: () => void;
     getItemById: (tokenId: string) => PulseItem | undefined;
-    setFilters: (filters: Partial<PulseFilters>) => void;
+    setFilters: (state: PulseState, filters: Partial<PulseFilters>) => void;
+    setFiltersAll: (filters: Partial<PulseFilters>) => void;
     getFilteredItems: (state: PulseState) => PulseItem[];
     setConnected: (connected: boolean) => void;
     loadInitialData: () => Promise<void>;
@@ -215,6 +266,48 @@ export function filterPulseItems(
         filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
     }
 
+    // Launchpad filter
+    if (filters.launchpad && filters.launchpad !== 'all') {
+        filtered = filtered.filter(item => {
+            if (filters.launchpad === 'bags') {
+                return item.protocolSource === 'bags' || item.tokenId.toLowerCase().endsWith('bags');
+            }
+            return item.protocolSource === filters.launchpad;
+        });
+    }
+
+    // --- Advanced filters (Pulse filter popover) ---
+    const kws = (s?: string) =>
+        (s || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+    const hay = (item: PulseItem) => `${item.name} ${item.symbol}`.toLowerCase();
+    const inRange = (v: number, r?: FilterRange) =>
+        !r || ((r.min == null || v >= r.min) && (r.max == null || v <= r.max));
+
+    const searchKw = kws(filters.search);
+    if (searchKw.length) {
+        filtered = filtered.filter(item => searchKw.some(k => hay(item).includes(k)));
+    }
+    const excludeKw = kws(filters.exclude);
+    if (excludeKw.length) {
+        filtered = filtered.filter(item => !excludeKw.some(k => hay(item).includes(k)));
+    }
+
+    if ((filters.protocols?.length ?? 0) > 0) {
+        filtered = filtered.filter(item => {
+            const p = (item.protocolSource || '').toLowerCase();
+            return filters.protocols.some(key => p.includes(key));
+        });
+    }
+
+    filtered = filtered.filter(item =>
+        inRange(item.marketCap ?? 0, filters.mcap) &&
+        inRange(item.volume24h ?? 0, filters.volume) &&
+        inRange(item.liquidity ?? 0, filters.liquidity) &&
+        inRange(item.holders ?? 0, filters.holders) &&
+        inRange(item.txCount ?? 0, filters.txns) &&
+        inRange(item.ageSeconds ?? 0, filters.ageSec)
+    );
+
     return filtered;
 }
 
@@ -228,12 +321,11 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     isConnected: false,
     isInitialLoading: false,
     lastUpdate: Date.now(),
+    // Per-column (per-tab) filters — independent for NEW / FINAL_STRETCH / MIGRATED.
     filters: {
-        displayMode: 'compact',
-        tierFilter: 'all',
-        hideRisky: false,
-        minMarketCap: 0,
-        bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
+        NEW: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
+        FINAL_STRETCH: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
+        MIGRATED: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
     },
 
     addItem: (item) => {
@@ -486,13 +578,21 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         return undefined;
     },
 
-    setFilters: (newFilters) => set((state) => ({
-        filters: { ...state.filters, ...newFilters },
+    setFilters: (col, newFilters) => set((s) => ({
+        filters: { ...s.filters, [col]: { ...s.filters[col], ...newFilters } },
+    })),
+
+    setFiltersAll: (newFilters) => set((s) => ({
+        filters: {
+            NEW: { ...s.filters.NEW, ...newFilters },
+            FINAL_STRETCH: { ...s.filters.FINAL_STRETCH, ...newFilters },
+            MIGRATED: { ...s.filters.MIGRATED, ...newFilters },
+        },
     })),
 
     getFilteredItems: (state) => {
         const { items, filters } = get();
-        return filterPulseItems(items[state], filters);
+        return filterPulseItems(items[state], filters[state]);
     },
 
     setConnected: (connected) => set({ isConnected: connected }),
