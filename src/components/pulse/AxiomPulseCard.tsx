@@ -12,8 +12,11 @@ import {
   RiUserStarFill,
   RiWaterFlashFill,
   RiShieldCheckFill,
+  RiLoader4Line,
 } from "@remixicon/react";
 import type { PulseItem } from "@/lib/types";
+import { useActiveBuyAmount } from "@/store/loadout.store";
+import { useQuickBuy } from "@/components/pulse/QuickBuyProvider";
 
 function formatCurrency(value: number): string {
   if (value >= 1_000_000_000) return `$${(value / 1_000_000_000).toFixed(2)}B`;
@@ -88,6 +91,9 @@ interface AxiomPulseCardProps {
 
 function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
   const router = useRouter();
+  const activeAmount = useActiveBuyAmount();
+  const { quickBuy, pendingMint } = useQuickBuy();
+  const isBuying = pendingMint === token.tokenId;
   const [copied, setCopied] = useState(false);
   const [imgFailed, setImgFailed] = useState(false);
   // Reset the failed flag when the logo changes (e.g. backfilled via
@@ -109,8 +115,22 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
     const src = (token.protocolSource || "").toLowerCase();
     if (src.includes("pump")) {
       return (
-        <div title="Pump.fun" className="flex items-center justify-center w-full h-full">
-          <PumpIcon />
+        <div title="Pump.fun" className="flex items-center justify-center w-full h-full p-[2px]">
+          <img src="/pump.fun.svg" alt="Pump.fun" className="w-full h-full object-contain" />
+        </div>
+      );
+    }
+    if (src.includes("letsbonk")) {
+      return (
+        <div title="LetsBonk" className="flex items-center justify-center w-full h-full p-[2px]">
+          <img src="/letsbonk.fun.svg" alt="LetsBonk" className="w-full h-full object-contain" />
+        </div>
+      );
+    }
+    if (src.includes("bags") || token.tokenId.toLowerCase().endsWith('bags')) {
+      return (
+        <div title="Bags" className="flex items-center justify-center w-full h-full p-[2px]">
+          <img src="/bags-logo.svg" alt="Bags" className="w-full h-full object-contain" />
         </div>
       );
     }
@@ -138,8 +158,8 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
       );
     }
     return (
-      <div title="Pump.fun" className="flex items-center justify-center w-full h-full">
-        <PumpIcon />
+      <div title="Pump.fun" className="flex items-center justify-center w-full h-full p-[2px]">
+        <img src="/pump.fun.svg" alt="Pump.fun" className="w-full h-full object-contain" />
       </div>
     );
   };
@@ -321,11 +341,20 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
           </div>
 
           <button
-            onClick={(e) => e.stopPropagation()}
-            className="px-1 py-[1px] rounded-xl text-[10px] font-semibold bg-[#526fff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[54px] justify-center shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              quickBuy(token.tokenId, activeAmount, token.symbol);
+            }}
+            disabled={isBuying}
+            title={`Quick buy ${activeAmount} SOL`}
+            className="px-1 py-[1px] rounded-xl text-[10px] font-semibold bg-[#526fff] text-black border-none cursor-pointer whitespace-nowrap flex items-center gap-[2px] min-w-[54px] justify-center shrink-0 disabled:opacity-60"
           >
-            <RiFlashlightFill className="w-3 h-3 text-black" />
-            <span className="text-black">0.1 SOL</span>
+            {isBuying ? (
+              <RiLoader4Line className="w-3 h-3 text-black animate-spin" />
+            ) : (
+              <RiFlashlightFill className="w-3 h-3 text-black" />
+            )}
+            <span className="text-black">{activeAmount} SOL</span>
           </button>
         </div>
       </div>

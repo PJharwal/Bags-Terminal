@@ -11,6 +11,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { config } from "@/config/env";
+import { mapExchangeToPoolHint } from "@/lib/poolHint";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -146,16 +147,10 @@ export function TerminalTradePanel() {
 
     // Map GMGN exchange to pool_type hint
     const getPoolHint = useCallback(() => {
-        if (!exchange) return {};
-        switch (exchange) {
-            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, coinCreator: coinCreator || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
-            case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
-            case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
-            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined, tokenStandard };
-            case "meteora_dbc": return { poolAddress: poolAddress || undefined, poolType: "meteora_dbc" };
-            case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
-            default: return {};
-        }
+        return mapExchangeToPoolHint({
+            exchange, poolAddress, quoteAddress, creatorAddress, coinCreator,
+            baseVaultAddress, quoteVaultAddress, tokenStandard,
+        });
     }, [exchange, poolAddress, quoteAddress, creatorAddress, coinCreator, baseVaultAddress, quoteVaultAddress, tokenStandard]);
 
     // Connect socket when authenticated
