@@ -13,6 +13,7 @@ export interface NewTokenEvent {
   creator: string;
   creator_token_status: string;
   protocol_source: "pumpfun" | "pumpfun_v2" | "bonk" | "meteora_dbc";
+  launchpad?: string;
   bonding_curve: string;
   initial_token_reserves: string;
   status: "active" | "migrated" | "rugged" | "inactive";

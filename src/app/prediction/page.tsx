@@ -1,26 +1,24 @@
 import type { Metadata } from 'next';
-import { ComingSoonMarket } from '@/components/ComingSoonMarket';
+import PredictionClient from './PredictionClient';
 
 export const metadata: Metadata = {
-  title: 'Cross-Chain Prediction Markets',
-  description: 'Trade Polymarket with Solana funds — no manual bridge. Coming soon to BAGS Terminal.',
+  title: 'Prediction Markets',
+  description:
+    'Trade Polymarket live with your Solana funds — no manual bridge, no chain-switching. Solver-routed cross-chain execution from BAGS Terminal.',
+  openGraph: {
+    title: 'Prediction Markets · BAGS Terminal',
+    description: 'Trade the outcome. Solana in, Solana out — live Polymarket markets.',
+    url: '/prediction',
+    images: [{ url: '/api/og?page=prediction', width: 1200, height: 630, alt: 'Prediction Markets on BAGS Terminal' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Prediction Markets · BAGS Terminal',
+    description: 'Trade the outcome. Solana in, Solana out — live Polymarket markets.',
+    images: ['/api/og?page=prediction'],
+  },
 };
 
 export default function PredictionPage() {
-  return (
-    <ComingSoonMarket
-      tagline="Cross-Chain Prediction Markets"
-      title="POLYMARKET, ZERO BRIDGING"
-      accent="#00F0FF"
-      status="In Testing"
-      description="Trade the world's largest prediction market with your Solana funds — no manual bridge, no chain-switching. Solver infrastructure routes execution so you stay on Solana the whole time."
-      points={[
-        'Trade Polymarket directly with Solana funds',
-        'No manual bridging — solver-routed execution',
-        'One wallet, one interface for every market',
-      ]}
-      stat="~$10B"
-      statLabel="Polymarket Monthly Volume (2026 peak)"
-    />
-  );
+  return <PredictionClient />;
 }

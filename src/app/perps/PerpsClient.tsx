@@ -450,7 +450,7 @@ export default function PerpsClient() {
             </>
           )}
 
-          <div className="ml-auto flex items-center gap-2">
+          {/* <div className="ml-auto flex items-center gap-2">
             {wsLive ? (
               <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded border border-[#39FF14]/30 bg-[#39FF14]/8 text-[9px] font-bold tracking-[0.14em] text-[#39FF14]">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#39FF14] animate-pulse" />
@@ -466,7 +466,7 @@ export default function PerpsClient() {
               <Lock size={9} />
               EXECUTION COMING SOON
             </span>
-          </div>
+          </div> */}
         </div>
 
         {error && markets.length === 0 ? (

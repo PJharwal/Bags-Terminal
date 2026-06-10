@@ -101,6 +101,30 @@ const MeteoraIcon = () => (
   </svg>
 );
 
+// Fixed brand → human-readable label map. Rendered as React text content only
+// (never interpolated into markup/attributes), so a hostile launchpad value
+// cannot inject HTML. Unknown non-empty values fall back to a titlecased form.
+const LAUNCHPAD_LABELS: Record<string, string> = {
+  bags: "Bags",
+  bonk_fun: "bonk.fun",
+  pumpfun_mayhem: "Mayhem",
+  moonshot: "Moonshot",
+  jupiter_studio: "Jupiter",
+  believe: "Believe",
+};
+
+const getLaunchpadLabel = (launchpad?: string): string | null => {
+  if (!launchpad) return null;
+  const key = launchpad.toLowerCase();
+  if (LAUNCHPAD_LABELS[key]) return LAUNCHPAD_LABELS[key];
+  // Titlecase the raw value as a safe fallback (rendered as text).
+  return key
+    .split(/[_\s-]+/)
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+};
+
 // Ring color reflects real risk data: red for critical flags, yellow for
 // warnings, neutral otherwise — never a pseudo-random signal.
 const getRingColor = (riskFlags: PulseItem["riskFlags"]): string => {
@@ -137,6 +161,7 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
   }
 
   const ringColor = getRingColor(token.riskFlags);
+  const launchpadLabel = getLaunchpadLabel(token.launchpad);
   const mcColor = useMemo(
     () => getMarketCapColor(token.marketCap),
     [token.marketCap],
@@ -257,6 +282,11 @@ function AxiomPulseCardComponent({ token }: AxiomPulseCardProps) {
               <span className="text-[10px] text-[#777a8c] shrink-0 font-semibold">
                 {token.symbol}
               </span>
+              {launchpadLabel && (
+                <span className="shrink-0 px-1 py-[1px] bg-[#1a1626] border border-[#2e2740] rounded text-[9px] text-[#a78bfa] font-semibold">
+                  {launchpadLabel}
+                </span>
+              )}
               <div
                 onClick={handleCopy}
                 className="relative flex items-center gap-1 shrink-0 px-1 py-[1px] bg-[#16161e] border border-[#23242e] rounded text-[9px] text-[#777a8c] hover:text-[#fcfcfc] hover:border-[#38394e] cursor-pointer transition-all font-mono"

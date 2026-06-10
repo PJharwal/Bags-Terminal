@@ -252,6 +252,7 @@ export interface RawTokenData {
   logo_url?: string;
   image_uri?: string;
   protocol_source?: string;
+  launchpad?: string;
   status?: string;
 }
 

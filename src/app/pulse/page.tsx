@@ -77,6 +77,7 @@ const processApiTokenData = (
         updatedAt: Date.now(),
         logoUrl: resolveTokenImage(data.logo_url || data.image_uri),
         protocolSource: data.protocol_source || "unknown",
+        launchpad: data.launchpad,
     };
 };
 

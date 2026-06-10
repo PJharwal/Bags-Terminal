@@ -113,6 +113,7 @@ export interface PulseItem {
     // Socket data fields
     logoUrl?: string;
     protocolSource?: string;
+    launchpad?: string;
 }
 
 // ==========================================

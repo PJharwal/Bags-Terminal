@@ -21,6 +21,10 @@ export const config = {
   siteUrl:
     process.env.NEXT_PUBLIC_SITE_URL || "https://www.bagsterminal.fm",
 
+  // omnera-polymarket Rust backend (prediction markets HTTP + Socket.IO)
+  polyBackendUrl:
+    process.env.NEXT_PUBLIC_POLY_BACKEND || "http://localhost:4001",
+
   // Turnkey Configuration (public keys only - private keys are server-side)
   turnkey: {
     organizationId: process.env.NEXT_PUBLIC_TURNKEY_ORGANIZATION_ID || "",

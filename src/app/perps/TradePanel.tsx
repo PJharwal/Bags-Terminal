@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock } from "lucide-react";
+import { Lock, ImageIcon, X } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { fetchL2BookGrouped, fmtPx, type GroupedBook, type PerpMarketEx } from "./lib";
+import { PerpsPnLCard } from "@/components/share/PerpsPnLCard";
 
 const BOOK_POLL_MS = 5000;
 const TAKER_FEE = 0.00045; // HL base-tier taker fee 0.045%
@@ -30,6 +31,7 @@ export function TradePanel({ market }: { market: PerpMarketEx }) {
   const [size, setSize] = useState("");
   const [lev, setLev] = useState(5);
   const [book, setBook] = useState<GroupedBook | null>(null);
+  const [showCard, setShowCard] = useState(false);
 
   const maxLev = Math.max(1, market.maxLeverage);
   const margin = parseFloat(size) || 0;
@@ -195,6 +197,46 @@ export function TradePanel({ market }: { market: PerpMarketEx }) {
         Live Hyperliquid market data. Fill, impact, fee, and liquidation figures
         are estimates. Order execution is not available yet.
       </p>
+
+      {/* Simulated PnL-card preview from the current panel inputs */}
+      <button
+        onClick={() => setShowCard(true)}
+        disabled={margin <= 0}
+        className="w-full mt-2 py-2 rounded font-mono text-[10px] uppercase tracking-widest border border-[#FFD700]/25 text-[#FFD700]/80 hover:text-[#FFD700] hover:border-[#FFD700]/50 transition-colors disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      >
+        <ImageIcon size={11} />
+        Preview PnL card (simulated)
+      </button>
+
+      {showCard && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setShowCard(false)}
+        >
+          <div className="max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex justify-end mb-2">
+              <button
+                onClick={() => setShowCard(false)}
+                className="text-[#666] hover:text-white transition-colors"
+                aria-label="Close"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <PerpsPnLCard
+              coin={market.coin}
+              side={side}
+              leverage={lev}
+              entryPx={entry}
+              markPx={entry}
+              marginUsd={margin}
+              pnlUsd={0}
+              roePct={0}
+              simulated
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

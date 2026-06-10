@@ -62,6 +62,8 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
         updatedAt: Date.now(),
         logoUrl: resolveTokenImage(token.logo),
         protocolSource: 'pumpfun',
+        // Trending service has no real protocol/brand source — no launchpad to map here.
+        launchpad: undefined,
     };
 };
 
@@ -132,6 +134,7 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
         // Store original data for reference
         logoUrl: resolveTokenImage(token.logo_url),
         protocolSource: token.protocol_source,
+        launchpad: token.launchpad,
     };
 };
 
@@ -299,7 +302,8 @@ export function filterPulseItems(
     if ((filters.protocols?.length ?? 0) > 0) {
         filtered = filtered.filter(item => {
             const p = (item.protocolSource || '').toLowerCase();
-            return filters.protocols.some(key => p.includes(key));
+            const lp = (item.launchpad || '').toLowerCase();
+            return filters.protocols.some(key => lp.includes(key) || p.includes(key));
         });
     }
 
