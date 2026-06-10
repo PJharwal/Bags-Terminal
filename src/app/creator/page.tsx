@@ -121,7 +121,6 @@ function CreatorShareCards({ wallet }: { wallet: string }) {
             <PortfolioCard
               tokensCreated={createdTokens.length}
               totalMarketCap={totalMarketCap}
-              totalVolume={0}
               totalFeesEarned={totalFeesEarned}
               bestToken={bestToken ? { symbol: bestToken.symbol, marketCap: bestToken.marketCap } : undefined}
               walletAddress={wallet}

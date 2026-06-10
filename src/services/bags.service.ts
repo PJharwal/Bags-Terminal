@@ -42,7 +42,8 @@ const BAGS_API_BASE = '/api/bags';
 
 async function fetchBags<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  throwOnHttpError = false
 ): Promise<T | null> {
   try {
     const response = await fetch(`${BAGS_API_BASE}${endpoint}`, {
@@ -56,11 +57,17 @@ async function fetchBags<T>(
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Unknown error' }));
       console.warn(`Bags API error [${response.status}]:`, error);
+      // Distinguish HTTP failure from empty data — never let a 404/5xx
+      // be rendered as a legitimate empty state.
+      if (throwOnHttpError || response.status === 404 || response.status >= 500) {
+        throw new Error(`Bags API error ${response.status}`);
+      }
       return null;
     }
 
     const data = await response.json();
-    return data.data ?? data;
+    // Public API v2 wraps payloads as { success, response }
+    return data.response ?? data.data ?? data;
   } catch (error) {
     console.error(`Bags API fetch error for ${endpoint}:`, error);
     throw error;
@@ -247,17 +254,17 @@ async function createTokenLaunch(
 // ==========================================
 
 async function getCreatedTokens(wallet: string): Promise<BagsCreatedToken[]> {
-  const result = await fetchBags<BagsCreatedToken[]>(`/creator/tokens?wallet=${wallet}`);
+  const result = await fetchBags<BagsCreatedToken[]>(`/creator/tokens?wallet=${encodeURIComponent(wallet)}`);
   return result || [];
 }
 
 async function getClaimableFees(wallet: string): Promise<FeeClaimInfo[]> {
-  const result = await fetchBags<FeeClaimInfo[]>(`/creator/claimable?wallet=${wallet}`);
+  const result = await fetchBags<FeeClaimInfo[]>(`/creator/claimable?wallet=${encodeURIComponent(wallet)}`);
   return result || [];
 }
 
 async function getClaimHistory(wallet: string): Promise<ClaimEvent[]> {
-  const result = await fetchBags<ClaimEvent[]>(`/creator/history?wallet=${wallet}`);
+  const result = await fetchBags<ClaimEvent[]>(`/creator/history?wallet=${encodeURIComponent(wallet)}`);
   return result || [];
 }
 
@@ -298,14 +305,14 @@ async function createPartnerConfig(
  * Get partner configuration for a wallet
  */
 async function getPartnerConfig(wallet: string): Promise<PartnerConfig | null> {
-  return fetchBags<PartnerConfig>(`/partner/config?wallet=${wallet}`);
+  return fetchBags<PartnerConfig>(`/partner/config?wallet=${encodeURIComponent(wallet)}`);
 }
 
 /**
  * Get claimable partner fees
  */
 async function getPartnerClaimable(partnerKey: string): Promise<PartnerClaimInfo | null> {
-  return fetchBags<PartnerClaimInfo>(`/partner/claimable?partnerKey=${partnerKey}`);
+  return fetchBags<PartnerClaimInfo>(`/partner/claimable?partnerKey=${encodeURIComponent(partnerKey)}`);
 }
 
 /**
@@ -331,7 +338,7 @@ async function createPartnerClaimTransactions(
  * Get fee share wallet info (v2) with support for GitHub, Kick, TikTok, and Twitter
  */
 async function getFeeShareWalletInfo(wallet: string): Promise<FeeShareWalletInfo | null> {
-  return fetchBags<FeeShareWalletInfo>(`/fee-share/wallet/v2?wallet=${wallet}`);
+  return fetchBags<FeeShareWalletInfo>(`/fee-share/wallet/v2?wallet=${encodeURIComponent(wallet)}`);
 }
 
 // ==========================================
@@ -339,7 +346,7 @@ async function getFeeShareWalletInfo(wallet: string): Promise<FeeShareWalletInfo
 // ==========================================
 
 async function getSocialLinks(wallet: string): Promise<SocialLink[]> {
-  const result = await fetchBags<SocialLink[]>(`/social/links?wallet=${wallet}`);
+  const result = await fetchBags<SocialLink[]>(`/social/links?wallet=${encodeURIComponent(wallet)}`);
   return result || [];
 }
 
@@ -364,7 +371,7 @@ async function lookupBySocial(
   username: string
 ): Promise<string | null> {
   const result = await fetchBags<{ wallet: string }>(
-    `/social/lookup?provider=${provider}&username=${username}`
+    `/social/lookup?provider=${encodeURIComponent(provider)}&username=${encodeURIComponent(username)}`
   );
   return result?.wallet || null;
 }
@@ -374,7 +381,7 @@ async function lookupBySocial(
 // ==========================================
 
 async function getTokenMetadata(mint: string): Promise<BagsTokenMetadata | null> {
-  return fetchBags<BagsTokenMetadata>(`/token/metadata?mint=${mint}`);
+  return fetchBags<BagsTokenMetadata>(`/token/metadata?mint=${encodeURIComponent(mint)}`);
 }
 
 // ==========================================
@@ -385,31 +392,35 @@ async function getTokenMetadata(mint: string): Promise<BagsTokenMetadata | null>
  * Get total lifetime fees earned by a token (in lamports)
  */
 async function getTokenLifetimeFees(mint: string): Promise<number> {
-  const result = await fetchBags<{ response: number }>(
-    `/token-launch/lifetime-fees?tokenMint=${mint}`
+  const result = await fetchBags<number>(
+    `/token-launch/lifetime-fees?tokenMint=${encodeURIComponent(mint)}`,
+    {},
+    true
   );
   // API returns lamports, convert to SOL
-  return result?.response ? result.response / 1_000_000_000 : 0;
+  return result ? result / 1_000_000_000 : 0;
 }
 
 /**
  * Get all fee earners/creators for a token (v3 endpoint with full details)
  */
 async function getTokenCreators(mint: string): Promise<BagsTokenCreator[]> {
-  const result = await fetchBags<{ response: BagsTokenCreator[] }>(
-    `/token-launch/creator/v3?tokenMint=${mint}`
+  const result = await fetchBags<BagsTokenCreator[]>(
+    `/token-launch/creator/v3?tokenMint=${encodeURIComponent(mint)}`,
+    {},
+    true
   );
-  return result?.response || [];
+  return result || [];
 }
 
 /**
  * Get claim statistics per earner (includes total claimed amounts)
  */
 async function getTokenClaimStats(mint: string): Promise<BagsTokenCreatorWithStats[]> {
-  const result = await fetchBags<{ response: BagsTokenCreatorWithStats[] }>(
-    `/token-launch/claim-stats?tokenMint=${mint}`
+  const result = await fetchBags<BagsTokenCreatorWithStats[]>(
+    `/token-launch/claim-stats?tokenMint=${encodeURIComponent(mint)}`
   );
-  return result?.response || [];
+  return result || [];
 }
 
 /**
@@ -485,10 +496,10 @@ async function getTokenFeeInfo(mint: string): Promise<{
 
 async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
   // SDK v1.3.5: leaderboard moved to /token-launch/top-tokens/lifetime-fees
-  const result = await fetchBags<{ response: BagsLeaderboardItem[] }>(
+  const result = await fetchBags<BagsLeaderboardItem[]>(
     '/token-launch/top-tokens/lifetime-fees'
   );
-  return result?.response || [];
+  return result || [];
 }
 
 // ==========================================
@@ -498,10 +509,13 @@ async function getTopTokensByFees(): Promise<BagsLeaderboardItem[]> {
 async function getLaunchFeed(options: {
   limit?: number;
 } = {}): Promise<BagsLaunchFeedItem[]> {
-  const result = await fetchBags<{ response: Array<Record<string, unknown>> }>(
+  // Note: /token-launch/feed rejects ALL query parameters with 400
+  // (verified by live probe), so limit is applied client-side.
+  const result = await fetchBags<Array<Record<string, unknown>>>(
     '/token-launch/feed'
   );
-  const items = result?.response || [];
+  let items = result || [];
+  if (options.limit) items = items.slice(0, options.limit);
   return items.map((item) => ({
     mint: (item.tokenMint as string) || '',
     name: (item.name as string) || '',
@@ -521,7 +535,7 @@ async function getLaunchFeed(options: {
 // ==========================================
 
 async function getPoolByTokenMint(mint: string): Promise<BagsPoolData | null> {
-  return fetchBags<BagsPoolData>(`/pool/by-token-mint?tokenMint=${mint}`);
+  return fetchBags<BagsPoolData>(`/pool/by-token-mint?tokenMint=${encodeURIComponent(mint)}`);
 }
 
 // ==========================================
@@ -530,7 +544,7 @@ async function getPoolByTokenMint(mint: string): Promise<BagsPoolData | null> {
 
 async function getAdminTokens(wallet: string): Promise<FeeShareAdminToken[]> {
   const result = await fetchBags<FeeShareAdminToken[]>(
-    `/fee-share/admin/tokens?wallet=${wallet}`
+    `/fee-share/admin/tokens?wallet=${encodeURIComponent(wallet)}`
   );
   return result || [];
 }
@@ -586,7 +600,7 @@ async function createDexscreenerOrder(
 
 async function checkDexscreenerAvailability(tokenMint: string): Promise<DexscreenerAvailability> {
   const result = await fetchBags<DexscreenerAvailability>(
-    `/solana/dexscreener/order-availability?tokenMint=${tokenMint}`
+    `/solana/dexscreener/order-availability?tokenMint=${encodeURIComponent(tokenMint)}`
   );
   if (!result) throw new Error('Failed to check Dexscreener availability');
   return result;
@@ -612,10 +626,13 @@ async function getClaimTransactionsV3(
   tokenMint: string,
   walletAddress: string
 ): Promise<string[]> {
-  const result = await fetchBags<{ transactions: string[] }>(
-    `/token-launch/claim-txs/v3?tokenMint=${tokenMint}&wallet=${walletAddress}`
+  // Endpoint is POST-only (GET returns 404, verified by live probe).
+  const result = await postBags<{ transactions: string[] } | string[]>(
+    '/token-launch/claim-txs/v3',
+    { tokenMint, feeClaimer: walletAddress }
   );
-  return result?.transactions || [];
+  if (!result) return [];
+  return Array.isArray(result) ? result : result.transactions || [];
 }
 
 // ==========================================
@@ -629,10 +646,14 @@ async function getAllPools(): Promise<BagsPool[]> {
   if (allPoolsCache && Date.now() - allPoolsCache.ts < 60_000) {
     return allPoolsCache.data;
   }
-  const result = await fetchBags<BagsPool[]>('/solana/bags/pools');
-  if (result) {
-    allPoolsCache = { data: result, ts: Date.now() };
-    return result;
+  try {
+    const result = await fetchBags<BagsPool[]>('/solana/bags/pools');
+    if (result) {
+      allPoolsCache = { data: result, ts: Date.now() };
+      return result;
+    }
+  } catch (error) {
+    console.error('Failed to fetch pools:', error);
   }
   // Serve stale data on failure rather than an empty list.
   return allPoolsCache?.data ?? [];

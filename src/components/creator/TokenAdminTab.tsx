@@ -67,8 +67,14 @@ function AdminTokenCard({ token, wallet }: { token: FeeShareAdminToken; wallet: 
   const [success, setSuccess] = useState<string | null>(null);
   const [copiedKey, setCopiedKey] = useState(false);
 
+  const isValidNewAdmin = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(newAdmin.trim());
+
   const handleTransferAdmin = async () => {
     if (!newAdmin.trim() || !sendTransaction) return;
+    if (!isValidNewAdmin) {
+      setError('Invalid Solana address');
+      return;
+    }
     setIsSubmitting(true);
     setError(null);
     setSuccess(null);
@@ -170,10 +176,15 @@ function AdminTokenCard({ token, wallet }: { token: FeeShareAdminToken; wallet: 
             placeholder="Wallet address..."
             className="w-full px-3 py-2 text-[10px] font-mono bg-[#1A1A1A] border border-white/10 text-[#EDEDED] placeholder:text-[#444] focus:border-[#39FF14]/30 focus:outline-none"
           />
+          {isValidNewAdmin && (
+            <span className="text-[9px] font-mono text-[#888]">
+              Transferring admin to {newAdmin.trim().slice(0, 4)}...{newAdmin.trim().slice(-4)} — this is irreversible
+            </span>
+          )}
           <div className="flex gap-2">
             <button
               onClick={handleTransferAdmin}
-              disabled={isSubmitting || !newAdmin.trim()}
+              disabled={isSubmitting || !isValidNewAdmin}
               className="flex-1 flex items-center justify-center gap-1.5 py-2 text-[9px] font-bold uppercase tracking-wider bg-[#FF003C] text-white hover:brightness-110 transition-all disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 size={10} className="animate-spin" /> : <ArrowRightLeft size={10} />}

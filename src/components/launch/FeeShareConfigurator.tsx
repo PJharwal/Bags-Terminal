@@ -73,7 +73,9 @@ export function FeeShareConfigurator() {
                   }
                 </span>
                 <span className="text-[8px] text-[#666] uppercase">
-                  {claimer.type === 'wallet' ? 'Wallet' : PROVIDER_LABELS[claimer.provider!]}
+                  {claimer.id.startsWith('referrer_')
+                    ? 'Referrer · suggested'
+                    : claimer.type === 'wallet' ? 'Wallet' : PROVIDER_LABELS[claimer.provider!]}
                 </span>
               </div>
               <div className="flex items-center gap-2">

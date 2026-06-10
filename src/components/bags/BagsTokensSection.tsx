@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -47,6 +47,14 @@ function formatUsd(amount: number): string {
   }).format(amount);
 }
 
+// Known social provider profile URLs
+const PROVIDER_URLS: Record<string, (username: string) => string> = {
+  twitter: (u) => `https://twitter.com/${u}`,
+  github: (u) => `https://github.com/${u}`,
+  kick: (u) => `https://kick.com/${u}`,
+  tiktok: (u) => `https://tiktok.com/@${u}`,
+};
+
 // Creator card component
 function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) {
   const [copied, setCopied] = useState(false);
@@ -85,18 +93,18 @@ function CreatorCard({ creator }: { creator: BagsTokenCreator; index: number }) 
             {creator.username || "Anonymous"}
           </span>
           {creator.provider && creator.providerUsername && (
-            <a
-              href={
-                creator.provider === "twitter"
-                  ? `https://twitter.com/${creator.providerUsername}`
-                  : "#"
-              }
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#1DA1F2] hover:underline text-xs"
-            >
-              @{creator.providerUsername}
-            </a>
+            PROVIDER_URLS[creator.provider] ? (
+              <a
+                href={PROVIDER_URLS[creator.provider](creator.providerUsername)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#1DA1F2] hover:underline text-xs"
+              >
+                @{creator.providerUsername}
+              </a>
+            ) : (
+              <span className="text-[#888] text-xs">@{creator.providerUsername}</span>
+            )
           )}
         </div>
         <div className="flex items-center gap-2 mt-0.5">
@@ -300,8 +308,13 @@ function AddTokenModal({
   } | null>(null);
 
   const validateAndAdd = async () => {
-    if (!mint.trim()) {
+    const trimmedMint = mint.trim();
+    if (!trimmedMint) {
       setError("Please enter a token mint address");
+      return;
+    }
+    if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(trimmedMint)) {
+      setError("Invalid mint address format");
       return;
     }
 
@@ -310,19 +323,22 @@ function AddTokenModal({
     setValidationResult(null);
 
     try {
-      const result = await bagsTokensService.validateBagsToken(mint.trim());
+      const result = await bagsTokensService.validateBagsToken(trimmedMint);
 
       if (result.isValid) {
         setValidationResult({ isValid: true, lifetimeFees: result.lifetimeFees });
         onAdd({
-          mint: mint.trim(),
+          mint: trimmedMint,
           name: name.trim() || "Unknown Token",
           symbol: symbol.trim() || "???",
         });
         setMint("");
         setName("");
         setSymbol("");
-        onClose();
+        setTimeout(() => {
+          setValidationResult(null);
+          onClose();
+        }, 1500);
       } else {
         setError(result.error || "Invalid BAGS token");
       }
@@ -445,6 +461,9 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
   const [showAddModal, setShowAddModal] = useState(false);
   const [error, setError] = useState("");
 
+  const solPriceRef = useRef(solPrice);
+  solPriceRef.current = solPrice;
+
   const loadTokens = useCallback(async (refresh = false) => {
     if (refresh) {
       setIsRefreshing(true);
@@ -454,7 +473,7 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
     setError("");
 
     try {
-      const data = await bagsTokensService.fetchAllBagsTokensFeeData(solPrice);
+      const data = await bagsTokensService.fetchAllBagsTokensFeeData(solPriceRef.current);
       setTokens(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load BAGS tokens");
@@ -462,7 +481,7 @@ export default function BagsTokensSection({ solPrice = 140 }: { solPrice?: numbe
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [solPrice]);
+  }, []);
 
   useEffect(() => {
     loadTokens();

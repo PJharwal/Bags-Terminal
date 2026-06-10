@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useLaunchStore } from '@/store/launch.store';
 import { useBagsWallet } from '@/hooks/useWallet';
 import { Loader2, CheckCircle2, XCircle, Rocket, Heart } from 'lucide-react';
@@ -18,10 +17,9 @@ const STATUS_LABELS: Record<string, string> = {
 };
 
 export function TransactionSummary() {
-  const router = useRouter();
   const {
     metadata, feeClaimers, initialBuyAmount, status, error, result,
-    tipEnabled, tipAmountSol, imageSourceMode, imageUrl,
+    tipEnabled, tipAmountSol, imageSourceMode, imageUrl, imagePreviewUrl,
     executeLaunch,
   } = useLaunchStore();
   const { connected, publicKey, balance, sendTransaction, connection } = useBagsWallet();
@@ -32,7 +30,7 @@ export function TransactionSummary() {
   const totalCost = initialBuyAmount + txFeeEstimate + tipCost;
   const hasSufficientBalance = balance !== null && balance >= totalCost;
 
-  const hasImage = imageSourceMode === 'url' ? imageUrl.length > 0 : true;
+  const hasImage = imageSourceMode === 'url' ? imageUrl.length > 0 : imagePreviewUrl !== null;
 
   const isFormValid =
     metadata.name.length > 0 &&
@@ -47,11 +45,7 @@ export function TransactionSummary() {
   const handleLaunch = async () => {
     if (!publicKey || !sendTransaction) return;
     try {
-      const launchResult = await executeLaunch(publicKey, sendTransaction as SendTransactionFn, connection);
-      // Redirect to terminal after success
-      setTimeout(() => {
-        router.push(`/terminal/${launchResult.tokenMint}`);
-      }, 2000);
+      await executeLaunch(publicKey, sendTransaction as SendTransactionFn, connection);
     } catch (err) {
       console.error('Launch failed:', err);
     }
@@ -119,7 +113,7 @@ export function TransactionSummary() {
         <div className="badge-green flex items-center gap-2 p-2.5">
           <CheckCircle2 size={12} />
           <span className="text-[9px] font-mono">
-            Token launched! Redirecting to terminal...
+            Token launched!
           </span>
         </div>
       )}

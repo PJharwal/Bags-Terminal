@@ -28,7 +28,8 @@ export function useFeeData(
 
     bagsService.getTokenFeeInfo(tokenId)
       .then((info) => {
-        if (mounted && info) {
+        if (!mounted) return;
+        if (info) {
           const topEarner = info.creators.length > 0
             ? Math.max(...info.creators.map(c => c.royaltyBps)) / 100
             : 0;
@@ -44,7 +45,8 @@ export function useFeeData(
         }
       })
       .catch(() => {
-        if (mounted) setError(true);
+        if (!mounted) return;
+        setError(true);
         onFeeDataLoaded?.(tokenId, false);
       })
       .finally(() => {

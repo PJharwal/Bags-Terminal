@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, AlertTriangle, RefreshCw, Rocket, Users, Coins } from "lucide-react";
+import { Loader2, AlertTriangle, RefreshCw, Rocket } from "lucide-react";
 import { bagsService } from "@/services/bags.service";
-import { formatNumber, formatTimeAgo } from "@/lib/format";
+import { formatTimeAgo } from "@/lib/format";
 import type { BagsLaunchFeedItem } from "@/lib/bags-types";
 
 const REFRESH_INTERVAL = 30_000;
@@ -39,7 +39,8 @@ function SkeletonRow() {
 
 function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
     const router = useRouter();
-    const createdAtMs = item.createdAt ? (item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt) : Date.now();
+    const createdAtMs = item.createdAt ? (item.createdAt < 1e12 ? item.createdAt * 1000 : item.createdAt) : undefined;
+    const statusLabel = item.status ? item.status.replace('_', ' ') : createdAtMs ? formatTimeAgo(createdAtMs) : null;
 
     return (
         <button
@@ -70,33 +71,18 @@ function LaunchItem({ item }: { item: BagsLaunchFeedItem }) {
                 </div>
                 <div className="flex items-center gap-2 text-[9px] text-[#444] font-mono mt-0.5">
                     <span>{truncateAddress(item.creator)}</span>
-                    <span className="text-[#333]">&middot;</span>
-                    <span>{item.status ? item.status.replace('_', ' ') : formatTimeAgo(createdAtMs)}</span>
+                    {statusLabel && (
+                        <>
+                            <span className="text-[#333]">&middot;</span>
+                            <span>{statusLabel}</span>
+                        </>
+                    )}
                 </div>
             </div>
 
-            <div className="text-right shrink-0 space-y-0.5">
+            <div className="text-right shrink-0">
                 <div className="text-[10px] font-bold text-[#EDEDED] font-mono">
                     {formatMarketCap(item.marketCap)}
-                </div>
-                <div className="flex items-center gap-2 justify-end text-[9px] font-mono text-[#555]">
-                    {item.bondingCurve !== undefined && (
-                        <span className={item.bondingCurve >= 90 ? "text-[#39FF14]" : item.bondingCurve >= 50 ? "text-[#FAFF00]" : ""}>
-                            {item.bondingCurve.toFixed(0)}%
-                        </span>
-                    )}
-                    {item.lifetimeFees !== undefined && item.lifetimeFees > 0 && (
-                        <span className="text-[#FFD700] flex items-center gap-0.5">
-                            <Coins size={8} />
-                            {formatNumber(item.lifetimeFees)}
-                        </span>
-                    )}
-                    {item.creatorCount !== undefined && item.creatorCount > 1 && (
-                        <span className="text-[#00F0FF] flex items-center gap-0.5">
-                            <Users size={8} />
-                            {item.creatorCount}
-                        </span>
-                    )}
                 </div>
             </div>
         </button>

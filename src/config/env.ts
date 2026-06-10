@@ -16,6 +16,11 @@ export const config = {
   buysellServerUrl:
     process.env.NEXT_PUBLIC_BUYSELL_SERVER_URL || "",
 
+  // Canonical public site URL — used for shareable/referral links so tweets and
+  // share cards never bake in localhost or a preview host.
+  siteUrl:
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.bagsterminal.fm",
+
   // Turnkey Configuration (public keys only - private keys are server-side)
   turnkey: {
     organizationId: process.env.NEXT_PUBLIC_TURNKEY_ORGANIZATION_ID || "",

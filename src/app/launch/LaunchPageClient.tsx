@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { LaunchTokenForm } from '@/components/launch/LaunchTokenForm';
@@ -10,18 +10,39 @@ import { TransactionSummary } from '@/components/launch/TransactionSummary';
 import { BagsLogo } from '@/components/ui/BagsLogo';
 import { TokenLaunchCard } from '@/components/share/TokenLaunchCard';
 import { useLaunchStore } from '@/store/launch.store';
+import { track, EVENTS } from '@/lib/analytics';
+
+// A referrer link (?ref=<wallet>) suggests a small fee-share slice to the referrer.
+const SUGGESTED_REFERRER_PCT = 5;
+const isSolanaAddress = (s: string) => /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
 
 function LaunchPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const ref = searchParams.get('ref');
-  const { partnerKey, setPartnerKey, status, result, metadata, feeClaimers, initialBuyAmount } = useLaunchStore();
+  const { status, result, metadata, feeClaimers, initialBuyAmount, imageSourceMode, imageUrl, ipfsUrl, imagePreviewUrl } = useLaunchStore();
+  const prefilledRef = useRef(false);
 
+  // Pre-fill the referrer as a suggested (editable, removable) fee claimer.
   useEffect(() => {
-    if (ref && !partnerKey) {
-      setPartnerKey(ref);
+    if (!ref || prefilledRef.current || !isSolanaAddress(ref)) return;
+    prefilledRef.current = true;
+    track(EVENTS.REFERRAL_VISIT);
+    const id = `referrer_${ref}`;
+    const { feeClaimers: current, addFeeClaimer } = useLaunchStore.getState();
+    if (!current.some((c) => c.id === id)) {
+      addFeeClaimer({ id, type: 'wallet', identifier: ref, percentage: SUGGESTED_REFERRER_PCT });
     }
-  }, [ref, partnerKey, setPartnerKey]);
+  }, [ref]);
+
+  // Fire a launch_success event once when a launch completes.
+  const trackedSuccess = useRef(false);
+  useEffect(() => {
+    if (status === 'success' && result && !trackedSuccess.current) {
+      trackedSuccess.current = true;
+      track(EVENTS.LAUNCH_SUCCESS, { claimers: feeClaimers.length });
+    }
+  }, [status, result, feeClaimers.length]);
 
   const shortenedRef = ref ? `${ref.slice(0, 4)}...${ref.slice(-4)}` : null;
 
@@ -50,17 +71,29 @@ function LaunchPageContent() {
             <TokenLaunchCard
               tokenName={metadata.name}
               tokenSymbol={metadata.symbol}
-              tokenImage={metadata.imageUrl || metadata.image}
+              tokenImage={imageSourceMode === 'url' ? (imageUrl || undefined) : (ipfsUrl || imagePreviewUrl || undefined)}
               initialBuyAmount={initialBuyAmount}
               tokenMint={result.tokenMint}
               feeClaimersCount={feeClaimers.length}
             />
-            <button
-              onClick={() => router.push(`/terminal/${result.tokenMint}`)}
-              className="w-full mt-3 px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/10 text-[#888] hover:text-white hover:border-white/20 transition-colors"
-            >
-              Open in Terminal →
-            </button>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => {
+                  const mint = result.tokenMint;
+                  useLaunchStore.getState().reset();
+                  router.push(`/terminal/${mint}`);
+                }}
+                className="flex-1 px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/10 text-[#888] hover:text-white hover:border-white/20 transition-colors"
+              >
+                Open in Terminal →
+              </button>
+              <button
+                onClick={() => useLaunchStore.getState().reset()}
+                className="px-4 py-2 text-[10px] font-mono uppercase tracking-widest border border-white/10 text-[#666] hover:text-white hover:border-white/20 transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

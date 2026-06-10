@@ -51,6 +51,8 @@ export function useSolPrice() {
     return { price, isLoading, isLive: cachedPrice !== SOL_PRICE_FALLBACK };
 }
 
+export const getSolPrice = () => cachedPrice;
+
 export function solToUsd(solAmount: number, solPrice: number = cachedPrice): number {
     return solAmount * solPrice;
 }

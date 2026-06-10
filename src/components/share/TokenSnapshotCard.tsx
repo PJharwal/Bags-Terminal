@@ -32,11 +32,12 @@ export function TokenSnapshotCard({
 
   // URL is passed via shareUrl (X unfurls the token OG card); omit it from the
   // text. Only include holders when we actually have a count.
+  const sym = tokenSymbol || 'UNK';
   const holdersLine = holders > 0 ? `\nHolders: ${formatNumber(holders)}` : '';
-  const tweetText = `$${tokenSymbol} on BAGS Terminal 📊\n\nPrice: $${price}\n24h: ${changePrefix}${priceChange24h.toFixed(1)}%\nMC: ${formatCurrency(marketCap)}\nVol: ${formatCurrency(volume24h)}${holdersLine}${hasBagsFees ? `\nFees: ${lifetimeFees?.toFixed(4)} SOL` : ''}`;
+  const tweetText = `$${sym} on BAGS Terminal 📊\n\nPrice: $${price}\n24h: ${changePrefix}${priceChange24h.toFixed(1)}%\nMC: ${formatCurrency(marketCap)}\nVol: ${formatCurrency(volume24h)}${holdersLine}${hasBagsFees ? `\nFees: ${lifetimeFees?.toFixed(4)} SOL` : ''}`;
 
   return (
-    <ShareCardWrapper tweetText={tweetText} filename={`bags-snapshot-${tokenSymbol.toLowerCase()}`} shareUrl={shareUrl}>
+    <ShareCardWrapper tweetText={tweetText} filename={`bags-snapshot-${sym.toLowerCase()}`} shareUrl={shareUrl}>
       <div style={{ fontFamily: mono }}>
         {/* Header: Token + Price + Change */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
@@ -49,11 +50,11 @@ export function TokenSnapshotCard({
                 border: '2px solid rgba(255,255,255,0.1)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <span style={{ fontSize: 18, fontWeight: 'bold', color: '#fff', fontFamily: mono }}>{tokenSymbol[0]}</span>
+                <span style={{ fontSize: 18, fontWeight: 'bold', color: '#fff', fontFamily: mono }}>{sym[0]}</span>
               </div>
             )}
             <div>
-              <div style={{ fontSize: 20, fontWeight: 'bold', color: '#fff', fontFamily: mono }}>${tokenSymbol}</div>
+              <div style={{ fontSize: 20, fontWeight: 'bold', color: '#fff', fontFamily: mono }}>${sym}</div>
               <div style={{ fontSize: 11, color: '#666', fontFamily: mono }}>{tokenName}</div>
             </div>
           </div>

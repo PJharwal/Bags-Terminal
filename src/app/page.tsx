@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { TrendingUp, Rocket, BarChart3, Wallet, Activity, Search } from 'lucide-react';
@@ -16,17 +16,7 @@ import { HotCard } from '@/components/ui/HotCard';
 import { StatCell } from '@/components/ui/StatCell';
 import { SectionHeader } from '@/components/ui/SectionHeader';
 import { LivePulseDot } from '@/components/ui/LivePulseDot';
-
-// Ticker Token Display
-const TickerToken = ({ token }: { token: PulseItem }) => (
-  <span className="inline-flex items-center mx-8 font-mono text-sm">
-    <span className="text-[#39FF14] font-bold">{token.symbol}</span>
-    <span className="text-[#888] mx-2">MC {formatCurrency(token.marketCap)}</span>
-    <span className={token.bondingProgress >= 85 ? 'text-white' : 'text-[#444]'}>
-      {(token.bondingProgress || 0).toFixed(1)}%
-    </span>
-  </span>
-);
+import { Onboarding } from '@/components/home/Onboarding';
 
 // Enhanced BAGS Token Card with fee data
 const BagsTokenCard = ({ token }: { token: PulseItem }) => {
@@ -105,30 +95,20 @@ const BagsTokenCard = ({ token }: { token: PulseItem }) => {
 };
 
 export default function HomePage() {
-  const [mounted, setMounted] = useState(false);
   const { connected, shortenedAddress } = useBagsWallet();
   const { items, loadInitialData } = usePulseStore();
   const { connect } = useSocketStore();
   const { setVisible } = useWalletModal();
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
     connect();
     // Load initial data from GMGN/DexScreener while socket connects
     loadInitialData();
   }, [connect, loadInitialData]);
 
-  if (!mounted) return null;
-
   // BAGS tokens from pulse (sorted by market cap)
   const allBagsTokens = [...items.NEW, ...items.FINAL_STRETCH, ...items.MIGRATED]
     .sort((a, b) => b.marketCap - a.marketCap);
-
-
-  const tickerTokens = allBagsTokens.length > 0
-    ? [...allBagsTokens, ...allBagsTokens].slice(0, 20)
-    : [];
 
   // Separate by state for display
   const migratedTokens = items.MIGRATED.slice(0, 4);
@@ -139,6 +119,9 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#050505] text-[#EDEDED] font-mono selection:bg-[#39FF14] selection:text-black">
       <div className="fixed inset-0 bg-grid-pattern opacity-20 pointer-events-none" />
+
+      {/* First-visit walkthrough — only shows for new, disconnected visitors */}
+      <Onboarding />
 
       <div className="relative">
         {!connected ? (
@@ -261,20 +244,23 @@ export default function HomePage() {
               <div className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-3 gap-3 sm:gap-5">
                   <StatCell
-                    label="24H VOLUME"
+                    label="TRACKED VOLUME"
                     value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
                     accent="green"
                     size="lg"
                   />
                   <StatCell
-                    label="ACTIVE LAUNCHES"
+                    label="TRACKED TOKENS"
                     value={allBagsTokens.length.toString()}
                     accent="default"
                     size="lg"
                   />
                   <StatCell
                     label="HOLDERS"
-                    value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
+                    value={(() => {
+                      const sum = allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0);
+                      return sum > 0 ? sum.toLocaleString() : '—';
+                    })()}
                     accent="blue"
                     size="lg"
                   />
@@ -355,18 +341,21 @@ export default function HomePage() {
                 {/* Stats strip */}
                 <div className="grid grid-cols-3 gap-3 sm:gap-5 mb-6">
                   <StatCell
-                    label="24H VOLUME"
+                    label="TRACKED VOLUME"
                     value={`$${(allBagsTokens.reduce((a, t) => a + (t.volume24h || 0), 0) / 1e6).toFixed(1)}M`}
                     accent="green"
                   />
                   <StatCell
-                    label="LIVE TOKENS"
+                    label="TRACKED TOKENS"
                     value={allBagsTokens.length.toString()}
                     accent="default"
                   />
                   <StatCell
                     label="HOLDERS"
-                    value={(allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0)).toLocaleString()}
+                    value={(() => {
+                      const sum = allBagsTokens.reduce((a, t) => a + (t.holders || 0), 0);
+                      return sum > 0 ? sum.toLocaleString() : '—';
+                    })()}
                     accent="blue"
                   />
                 </div>

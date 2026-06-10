@@ -15,18 +15,17 @@ import type { SwapStatus, BagsTokenCreator } from '@/lib/bags-types';
 import { generateCredibilityMatrix, type RealTokenData } from '@/lib/credibility';
 import { fetchTerminalTokenData, type GMGNHolder, type GMGNTrader } from '@/services/gmgn.service';
 import { bagsService } from '@/services/bags.service';
+import { usePulseStore } from '@/store/pulse.store';
 
-// Transform GMGN holder data to WalletRow
+// Transform GMGN holder data to WalletRow.
+// Only value (usd_value) is available for holders — bought/sold/PnL are not
+// provided by the API, so they are not emitted.
 const transformHolder = (holder: GMGNHolder): WalletRow => ({
     wallet: holder.address.slice(0, 4) + '...' + holder.address.slice(-4),
     walletLabel: holder.wallet_tag_v2 || undefined,
-    bought: holder.usd_value || 0,
-    sold: 0,
-    pnl: 0,
-    pnlPercent: 0,
+    value: holder.usd_value || 0,
     holding: holder.balance,
     holdingPercent: holder.amount_percentage * 100,
-    lastActive: Date.now(),
 });
 
 // Transform GMGN trader data to WalletRow
@@ -39,7 +38,6 @@ const transformTrader = (trader: GMGNTrader): WalletRow => ({
     pnlPercent: trader.total_cost > 0 ? (trader.profit / trader.total_cost) * 100 : 0,
     holding: trader.buy_volume_cur - trader.sell_volume_cur,
     holdingPercent: 0,
-    lastActive: Date.now(),
 });
 
 // Transform Bags creator data to TokenFeeEarner
@@ -130,6 +128,11 @@ const defaultTradePanel: TradePanelState = {
     amount: 0.1,
 };
 
+// Guards loadToken against out-of-order resolution: only the latest request
+// may write to the store (rapid navigation would otherwise render token A's
+// data under token B's URL).
+let loadSeq = 0;
+
 export const useTerminalStore = create<TerminalStore>((set, get) => ({
     // Initial state
     activeToken: null,
@@ -161,7 +164,18 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
     // Load token data from GMGN API + Bags fee data
     loadToken: async (tokenId) => {
+        const reqId = ++loadSeq;
         set({ isLoading: true, error: null });
+
+        // Seed from the live Pulse feed (correct name/symbol/logo) so the token
+        // page never shows "Unknown Token"/$UNK when the (currently dead) GMGN
+        // provider returns nothing for this mint.
+        const pulseItems = usePulseStore.getState().items;
+        const pulseItem = [
+            ...(pulseItems.NEW || []),
+            ...(pulseItems.FINAL_STRETCH || []),
+            ...(pulseItems.MIGRATED || []),
+        ].find((i) => i.tokenId === tokenId);
 
         try {
             console.log('Loading token data for:', tokenId);
@@ -175,7 +189,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
             const { tokenInfo, security, holders, traders, source } = gmgnData;
 
-            if (!tokenInfo) {
+            if (!tokenInfo && !pulseItem) {
                 throw new Error('Token not found. Could not fetch data from any provider.');
             }
 
@@ -183,9 +197,16 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
                 console.log('Using DexScreener fallback for token data');
             }
 
-            // Extract data from enriched response
-            const info = tokenInfo.info;
-            const stats = tokenInfo.stats;
+            // Extract data from enriched response, falling back to the live Pulse
+            // feed when GMGN/DexScreener returned nothing for this mint.
+            const info = tokenInfo?.info ?? ({
+                symbol: (pulseItem?.symbol || '').replace(/^\$/, ''),
+                name: pulseItem?.name,
+                logo: pulseItem?.logoUrl,
+                market_cap: pulseItem?.marketCap,
+                liquidity: pulseItem?.liquidity,
+            } as NonNullable<typeof tokenInfo>['info']);
+            const stats = tokenInfo?.stats;
 
             // Fetch claim stats in parallel with main data (if we have fee info)
             const claimStats = bagsFeeData
@@ -211,24 +232,24 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
             // Build TerminalToken from GMGN data + Bags fee data
             const token: TerminalToken = {
                 tokenId,
-                symbol: info?.symbol ? `$${info.symbol}` : '$UNK',
-                name: info?.name || 'Unknown Token',
-                image: info?.logo || undefined,
-                deployer: info?.creator ? info.creator.slice(0, 4) + '...' + info.creator.slice(-4) : 'unknown',
+                symbol: info?.symbol ? `$${info.symbol}` : (pulseItem?.symbol || '$UNK'),
+                name: info?.name || pulseItem?.name || 'Unknown Token',
+                image: info?.logo || pulseItem?.logoUrl || undefined,
+                deployer: info?.creator ? `${info.creator.slice(0, 4)}...${info.creator.slice(-4)}` : (pulseItem?.deployer || 'unknown'),
                 deployerName: undefined,
                 deployerLaunches: undefined,
                 deployerSuccessRate: undefined,
-                marketCap: info?.market_cap || 0,
+                marketCap: info?.market_cap || pulseItem?.marketCap || 0,
                 liquidity: info?.liquidity || 0,
                 supply: 1000000000, // Default supply
-                bondingProgress: 100, // Assume migrated if in GMGN
+                bondingProgress: pulseItem ? pulseItem.bondingProgress : (tokenInfo ? 100 : 0),
                 holders: info?.holder_count || 0,
                 feesPaid: lifetimeFees, // Now from Bags API
-                migrated: true,
+                migrated: pulseItem ? pulseItem.bondingProgress >= 100 : !!tokenInfo,
                 priceUsd: info?.price || 0,
                 priceChange24h: info?.price_change_24h || 0,
                 volume24h: info?.volume_24h || 0,
-                volume5m: 0,
+                volume5m: undefined, // No 5m volume data source
 
                 // Bags Fee Data
                 lifetimeFees,
@@ -255,7 +276,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
             // Transform holders and traders
             const transformedHolders = holders.map(transformHolder);
-            const transformedTraders = traders.map(transformTrader).sort((a, b) => b.pnl - a.pnl);
+            const transformedTraders = traders.map(transformTrader).sort((a, b) => (b.pnl ?? 0) - (a.pnl ?? 0));
 
             // Calculate real credibility data
             const realData: RealTokenData = {
@@ -274,6 +295,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
 
             const credibilityMatrix = generateCredibilityMatrix(tokenId, realData);
 
+            if (reqId !== loadSeq) return;
             set({
                 activeToken: token,
                 credibilityMatrix,
@@ -290,6 +312,7 @@ export const useTerminalStore = create<TerminalStore>((set, get) => ({
             });
         } catch (error) {
             console.error('Failed to load token:', error);
+            if (reqId !== loadSeq) return;
             set({
                 error: error instanceof Error ? error.message : 'Failed to load token',
                 isLoading: false,

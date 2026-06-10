@@ -3,6 +3,7 @@
 import { Loader2, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import type { BagsCreatedToken } from '@/lib/bags-types';
+import { formatCurrency } from '@/lib/format';
 import { DexListingButton } from './DexListingButton';
 
 interface TokenStatsCardProps {
@@ -41,7 +42,7 @@ export function TokenStatsCard({ token, claimable, isClaiming, onClaim }: TokenS
         <div className="stat-card flex flex-col p-2">
           <span className="label">Market Cap</span>
           <span className="text-[10px] font-mono text-[#EDEDED]">
-            ${token.marketCap.toLocaleString()}
+            {formatCurrency(token.marketCap)}
           </span>
         </div>
         <div className="stat-card flex flex-col p-2">

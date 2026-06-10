@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useTerminalStore } from "@/store/terminal.store";
 import { useBagsFees } from "@/hooks/useBagsFees";
 import type { TerminalBottomTab, TradeRow, WalletRow } from "@/lib/types";
@@ -53,13 +53,17 @@ export function TerminalBottomTabs() {
     const { activeBottomTab, setActiveBottomTab, trades, holders, topTraders, activeToken } = useTerminalStore();
     const [feeTimeRange, setFeeTimeRange] = useState('all');
 
+    // Memoize so the range isn't recomputed (with a fresh Date.now()) on every
+    // render — that would retrigger the fee fetch on each store update.
+    const timeRange = useMemo(() => getTimeRange(feeTimeRange), [feeTimeRange]);
+
     // Fetch claim events when on fees tab
     const { claimEvents, isLoading: feesLoading } = useBagsFees(
         activeBottomTab === 'fees' ? activeToken?.tokenId ?? null : null,
         {
             fetchClaimEvents: true,
             claimEventsLimit: 100,
-            timeRange: getTimeRange(feeTimeRange),
+            timeRange,
         }
     );
 
@@ -178,14 +182,12 @@ function HoldersTable({ holders }: { holders: WalletRow[] }) {
                     <th className="py-2 px-3 text-left font-normal">Wallet</th>
                     <th className="py-2 px-3 text-right font-normal">Holding</th>
                     <th className="py-2 px-3 text-right font-normal">%</th>
-                    <th className="py-2 px-3 text-right font-normal">Bought</th>
-                    <th className="py-2 px-3 text-right font-normal">Sold</th>
-                    <th className="py-2 px-3 text-right font-normal">PnL</th>
+                    <th className="py-2 px-3 text-right font-normal">Value (USD)</th>
                 </tr>
             </thead>
             <tbody>
                 {holders.length === 0 && (
-                    <TableEmpty colSpan={6} message="Holder data unavailable — requires a holder API key" />
+                    <TableEmpty colSpan={4} message="Holder data unavailable — requires a holder API key" />
                 )}
                 {holders.map((holder, idx) => (
                     <tr
@@ -204,10 +206,8 @@ function HoldersTable({ holders }: { holders: WalletRow[] }) {
                         </td>
                         <td className="py-2 px-3 text-right text-[#EDEDED]">{formatNum(holder.holding)}</td>
                         <td className="py-2 px-3 text-right text-[#888]">{holder.holdingPercent.toFixed(1)}%</td>
-                        <td className="py-2 px-3 text-right text-[#39FF14]">{formatNum(holder.bought)}</td>
-                        <td className="py-2 px-3 text-right text-[#FF003C]">{formatNum(holder.sold)}</td>
-                        <td className={`py-2 px-3 text-right ${holder.pnl >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
-                            {holder.pnl >= 0 ? '+' : ''}${formatNum(Math.abs(holder.pnl))}
+                        <td className="py-2 px-3 text-right text-[#EDEDED]">
+                            {holder.value !== undefined ? `$${formatNum(holder.value)}` : '—'}
                         </td>
                     </tr>
                 ))}
@@ -227,12 +227,11 @@ function TopTradersTable({ traders }: { traders: WalletRow[] }) {
                     <th className="py-2 px-3 text-right font-normal">Realized PnL</th>
                     <th className="py-2 px-3 text-right font-normal">ROI</th>
                     <th className="py-2 px-3 text-right font-normal">Volume</th>
-                    <th className="py-2 px-3 text-right font-normal">Last Active</th>
                 </tr>
             </thead>
             <tbody>
                 {traders.length === 0 && (
-                    <TableEmpty colSpan={6} message="Trader data unavailable — requires a holder API key" />
+                    <TableEmpty colSpan={5} message="Trader data unavailable — requires a holder API key" />
                 )}
                 {traders.map((trader, idx) => (
                     <tr
@@ -251,14 +250,13 @@ function TopTradersTable({ traders }: { traders: WalletRow[] }) {
                                 <span className="text-[#EDEDED]">{trader.wallet}</span>
                             )}
                         </td>
-                        <td className={`py-2 px-3 text-right font-bold ${trader.pnl >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
-                            {trader.pnl >= 0 ? '+' : ''}${formatNum(Math.abs(trader.pnl))}
+                        <td className={`py-2 px-3 text-right font-bold ${(trader.pnl ?? 0) >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                            {(trader.pnl ?? 0) >= 0 ? '+' : ''}${formatNum(Math.abs(trader.pnl ?? 0))}
                         </td>
-                        <td className={`py-2 px-3 text-right ${trader.pnlPercent >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
-                            {trader.pnlPercent >= 0 ? '+' : ''}{trader.pnlPercent.toFixed(0)}%
+                        <td className={`py-2 px-3 text-right ${(trader.pnlPercent ?? 0) >= 0 ? 'text-[#39FF14]' : 'text-[#FF003C]'}`}>
+                            {(trader.pnlPercent ?? 0) >= 0 ? '+' : ''}{(trader.pnlPercent ?? 0).toFixed(0)}%
                         </td>
-                        <td className="py-2 px-3 text-right text-[#EDEDED]">${formatNum(trader.bought + trader.sold)}</td>
-                        <td className="py-2 px-3 text-right text-[#666]">{formatTimeAgo(trader.lastActive)}</td>
+                        <td className="py-2 px-3 text-right text-[#EDEDED]">${formatNum((trader.bought ?? 0) + (trader.sold ?? 0))}</td>
                     </tr>
                 ))}
             </tbody>

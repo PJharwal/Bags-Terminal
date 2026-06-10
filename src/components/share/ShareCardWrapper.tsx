@@ -3,6 +3,9 @@
 import { useRef, type ReactNode } from 'react';
 import { Download, Share2, Loader2 } from 'lucide-react';
 import { useShareCard } from './useShareCard';
+import { useBagsWallet } from '@/hooks/useWallet';
+import { track, EVENTS } from '@/lib/analytics';
+import { config } from '@/config/env';
 
 interface ShareCardWrapperProps {
   children: ReactNode;
@@ -16,6 +19,12 @@ interface ShareCardWrapperProps {
 export function ShareCardWrapper({ children, tweetText, filename = 'bags-terminal', compact, shareUrl }: ShareCardWrapperProps) {
   const cardRef = useRef<HTMLDivElement>(null);
   const { captureCard, shareToTwitter, isCapturing } = useShareCard();
+  const { publicKey } = useBagsWallet();
+
+  // Default the shared URL to the user's referral link so every share recruits.
+  // Use the canonical site URL (never localhost/preview host) so tweets are correct.
+  const effectiveShareUrl =
+    shareUrl ?? (publicKey ? `${config.siteUrl}/launch?ref=${publicKey}` : `${config.siteUrl}/launch`);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -88,7 +97,10 @@ export function ShareCardWrapper({ children, tweetText, filename = 'bags-termina
           {isCapturing ? 'Capturing...' : 'Save Image'}
         </button>
         <button
-          onClick={() => shareToTwitter(tweetText, shareUrl)}
+          onClick={() => {
+            track(EVENTS.SHARE_CLICK, { referral: Boolean(publicKey) });
+            shareToTwitter(tweetText, effectiveShareUrl, 'referral_share');
+          }}
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-[10px] font-mono uppercase tracking-widest bg-[#39FF14]/10 border border-[#39FF14]/20 text-[#39FF14] hover:bg-[#39FF14]/20 transition-colors"
         >
           <Share2 size={12} />

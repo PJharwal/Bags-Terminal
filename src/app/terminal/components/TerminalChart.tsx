@@ -57,7 +57,8 @@ export function TerminalChart({ tokenMint }: TerminalChartProps) {
         })();
 
         return () => controller.abort();
-    }, [tokenMint]);
+        // chartKey: incremented by RETRY to re-run pool resolution
+    }, [tokenMint, chartKey]);
 
     // Reveal the chart after the iframe has had time to paint. Cross-origin
     // iframes don't reliably fire onLoad, so we reveal on a timer too — the

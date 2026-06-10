@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTerminalStore } from "@/store/terminal.store";
 import { useSolPrice } from "@/hooks/useSolPrice";
@@ -14,9 +14,9 @@ import { VerticalSplitPanel } from "@/components/ui/VerticalSplitPanel";
 import { FeeEarnersPanel } from "@/components/terminal/FeeEarnersPanel";
 import { LaunchConfigPanel } from "@/components/terminal/LaunchConfigPanel";
 import { ArrowLeft, Loader2, Share2 } from "lucide-react";
-import { PnLCard } from "@/components/share/PnLCard";
 import { TokenSnapshotCard } from "@/components/share/TokenSnapshotCard";
 import type { TradeRow } from "@/lib/types";
+import { config } from "@/config/env";
 
 export default function TerminalPage() {
     const params = useParams();
@@ -39,27 +39,38 @@ export default function TerminalPage() {
         }
     }, [tokenId, loadToken]);
 
-    // Subscribe to trades for this token from socket
+    // Subscribe to trades for this token from socket. React batches multiple
+    // socket store writes into one render, so diff against the last-processed
+    // signature instead of only reading latestTrades[0].
+    const lastSeenTradeSig = useRef<string | null>(null);
     useEffect(() => {
-        if (latestTrades.length > 0 && tokenId) {
-            const latestTrade = latestTrades[0];
-            // Only add trades for the current token
-            if (latestTrade.mint === tokenId) {
-                const solAmount = parseFloat(latestTrade.sol_amount || '0');
-                const tokenAmount = parseFloat(latestTrade.token_amount || '1');
-                const priceUsd = solAmount * solPrice / (tokenAmount || 1);
+        if (latestTrades.length === 0 || !tokenId) return;
 
-                const trade: TradeRow = {
-                    id: latestTrade.signature || String(Date.now()),
-                    type: latestTrade.direction === 'buy' ? 'buy' : 'sell',
-                    wallet: latestTrade.user_wallet?.slice(0, 4) + '...' + latestTrade.user_wallet?.slice(-4) || 'unknown',
-                    amount: tokenAmount,
-                    priceUsd: priceUsd,
-                    total: solAmount * solPrice,
-                    timestamp: latestTrade.block_time ? latestTrade.block_time * 1000 : Date.now(),
-                };
-                addTrade(trade);
-            }
+        // Collect everything newer than the last-processed trade
+        const newTrades: typeof latestTrades = [];
+        for (const t of latestTrades) {
+            if (t.signature && t.signature === lastSeenTradeSig.current) break;
+            newTrades.push(t);
+        }
+        lastSeenTradeSig.current = latestTrades[0]?.signature ?? lastSeenTradeSig.current;
+
+        // Process oldest-first, only trades for the current token
+        for (const t of newTrades.reverse()) {
+            if (t.mint !== tokenId) continue;
+            const solAmount = parseFloat(t.sol_amount || '0');
+            const tokenAmount = parseFloat(t.token_amount || '1');
+            const priceUsd = solAmount * solPrice / (tokenAmount || 1);
+
+            const trade: TradeRow = {
+                id: t.signature || String(Date.now()),
+                type: t.direction === 'buy' ? 'buy' : 'sell',
+                wallet: t.user_wallet ? `${t.user_wallet.slice(0, 4)}...${t.user_wallet.slice(-4)}` : 'unknown',
+                amount: tokenAmount,
+                priceUsd: priceUsd,
+                total: solAmount * solPrice,
+                timestamp: t.block_time ? t.block_time * 1000 : Date.now(),
+            };
+            addTrade(trade);
         }
     }, [latestTrades, tokenId, addTrade]);
 
@@ -187,13 +198,9 @@ export default function TerminalPage() {
 // Collapsible share section for the right panel
 function ShareSection({ token }: { token: import('@/lib/types').TerminalToken }) {
     const [open, setOpen] = useState(false);
-    const [activeCard, setActiveCard] = useState<'pnl' | 'snapshot'>('snapshot');
 
     // Public token URL — X unfurls its OG card (/api/og?mint=) when shared.
-    const shareUrl =
-        typeof window !== 'undefined'
-            ? `${window.location.origin}/terminal/${token.tokenId}`
-            : `/terminal/${token.tokenId}`;
+    const shareUrl = `${config.siteUrl}/terminal/${token.tokenId}`;
 
     return (
         <div className="p-4 border-t border-white/10">
@@ -210,57 +217,22 @@ function ShareSection({ token }: { token: import('@/lib/types').TerminalToken })
 
             {open && (
                 <div className="mt-2 flex flex-col gap-2">
-                    <div className="flex gap-1">
-                        <button
-                            onClick={() => setActiveCard('snapshot')}
-                            className={`flex-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest border transition-colors ${
-                                activeCard === 'snapshot'
-                                    ? 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5'
-                                    : 'border-white/10 text-[#666]'
-                            }`}
-                        >
-                            Snapshot
-                        </button>
-                        <button
-                            onClick={() => setActiveCard('pnl')}
-                            className={`flex-1 px-2 py-1 text-[9px] font-mono uppercase tracking-widest border transition-colors ${
-                                activeCard === 'pnl'
-                                    ? 'border-[#39FF14]/30 text-[#39FF14] bg-[#39FF14]/5'
-                                    : 'border-white/10 text-[#666]'
-                            }`}
-                        >
-                            PnL
-                        </button>
-                    </div>
-
-                    {activeCard === 'snapshot' ? (
-                        <TokenSnapshotCard
-                            tokenSymbol={token.symbol.replace('$', '')}
-                            tokenName={token.name}
-                            tokenImage={token.image}
-                            price={token.priceUsd}
-                            priceChange24h={token.priceChange24h}
-                            marketCap={token.marketCap}
-                            volume24h={token.volume24h}
-                            holders={token.holders}
-                            liquidity={token.liquidity}
-                            lifetimeFees={token.lifetimeFees}
-                            hasBagsFees={token.hasBagsFees}
-                            shareUrl={shareUrl}
-                        />
-                    ) : (
-                        <PnLCard
-                            tokenSymbol={token.symbol.replace('$', '')}
-                            tokenName={token.name}
-                            tokenImage={token.image}
-                            entryPrice={0}
-                            currentPrice={token.priceUsd}
-                            pnlPercent={token.priceChange24h}
-                            pnlUsd={token.priceUsd * (token.priceChange24h / 100)}
-                            marketCap={token.marketCap}
-                            shareUrl={shareUrl}
-                        />
-                    )}
+                    {/* PnL card removed — no tracked position data exists, so it
+                        fabricated entry/PnL. Re-add once real entries are persisted. */}
+                    <TokenSnapshotCard
+                        tokenSymbol={token.symbol.replace('$', '')}
+                        tokenName={token.name}
+                        tokenImage={token.image}
+                        price={token.priceUsd}
+                        priceChange24h={token.priceChange24h}
+                        marketCap={token.marketCap}
+                        volume24h={token.volume24h}
+                        holders={token.holders}
+                        liquidity={token.liquidity}
+                        lifetimeFees={token.lifetimeFees}
+                        hasBagsFees={token.hasBagsFees}
+                        shareUrl={shareUrl}
+                    />
                 </div>
             )}
         </div>

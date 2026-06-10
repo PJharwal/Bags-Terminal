@@ -8,6 +8,7 @@ import { useSocketStore, getFeedStatus } from "@/store/socket.store";
 import { useSelectionStore } from "@/store/selection.store";
 import { AxiomPulseColumn } from "@/components/pulse/AxiomPulseColumn";
 import { AxiomPulseToolbar } from "@/components/pulse/AxiomPulseToolbar";
+import { QuickBuyProvider } from "@/components/pulse/QuickBuyProvider";
 import { PulseDrawer } from "@/components/pulse/PulseDrawer";
 import { LaunchFeedSection } from "@/components/bags/LaunchFeedSection";
 import { config } from "@/config/env";
@@ -55,15 +56,16 @@ const processApiTokenData = (
 
     return {
         tokenId: data.mint || data.address || "",
-        symbol: `$${data.symbol || "UNK"}`,
+        symbol: `$${(data.symbol || "UNK").replace(/^\$+/, "")}`,
         name: data.name || "Unknown",
-        deployer:
-            data.creator?.slice(0, 4) + "..." + data.creator?.slice(-4) ||
-            "unknown",
+        deployer: data.creator
+            ? `${data.creator.slice(0, 4)}...${data.creator.slice(-4)}`
+            : "unknown",
         deployerName: "deployer",
         deployerLaunches: 0,
         deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
+        createdAtSec: Math.floor(Date.now() / 1000) - (ageSeconds > 0 ? ageSeconds : 0),
         marketCap: Math.max(3900, marketCapSol * solPrice),
         liquidity: 0,
         bondingProgress,
@@ -87,16 +89,25 @@ export default function PulsePage() {
     const {
         items,
         filters,
-        setFilters,
+        setFiltersAll,
         addItem,
         setConnected,
         clearItems,
         reconcileItem,
-        getFilteredItems,
     } = usePulseStore();
-    const { connect, isConnected, latestTokens, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, isConnected, markFeedOk } = useSocketStore(
+        useShallow((s) => ({
+            connect: s.connect,
+            isConnected: s.isConnected,
+            markFeedOk: s.markFeedOk,
+        })),
+    );
     const { drawerOpen } = useSelectionStore();
     const { price: solPrice } = useSolPrice();
+    // Keep the latest SOL price readable without making the fetch callbacks
+    // (and the effects/intervals built on them) refire on every price change.
+    const solPriceRef = useRef(solPrice);
+    solPriceRef.current = solPrice;
     const [network, setNetwork] = useState<Network>("solana");
     const [activeTab, setActiveTab] = useState<"live" | "bags">("live");
     const [isLoading, setIsLoading] = useState(false);
@@ -127,8 +138,8 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
-                    const item = processApiTokenData(t, state, solPrice);
+                    if (filters.NEW.bagsOnly && !isBagsToken(t.mint)) return;
+                    const item = processApiTokenData(t, state, solPriceRef.current);
                     if (!processedTokensRef.current.has(item.tokenId)) {
                         processedTokensRef.current.add(item.tokenId);
                         addItem(item);
@@ -148,7 +159,7 @@ export default function PulsePage() {
         } finally {
             setIsLoading(false);
         }
-    }, [addItem, filters.bagsOnly, solPrice, markFeedOk]);
+    }, [addItem, filters.NEW.bagsOnly, markFeedOk]);
 
     // One-time backfill on open (seeds all three columns, incl. Final Stretch /
     // Migrated which the socket rarely emits). After this the socket drives all
@@ -177,8 +188,8 @@ export default function PulsePage() {
                 const data = await res.json();
                 const tokens = Array.isArray(data) ? data : data.tokens || [];
                 tokens.forEach((t: RawTokenData) => {
-                    if (filters.bagsOnly && !isBagsToken(t.mint)) return;
-                    reconcileItem(processApiTokenData(t, state, solPrice));
+                    if (filters.NEW.bagsOnly && !isBagsToken(t.mint)) return;
+                    reconcileItem(processApiTokenData(t, state, solPriceRef.current));
                 });
             };
 
@@ -190,7 +201,7 @@ export default function PulsePage() {
         } catch {
             // Best-effort; the socket remains the primary live source.
         }
-    }, [filters.bagsOnly, solPrice, reconcileItem, markFeedOk]);
+    }, [filters.NEW.bagsOnly, reconcileItem, markFeedOk]);
 
     useEffect(() => {
         const id = setInterval(reconcileColumns, 30000);
@@ -200,67 +211,6 @@ export default function PulsePage() {
     useEffect(() => {
         setConnected(isConnected);
     }, [isConnected, setConnected]);
-
-    useEffect(() => {
-        if (latestTokens.length > 0) {
-            const token = latestTokens[0];
-            if (filters.bagsOnly && !isBagsToken(token.mint)) return;
-            if (processedTokensRef.current.has(token.mint)) return;
-
-            processedTokensRef.current.add(token.mint);
-
-            let state: PulseState = "NEW";
-            let bondingProgress = 0;
-
-            if (token.status === "migrated") {
-                state = "MIGRATED";
-                bondingProgress = 100;
-            } else if (token.market_cap_sol) {
-                const mcSol = parseFloat(token.market_cap_sol);
-                bondingProgress = Math.min(
-                    99,
-                    Math.floor((mcSol / 85) * 100),
-                );
-                if (bondingProgress >= 85) {
-                    state = "FINAL_STRETCH";
-                }
-            }
-
-            const item: PulseItem = {
-                tokenId: token.mint,
-                symbol: `$${token.symbol}`,
-                name: token.name,
-                deployer:
-                    token.creator?.slice(0, 4) +
-                    "..." +
-                    token.creator?.slice(-4),
-                deployerName: "deployer",
-                deployerLaunches: 1,
-                deployerSuccessRate: 50,
-                ageSeconds: Math.max(
-                    0,
-                    Math.floor(Date.now() / 1000 - token.creation_timestamp),
-                ),
-                marketCap: Math.max(
-                    3900,
-                    parseFloat(token.market_cap_sol || "0") * solPrice,
-                ),
-                liquidity:
-                    parseFloat(token.market_cap_sol || "0") * solPrice * 0.3,
-                bondingProgress,
-                holders: token.holder_count || 0,
-                txCount: 0,
-                volume24h: 0,
-                state,
-                riskFlags: [],
-                updatedAt: Date.now(),
-                logoUrl: token.logo_url || undefined,
-                protocolSource: token.protocol_source,
-            };
-
-            addItem(item);
-        }
-    }, [latestTokens, addItem, filters.bagsOnly, solPrice]);
 
     const handleRefresh = useCallback(async () => {
         if (refreshingRef.current) return;
@@ -276,8 +226,8 @@ export default function PulsePage() {
 
     const handleTabChange = useCallback((tab: "live" | "bags") => {
         setActiveTab(tab);
-        setFilters({ bagsOnly: tab === "bags" });
-    }, [setFilters]);
+        setFiltersAll({ bagsOnly: tab === "bags" });
+    }, [setFiltersAll]);
 
     const totalTokens =
         items.NEW.length + items.FINAL_STRETCH.length + items.MIGRATED.length;
@@ -306,19 +256,20 @@ export default function PulsePage() {
     // keeps array identity stable across unrelated re-renders so the columns /
     // virtualizer don't churn on every socket event.
     const newItems = useMemo(
-        () => filterPulseItems(items.NEW, filters),
-        [items.NEW, filters],
+        () => filterPulseItems(items.NEW, filters.NEW),
+        [items.NEW, filters.NEW],
     );
     const finalStretchItems = useMemo(
-        () => filterPulseItems(items.FINAL_STRETCH, filters),
-        [items.FINAL_STRETCH, filters],
+        () => filterPulseItems(items.FINAL_STRETCH, filters.FINAL_STRETCH),
+        [items.FINAL_STRETCH, filters.FINAL_STRETCH],
     );
     const migratedItems = useMemo(
-        () => filterPulseItems(items.MIGRATED, filters),
-        [items.MIGRATED, filters],
+        () => filterPulseItems(items.MIGRATED, filters.MIGRATED),
+        [items.MIGRATED, filters.MIGRATED],
     );
 
     return (
+        <QuickBuyProvider>
         <div className="h-[calc(100vh-92px)] flex flex-col overflow-hidden bg-[#06070b]">
             {/* Axiom-style toolbar */}
             <AxiomPulseToolbar
@@ -388,22 +339,25 @@ export default function PulsePage() {
                 ) : (
                     <>
                         <AxiomPulseColumn
+                            state="NEW"
                             title="New Pairs"
-                            tokens={getFilteredItems("NEW")}
+                            tokens={newItems}
                             isLoading={isLoading}
                             color="#526fff"
                             className="flex-1"
                         />
                         <AxiomPulseColumn
+                            state="FINAL_STRETCH"
                             title="Final Stretch"
-                            tokens={getFilteredItems("FINAL_STRETCH")}
+                            tokens={finalStretchItems}
                             isLoading={isLoading}
                             color="#7c8cff"
                             className="flex-1"
                         />
                         <AxiomPulseColumn
+                            state="MIGRATED"
                             title="Migrated"
-                            tokens={getFilteredItems("MIGRATED")}
+                            tokens={migratedItems}
                             isLoading={isLoading}
                             color="#39FF14"
                             className="flex-1"
@@ -414,5 +368,6 @@ export default function PulsePage() {
 
             <PulseDrawer />
         </div>
+        </QuickBuyProvider>
     );
 }

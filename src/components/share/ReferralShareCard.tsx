@@ -1,6 +1,7 @@
 'use client';
 
 import { ShareCardWrapper } from './ShareCardWrapper';
+import { ScanStrip } from './ScanStrip';
 
 interface ReferralShareCardProps {
   referralLink: string;
@@ -14,7 +15,7 @@ const mono = "'Courier New', Courier, monospace";
 export function ReferralShareCard({
   referralLink, tokensReferred, feesEarned, walletAddress,
 }: ReferralShareCardProps) {
-  const truncatedWallet = `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`;
+  const truncatedWallet = walletAddress ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}` : '';
 
   // Link is passed via shareUrl (X unfurls our OG card), so it's omitted here
   // to avoid the URL appearing twice in the post.
@@ -68,17 +69,9 @@ export function ReferralShareCard({
             </div>
           </div>
 
-          {/* Referral link box */}
-          <div style={{
-            border: '1px solid rgba(57,255,20,0.2)', backgroundColor: 'rgba(57,255,20,0.03)',
-            padding: '10px 12px', marginBottom: 16,
-          }}>
-            <div style={{ fontSize: 9, fontFamily: mono, color: '#555', letterSpacing: '0.1em', marginBottom: 4 }}>
-              YOUR REFERRAL LINK
-            </div>
-            <div style={{ fontSize: 11, fontFamily: mono, color: '#39FF14', wordBreak: 'break-all' }}>
-              {referralLink}
-            </div>
+          {/* Referral link — signature scan strip */}
+          <div style={{ marginBottom: 10 }}>
+            <ScanStrip url={referralLink} accent="#FFD700" />
           </div>
 
           {/* How it works - 3 steps */}

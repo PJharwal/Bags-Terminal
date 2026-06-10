@@ -6,12 +6,36 @@ import { WalletProviderWrapper } from "@/components/wallet/WalletProviderWrapper
 import { TurnkeyProvider } from "@/components/turnkey/TurnkeyProvider";
 import { ToastContainer } from "@/components/ui/Toast";
 import { LiveTicker } from "@/components/ui/LiveTicker";
+import { Analytics } from "@/components/Analytics";
 
 // Canonical host is www (apex bagsterminal.fm 307-redirects to www); OG image
 // crawlers often don't follow redirects, so absolute URLs must use www.
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.bagsterminal.fm";
 const siteDescription =
   "Chain-abstracted trading terminal on Solana — spot memes, prediction markets, and perps in one interface, built on bags.fm.";
+
+// Structured data for search engines (Organization + WebApplication).
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "BAGS Terminal",
+      url: siteUrl,
+      description: siteDescription,
+      logo: `${siteUrl}/api/og`,
+    },
+    {
+      "@type": "WebApplication",
+      name: "BAGS Terminal",
+      url: siteUrl,
+      applicationCategory: "FinanceApplication",
+      operatingSystem: "Web",
+      description: siteDescription,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
+};
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -51,6 +75,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className="antialiased text-[#EDEDED]">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        <Analytics />
         <WalletProviderWrapper>
           <TurnkeyProvider>
             <TopBar />

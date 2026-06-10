@@ -134,24 +134,26 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
   setTwitterUrl: (url) => set({ twitterUrl: url }),
   setWebsiteUrl: (url) => set({ websiteUrl: url }),
   setTelegramUrl: (url) => set({ telegramUrl: url }),
-  setBagsConfigType: (type) => set({ bagsConfigType: type }),
+  setBagsConfigType: (type) => set({ bagsConfigType: type, configKey: null }),
   setPartnerKey: (key) => set({ partnerKey: key }),
 
   addFeeClaimer: (claimer) => set((state) => {
     if (state.feeClaimers.length >= MAX_FEE_CLAIMERS) {
       return state;
     }
-    return { feeClaimers: [...state.feeClaimers, claimer] };
+    return { feeClaimers: [...state.feeClaimers, claimer], configKey: null };
   }),
 
   removeFeeClaimer: (id) => set((state) => ({
     feeClaimers: state.feeClaimers.filter((c) => c.id !== id),
+    configKey: null,
   })),
 
   updateFeeClaimer: (id, updates) => set((state) => ({
     feeClaimers: state.feeClaimers.map((c) =>
       c.id === id ? { ...c, ...updates } : c
     ),
+    configKey: null,
   })),
 
   uploadImage: async () => {
@@ -307,26 +309,33 @@ export const useLaunchStore = create<LaunchStore>((set, get) => ({
     }
   },
 
-  reset: () => set({
-    metadata: { ...defaultMetadata },
-    feeClaimers: [],
-    initialBuyAmount: 0.1,
-    imageSourceMode: 'upload',
-    imageUrl: '',
-    twitterUrl: '',
-    websiteUrl: '',
-    telegramUrl: '',
-    bagsConfigType: BAGS_CONFIG_TYPES.DEFAULT,
-    tipEnabled: false,
-    tipWallet: '',
-    tipAmountSol: 0,
-    partnerKey: '',
-    uploadedImage: null,
-    imagePreviewUrl: null,
-    ipfsUrl: null,
-    configKey: null,
-    status: 'idle',
-    error: null,
-    result: null,
-  }),
+  reset: () => {
+    // Revoke object URL to prevent memory leaks
+    const prevUrl = get().imagePreviewUrl;
+    if (prevUrl && prevUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(prevUrl);
+    }
+    set({
+      metadata: { ...defaultMetadata },
+      feeClaimers: [],
+      initialBuyAmount: 0.1,
+      imageSourceMode: 'upload',
+      imageUrl: '',
+      twitterUrl: '',
+      websiteUrl: '',
+      telegramUrl: '',
+      bagsConfigType: BAGS_CONFIG_TYPES.DEFAULT,
+      tipEnabled: false,
+      tipWallet: '',
+      tipAmountSol: 0,
+      partnerKey: '',
+      uploadedImage: null,
+      imagePreviewUrl: null,
+      ipfsUrl: null,
+      configKey: null,
+      status: 'idle',
+      error: null,
+      result: null,
+    });
+  },
 }));

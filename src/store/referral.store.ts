@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { config } from '@/config/env';
 
 interface ReferralState {
   referralLink: string;
@@ -26,8 +27,7 @@ export const useReferralStore = create<ReferralState>((set, get) => ({
   },
 
   generateLink: (walletAddress: string) => {
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const link = `${origin}/launch?ref=${walletAddress}`;
+    const link = `${config.siteUrl}/launch?ref=${walletAddress}&utm_source=referral&utm_medium=link&utm_campaign=creator_referral`;
     set({ referralLink: link });
     return link;
   },

@@ -120,6 +120,9 @@ export const useCreatorStore = create<CreatorStore>((set, get) => ({
 
     try {
       const serializedTxs = await bagsService.getClaimTransactionsV3(tokenMint, walletAddress);
+      if (serializedTxs.length === 0) {
+        throw new Error('No claimable transactions');
+      }
       const { Transaction, VersionedTransaction } = await import('@solana/web3.js');
 
       // Process all claim transactions (v2 returns Transaction[] instead of VersionedTransaction[])

@@ -100,6 +100,7 @@ export interface PulseItem {
     deployerLaunches?: number;
     deployerSuccessRate?: number;
     ageSeconds: number;
+    createdAtSec?: number; // unix seconds; lets the UI derive a live age
     marketCap: number;
     liquidity: number;
     bondingProgress: number;
@@ -151,7 +152,7 @@ export interface TerminalToken {
     priceUsd: number;
     priceChange24h: number;
     volume24h: number;
-    volume5m: number;
+    volume5m?: number;     // No data source yet — undefined renders as "—"
 
     // Bags Fee Data
     lifetimeFees: number;              // Total fees earned (SOL)
@@ -193,13 +194,13 @@ export interface TradeRow {
 export interface WalletRow {
     wallet: string;
     walletLabel?: string;
-    bought: number;
-    sold: number;
-    pnl: number;
-    pnlPercent: number;
+    value?: number;        // USD value of holdings (holders only)
+    bought?: number;       // Buy volume (traders only)
+    sold?: number;         // Sell volume (traders only)
+    pnl?: number;          // Realized PnL (traders only)
+    pnlPercent?: number;   // ROI (traders only)
     holding: number;
     holdingPercent: number;
-    lastActive: number;
 }
 
 // Terminal bottom tab types

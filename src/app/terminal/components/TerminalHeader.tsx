@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Copy, ExternalLink, Link2, Check } from "lucide-react";
 import type { TerminalToken } from "@/lib/types";
 import { BagsLogo } from "@/components/ui/BagsLogo";
+import { config } from "@/config/env";
 
 // Provider icon mapping
 const providerIcons: Record<string, string> = {
@@ -50,7 +51,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
     };
 
     const handleShareLink = () => {
-        const url = `${window.location.origin}/terminal/${token.tokenId}`;
+        const url = `${config.siteUrl}/terminal/${token.tokenId}`;
         navigator.clipboard.writeText(url).then(() => {
             setLinkCopied(true);
             setTimeout(() => setLinkCopied(false), 2000);
@@ -126,7 +127,7 @@ export function TerminalHeader({ token }: TerminalHeaderProps) {
                 <StatItem label="MC" value={`$${formatNumber(token.marketCap)}`} />
                 <StatItem label="LIQ" value={`$${formatNumber(token.liquidity)}`} />
                 <StatItem label="VOL_24H" value={`$${formatNumber(token.volume24h)}`} />
-                <StatItem label="VOL_5M" value={`$${formatNumber(token.volume5m)}`} />
+                <StatItem label="VOL_5M" value={token.volume5m !== undefined ? `$${formatNumber(token.volume5m)}` : "—"} />
                 <StatItem label="HOLDERS" value={token.holders > 0 ? formatNumber(token.holders) : "—"} />
 
                 {/* Fees - highlighted if has Bags fees */}

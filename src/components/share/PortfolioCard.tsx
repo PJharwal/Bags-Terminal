@@ -6,7 +6,7 @@ import { formatCurrency } from '@/lib/format';
 interface PortfolioCardProps {
   tokensCreated: number;
   totalMarketCap: number;
-  totalVolume: number;
+  totalVolume?: number;
   totalFeesEarned: number;
   bestToken?: { symbol: string; marketCap: number };
   walletAddress: string;
@@ -70,7 +70,9 @@ export function PortfolioCard({
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, backgroundColor: 'rgba(255,255,255,0.04)' }}>
             {[
               { label: 'TOTAL MARKET CAP', value: formatCurrency(totalMarketCap), color: '#39FF14' },
-              { label: 'TOTAL VOLUME', value: formatCurrency(totalVolume), color: '#00F0FF' },
+              ...(totalVolume !== undefined
+                ? [{ label: 'TOTAL VOLUME', value: formatCurrency(totalVolume), color: '#00F0FF' }]
+                : []),
               { label: 'FEES EARNED', value: `${totalFeesEarned.toFixed(4)} SOL`, color: '#FFD700' },
               { label: 'AVG MC/TOKEN', value: tokensCreated > 0 ? formatCurrency(totalMarketCap / tokensCreated) : '$0', color: '#888' },
             ].map((stat) => (

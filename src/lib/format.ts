@@ -11,7 +11,8 @@ export function formatNumber(num: number): string {
     if (num >= 1000) {
         return (num / 1000).toFixed(1) + 'K';
     }
-    return num.toString();
+    // Round sub-1000 values so we never emit raw float garbage like "137.40000000000003".
+    return num >= 1 ? num.toFixed(num >= 100 ? 0 : 2) : Number(num.toFixed(6)).toString();
 }
 
 export function formatCurrency(num: number): string {

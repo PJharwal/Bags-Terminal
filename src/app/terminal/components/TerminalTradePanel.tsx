@@ -11,6 +11,7 @@ import { useWalletModal } from "@solana/wallet-adapter-react-ui";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { getAccount, getAssociatedTokenAddress, TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { config } from "@/config/env";
+import { mapExchangeToPoolHint } from "@/lib/poolHint";
 
 const BUY_PRESETS = [0.1, 0.5, 1, 5];
 const SELL_PRESETS = [25, 50, 75, 100];
@@ -54,7 +55,7 @@ export function TerminalTradePanel() {
         isPreparing, isReady: socketReady, isExecuting: socketExecuting,
         estimatedTokens, estimatedDisplay, pricePerToken,
         estimatedSol, estimatedSolDisplay, sellPricePerToken,
-        lastSignature, lastError, jitoTips,
+        lastSignature, lastError, jitoTips, preparedFor,
         connect: socketConnect, disconnect: socketDisconnect,
         prepareBuy, executeBuy, prepareSell, executeSell,
         instantBuy, instantSell, clearError, resetPrepare,
@@ -103,6 +104,16 @@ export function TerminalTradePanel() {
         mint: string | undefined;
     } | null>(null);
 
+    // Watchdog: if neither a signature nor an error arrives after submitting,
+    // unstick the panel instead of showing "Executing..." forever.
+    const watchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const clearWatchdog = useCallback(() => {
+        if (watchdogRef.current) {
+            clearTimeout(watchdogRef.current);
+            watchdogRef.current = null;
+        }
+    }, []);
+
     const isBuy = action === "buy";
     const accentColor = isBuy ? "#39FF14" : "#FF003C";
 
@@ -146,16 +157,10 @@ export function TerminalTradePanel() {
 
     // Map GMGN exchange to pool_type hint
     const getPoolHint = useCallback(() => {
-        if (!exchange) return {};
-        switch (exchange) {
-            case "pump_amm": return { poolAddress: poolAddress || undefined, poolType: "pumpswap", creatorAddress: creatorAddress || undefined, coinCreator: coinCreator || undefined, baseVaultAddress: baseVaultAddress || undefined, quoteVaultAddress: quoteVaultAddress || undefined, tokenStandard };
-            case "meteora_dammv2": return { poolAddress: poolAddress || undefined, poolType: "meteora_damm" };
-            case "ray_v4": return { poolAddress: poolAddress || undefined, poolType: "raydium_cpmm" };
-            case "pumpfun": case "pump": return { poolAddress: poolAddress || undefined, poolType: "pumpfun", creatorAddress: creatorAddress || undefined, tokenStandard };
-            case "meteora_dbc": return { poolAddress: poolAddress || undefined, poolType: "meteora_dbc" };
-            case "raydium_launchlab": return { poolAddress: poolAddress || undefined, poolType: "raydium_launchlab", quoteAddress: quoteAddress || undefined };
-            default: return {};
-        }
+        return mapExchangeToPoolHint({
+            exchange, poolAddress, quoteAddress, creatorAddress, coinCreator,
+            baseVaultAddress, quoteVaultAddress, tokenStandard,
+        });
     }, [exchange, poolAddress, quoteAddress, creatorAddress, coinCreator, baseVaultAddress, quoteVaultAddress, tokenStandard]);
 
     // Connect socket when authenticated
@@ -249,6 +254,7 @@ export function TerminalTradePanel() {
     // Handle execute results — verify on-chain before showing success
     useEffect(() => {
         if (!lastSignature) return;
+        clearWatchdog();
 
         // Read ALL trade-context values from the snapshot taken when this trade was
         // dispatched (not live component state) so a tab/token switch during the
@@ -320,18 +326,20 @@ export function TerminalTradePanel() {
     // Handle errors
     useEffect(() => {
         if (lastError) {
+            clearWatchdog();
             setTxResult({ error: lastError });
             setTxStatus("error");
             toast.error(lastError);
             clearError();
         }
-    }, [lastError, clearError]);
+    }, [lastError, clearError, clearWatchdog]);
 
     // Sell preset handler
     const handleSellPreset = (pct: number) => {
         const computed = parseFloat((tokenBalance * pct / 100).toFixed(10)).toString();
         setSellAmount(computed);
         setSellPreset(pct);
+        resetPrepare();
     };
 
     // Execute trade
@@ -357,29 +365,51 @@ export function TerminalTradePanel() {
 
         const poolHint = getPoolHint();
 
-        if (socketReady) {
+        // Only broadcast the pre-signed TX when it was prepared for the CURRENT
+        // mint + amount — otherwise a click inside the prepare debounce could
+        // execute a TX built for a stale amount.
+        const currentAmount = action === "buy" ? parseFloat(solAmount) : parseFloat(sellAmount);
+        const preparedMatches = !!preparedFor
+            && preparedFor.mint === activeToken?.tokenId
+            && preparedFor.amount === currentAmount;
+
+        let ok: boolean;
+        if (socketReady && preparedMatches) {
             // TX is pre-signed, just broadcast
-            if (action === "buy") executeBuy();
-            else executeSell();
+            ok = action === "buy" ? executeBuy() : executeSell();
         } else {
             // Instant flow (prepare + execute in one step)
             if (action === "buy") {
-                instantBuy({
+                ok = instantBuy({
                     mint: activeToken!.tokenId, solAmount: parseFloat(solAmount),
                     slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
                     ...poolHint,
                 });
             } else {
-                instantSell({
+                ok = instantSell({
                     mint: activeToken!.tokenId, tokenAmount: parseFloat(sellAmount), tokenDecimals,
                     slippageBps: effectiveSlippageBps, priorityFee: effectivePriorityFee, jitoTip: effectiveJitoTip,
                     ...poolHint,
                 });
             }
         }
+
+        if (!ok) {
+            setTxStatus("error");
+            setTxResult({ error: "Trading session expired — reconnect your wallet" });
+            return;
+        }
+
+        clearWatchdog();
+        watchdogRef.current = setTimeout(() => {
+            watchdogRef.current = null;
+            setTxStatus("error");
+            setTxResult({ error: "No response from trade server" });
+            toast.error("No response from trade server");
+        }, 15_000);
     };
 
-    const handleDismiss = () => { setTxStatus("idle"); setTxResult(null); resetPrepare(); };
+    const handleDismiss = () => { clearWatchdog(); setTxStatus("idle"); setTxResult(null); resetPrepare(); };
 
     const isProcessing = isPreparing || socketExecuting || txStatus === "sending";
 
@@ -458,14 +488,14 @@ export function TerminalTradePanel() {
                         <span className="text-[9px] text-[#666] uppercase tracking-widest">Amount (SOL)</span>
                         <div className="grid grid-cols-4 gap-2">
                             {BUY_PRESETS.map((amt) => (
-                                <button key={amt} onClick={() => setSolAmount(String(amt))}
+                                <button key={amt} onClick={() => { setSolAmount(String(amt)); resetPrepare(); }}
                                     className="py-2 text-[10px] font-mono font-bold border transition-colors border-[#333] text-[#888] hover:border-[#666]"
                                     style={{ borderColor: solAmount === String(amt) ? accentColor : undefined, color: solAmount === String(amt) ? accentColor : undefined }}
                                 >{amt}</button>
                             ))}
                         </div>
                         <div className="relative">
-                            <input type="number" value={solAmount} onChange={(e) => setSolAmount(e.target.value)}
+                            <input type="number" value={solAmount} onChange={(e) => { setSolAmount(e.target.value); resetPrepare(); }}
                                 className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#39FF14] focus:outline-none"
                                 placeholder="0.00" step="0.1" min="0" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">SOL</span>
@@ -483,7 +513,7 @@ export function TerminalTradePanel() {
                             ))}
                         </div>
                         <div className="relative">
-                            <input type="number" value={sellAmount} onChange={(e) => { setSellAmount(e.target.value); setSellPreset(null); }}
+                            <input type="number" value={sellAmount} onChange={(e) => { setSellAmount(e.target.value); setSellPreset(null); resetPrepare(); }}
                                 className="w-full bg-[#1A1A1A] border border-[#333] px-3 py-2 text-sm font-mono text-[#EDEDED] focus:border-[#FF003C] focus:outline-none"
                                 placeholder="0.00" step="0.1" min="0" />
                             <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-[#666] font-mono">{activeToken?.symbol || "Tokens"}</span>

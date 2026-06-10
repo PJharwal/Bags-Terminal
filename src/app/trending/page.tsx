@@ -300,14 +300,15 @@ export default function TrendingPage() {
     const [activeFilter, setActiveFilter] = useState(0);
     const [view, setView] = useState<"grid" | "table">("grid");
     const [tokensWithFees, setTokensWithFees] = useState<Set<string>>(new Set());
+    const [bootstrapAttempted, setBootstrapAttempted] = useState(false);
     const { items, loadInitialData, isInitialLoading } = usePulseStore();
-    const { connect, isConnected, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
+    const { connect, markFeedOk, lastEventAt, lastFeedOkAt } = useSocketStore();
     const { price: solPrice } = useSolPrice();
 
     useEffect(() => {
         connect();
         // Load initial data from GMGN/DexScreener while socket connects
-        loadInitialData();
+        loadInitialData().finally(() => setBootstrapAttempted(true));
     }, [connect, loadInitialData]);
 
     // Track which tokens have fee data
@@ -344,7 +345,7 @@ export default function TrendingPage() {
     const tokensWithFeesCount = tokensWithFees.size;
     const potentialBagsCount = allBagsTokens.filter(t => isBagsToken(t.tokenId)).length;
 
-    const isLoading = isInitialLoading || (!isConnected && allBagsTokens.length === 0);
+    const isLoading = isInitialLoading || (!bootstrapAttempted && allBagsTokens.length === 0);
     const feedStatus = getFeedStatus({ lastEventAt, lastFeedOkAt }, allBagsTokens.length > 0);
 
     // Signal global status pill that REST data is present.
@@ -514,16 +515,27 @@ export default function TrendingPage() {
                     <TrendingUp size={32} className="mb-4 opacity-30" />
                     <p className="text-sm font-mono">
                         {allBagsTokens.length === 0
-                            ? "Waiting for tokens..."
+                            ? "No token data available"
                             : "No tokens match your filter"}
                     </p>
+                    {allBagsTokens.length === 0 && (
+                        <button
+                            onClick={() => {
+                                loadInitialData();
+                                connect();
+                            }}
+                            className="btn-ghost px-4 py-2 mt-4 text-xs uppercase tracking-wider"
+                        >
+                            Retry
+                        </button>
+                    )}
                 </div>
             )}
 
             {/* Grid View */}
             {!isLoading && view === "grid" && filteredTokens.length > 0 && (
                 <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {filteredTokens.map((token) => (
+                    {filteredTokens.slice(0, 30).map((token) => (
                         <BagsTokenCard key={token.tokenId} token={token} onFeeDataLoaded={handleFeeDataLoaded} />
                     ))}
                 </div>
@@ -559,7 +571,7 @@ export default function TrendingPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {filteredTokens.map((token, i) => (
+                            {filteredTokens.slice(0, 30).map((token, i) => (
                                 <TokenTableRow key={token.tokenId} token={token} index={i} onFeeDataLoaded={handleFeeDataLoaded} />
                             ))}
                         </tbody>

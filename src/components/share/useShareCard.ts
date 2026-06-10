@@ -1,6 +1,22 @@
 'use client';
 
 import { useCallback, useState, type RefObject } from 'react';
+import { config } from '@/config/env';
+
+// Append UTM attribution to a shared URL without clobbering params already set
+// (e.g. a referral link that already carries utm_source=referral).
+function withUtm(url: string, campaign: string) {
+  try {
+    const base = config.siteUrl;
+    const u = new URL(url, base);
+    if (!u.searchParams.has('utm_source')) u.searchParams.set('utm_source', 'twitter');
+    if (!u.searchParams.has('utm_medium')) u.searchParams.set('utm_medium', 'share_card');
+    if (!u.searchParams.has('utm_campaign')) u.searchParams.set('utm_campaign', campaign);
+    return u.toString();
+  } catch {
+    return url;
+  }
+}
 
 export function useShareCard() {
   const [isCapturing, setIsCapturing] = useState(false);
@@ -60,10 +76,10 @@ export function useShareCard() {
     }
   }, []);
 
-  const shareToTwitter = useCallback((text: string, url?: string) => {
+  const shareToTwitter = useCallback((text: string, url?: string, campaign = 'share_card') => {
     const params = new URLSearchParams({ text });
     // When a URL is provided, X auto-unfurls its Open Graph card in the post.
-    if (url) params.set('url', url);
+    if (url) params.set('url', withUtm(url, campaign));
     window.open(`https://x.com/intent/tweet?${params.toString()}`, '_blank');
   }, []);
 

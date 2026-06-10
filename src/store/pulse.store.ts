@@ -3,7 +3,7 @@ import type { PulseItem, PulseState, RiskFlag } from '@/lib/types';
 import type { NewTokenEvent, TradeEvent, MetadataEvent } from '@/types/socket';
 import { resolveTokenImage } from '@/lib/image';
 import { tokenService, type Token } from '@/services/token.service';
-import { SOL_PRICE_FALLBACK } from '@/lib/constants';
+import { getSolPrice } from '@/hooks/useSolPrice';
 import { LAMPORTS_PER_SOL } from '@/lib/bags-types';
 
 // Bonding curve graduates at ~85 SOL market cap. Single source of truth for
@@ -42,13 +42,15 @@ const convertServiceTokenToPulseItem = (token: Token): PulseItem => {
 
     return {
         tokenId: token.address,
-        symbol: `$${token.symbol}`,
+        symbol: `$${(token.symbol || 'UNK').replace(/^\$+/, '')}`,
         name: token.name,
         deployer: 'Unknown',
         deployerName: 'deployer',
         deployerLaunches: 0,
         deployerSuccessRate: 0,
         ageSeconds: 0,
+        // No creation timestamp from this source — age counts from ingestion.
+        createdAtSec: Math.floor(Date.now() / 1000),
         marketCap,
         liquidity,
         bondingProgress,
@@ -75,15 +77,16 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
     } else if (token.market_cap_sol) {
         // Estimate bonding progress from market cap (~85 SOL = 100%)
         const mcSol = parseFloat(token.market_cap_sol);
-        bondingProgress = Math.min(99, Math.floor(mcSol / 850 * 100)); // ~85 SOL = 100%
+        bondingProgress = estimateBondingProgress(mcSol);
         if (bondingProgress >= 85) {
             state = 'FINAL_STRETCH';
         }
     }
 
-    // Calculate market cap in USD (minimum 3.9k)
+    // Floor at ~$3.9K (a new pump token's typical initial mcap) so dust/zero
+    // values don't render as misleading sub-$1 figures with long decimals.
     const marketCap = Math.max(3900, token.market_cap_sol
-        ? parseFloat(token.market_cap_sol) * SOL_PRICE_FALLBACK
+        ? parseFloat(token.market_cap_sol) * getSolPrice()
         : 0);
 
     // Parse holder rate for concentration
@@ -109,13 +112,14 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 
     return {
         tokenId: token.mint,
-        symbol: `$${token.symbol}`,
+        symbol: `$${(token.symbol || 'UNK').replace(/^\$+/, '')}`,
         name: token.name,
-        deployer: token.creator?.slice(0, 4) + '...' + token.creator?.slice(-4),
+        deployer: token.creator ? `${token.creator.slice(0, 4)}...${token.creator.slice(-4)}` : 'unknown',
         deployerName: 'deployer',
         deployerLaunches: 0,
         deployerSuccessRate: 0,
         ageSeconds: ageSeconds > 0 ? ageSeconds : 0,
+        createdAtSec: Math.floor(Date.now() / 1000) - (ageSeconds > 0 ? ageSeconds : 0),
         marketCap,
         liquidity: 0,
         bondingProgress,
@@ -135,19 +139,69 @@ const convertSocketTokenToPulseItem = (token: NewTokenEvent): PulseItem => {
 export type DisplayMode = 'cards' | 'compact' | 'table';
 export type TierFilter = 'all' | 'high' | 'medium' | 'low';
 
-interface PulseFilters {
+// Numeric min/max range — null means unbounded on that end.
+export interface FilterRange {
+    min: number | null;
+    max: number | null;
+}
+
+export interface PulseFilters {
     displayMode: DisplayMode;
     tierFilter: TierFilter;
     hideRisky: boolean;
     minMarketCap: number;
     bagsOnly: boolean; // Filter for BAGS tokens
+    launchpad: 'all' | 'pumpfun' | 'letsbonk' | 'bags';
+    // --- Advanced filters (Pulse filter popover) ---
+    search: string;         // comma-separated keywords; keep if name/symbol matches ANY
+    exclude: string;        // comma-separated keywords; drop if name/symbol matches ANY
+    protocols: string[];    // protocolSource substrings to include; [] = all
+    mcap: FilterRange;      // USD
+    volume: FilterRange;    // USD (24h)
+    liquidity: FilterRange; // USD
+    holders: FilterRange;   // count
+    txns: FilterRange;      // count
+    ageSec: FilterRange;    // seconds
+}
+
+// Fresh default advanced-filter values (new range objects each call).
+export function defaultAdvancedFilters() {
+    return {
+        launchpad: 'all' as const,
+        search: '',
+        exclude: '',
+        protocols: [] as string[],
+        mcap: { min: null, max: null } as FilterRange,
+        volume: { min: null, max: null } as FilterRange,
+        liquidity: { min: null, max: null } as FilterRange,
+        holders: { min: null, max: null } as FilterRange,
+        txns: { min: null, max: null } as FilterRange,
+        ageSec: { min: null, max: null } as FilterRange,
+    };
+}
+
+const isRangeSet = (r?: FilterRange) => !!r && (r.min != null || r.max != null);
+
+// True when any filter deviates from defaults (drives the filter-icon dot).
+export function hasActiveFilters(f: PulseFilters): boolean {
+    return (
+        f.hideRisky ||
+        f.bagsOnly ||
+        f.tierFilter !== 'all' ||
+        f.minMarketCap > 0 ||
+        (f.launchpad && f.launchpad !== 'all') ||
+        !!f.search ||
+        !!f.exclude ||
+        (f.protocols?.length ?? 0) > 0 ||
+        [f.mcap, f.volume, f.liquidity, f.holders, f.txns, f.ageSec].some(isRangeSet)
+    );
 }
 
 interface PulseStore {
     items: Record<PulseState, PulseItem[]>;
     isConnected: boolean;
     lastUpdate: number;
-    filters: PulseFilters;
+    filters: Record<PulseState, PulseFilters>;
     isInitialLoading: boolean;
 
     // Actions
@@ -162,7 +216,8 @@ interface PulseStore {
     removeItem: (tokenId: string) => void;
     clearItems: () => void;
     getItemById: (tokenId: string) => PulseItem | undefined;
-    setFilters: (filters: Partial<PulseFilters>) => void;
+    setFilters: (state: PulseState, filters: Partial<PulseFilters>) => void;
+    setFiltersAll: (filters: Partial<PulseFilters>) => void;
     getFilteredItems: (state: PulseState) => PulseItem[];
     setConnected: (connected: boolean) => void;
     loadInitialData: () => Promise<void>;
@@ -215,6 +270,56 @@ export function filterPulseItems(
         filtered = filtered.filter(item => item.tokenId.toLowerCase().endsWith('bags'));
     }
 
+    // Launchpad filter
+    if (filters.launchpad && filters.launchpad !== 'all') {
+        filtered = filtered.filter(item => {
+            if (filters.launchpad === 'bags') {
+                return item.protocolSource === 'bags' || item.tokenId.toLowerCase().endsWith('bags');
+            }
+            return item.protocolSource === filters.launchpad;
+        });
+    }
+
+    // --- Advanced filters (Pulse filter popover) ---
+    const kws = (s?: string) =>
+        (s || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+    const hay = (item: PulseItem) => `${item.name} ${item.symbol}`.toLowerCase();
+    const inRange = (v: number, r?: FilterRange) =>
+        !r || ((r.min == null || v >= r.min) && (r.max == null || v <= r.max));
+
+    const searchKw = kws(filters.search);
+    if (searchKw.length) {
+        filtered = filtered.filter(item => searchKw.some(k => hay(item).includes(k)));
+    }
+    const excludeKw = kws(filters.exclude);
+    if (excludeKw.length) {
+        filtered = filtered.filter(item => !excludeKw.some(k => hay(item).includes(k)));
+    }
+
+    if ((filters.protocols?.length ?? 0) > 0) {
+        filtered = filtered.filter(item => {
+            const p = (item.protocolSource || '').toLowerCase();
+            return filters.protocols.some(key => p.includes(key));
+        });
+    }
+
+    // Age is derived from createdAtSec when available so the range filter
+    // tracks real elapsed time instead of the ingestion-time snapshot.
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ageOf = (item: PulseItem) =>
+        item.createdAtSec != null
+            ? Math.max(0, nowSec - item.createdAtSec)
+            : item.ageSeconds ?? 0;
+
+    filtered = filtered.filter(item =>
+        inRange(item.marketCap ?? 0, filters.mcap) &&
+        inRange(item.volume24h ?? 0, filters.volume) &&
+        inRange(item.liquidity ?? 0, filters.liquidity) &&
+        inRange(item.holders ?? 0, filters.holders) &&
+        inRange(item.txCount ?? 0, filters.txns) &&
+        inRange(ageOf(item), filters.ageSec)
+    );
+
     return filtered;
 }
 
@@ -228,12 +333,11 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
     isConnected: false,
     isInitialLoading: false,
     lastUpdate: Date.now(),
+    // Per-column (per-tab) filters — independent for NEW / FINAL_STRETCH / MIGRATED.
     filters: {
-        displayMode: 'compact',
-        tierFilter: 'all',
-        hideRisky: false,
-        minMarketCap: 0,
-        bagsOnly: false, // Show all tokens, fee data will show for BAGS tokens
+        NEW: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
+        FINAL_STRETCH: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
+        MIGRATED: { displayMode: 'compact', tierFilter: 'all', hideRisky: false, minMarketCap: 0, bagsOnly: false, ...defaultAdvancedFilters() },
     },
 
     addItem: (item) => {
@@ -322,7 +426,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         if (trade.market_cap_sol) {
             const mcSol = parseFloat(trade.market_cap_sol);
             if (Number.isFinite(mcSol)) {
-                buf.marketCap = mcSol * SOL_PRICE_FALLBACK;
+                buf.marketCap = mcSol * getSolPrice();
                 // M2: derive progress from market cap when the trade omits
                 // bonding_curve_percent, so tokens still advance NEW->FINAL_STRETCH.
                 if (!trade.bonding_curve_percent) {
@@ -338,7 +442,7 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         // before pricing, otherwise one small trade reads as billions.
         const solAmount = parseFloat(trade.sol_amount || '0') / LAMPORTS_PER_SOL;
         if (Number.isFinite(solAmount)) {
-            buf.volumeUsdDelta += solAmount * SOL_PRICE_FALLBACK;
+            buf.volumeUsdDelta += solAmount * getSolPrice();
         }
         buf.txDelta += 1;
         tradeBuffer.set(trade.mint, buf);
@@ -486,13 +590,21 @@ export const usePulseStore = create<PulseStore>((set, get) => ({
         return undefined;
     },
 
-    setFilters: (newFilters) => set((state) => ({
-        filters: { ...state.filters, ...newFilters },
+    setFilters: (col, newFilters) => set((s) => ({
+        filters: { ...s.filters, [col]: { ...s.filters[col], ...newFilters } },
+    })),
+
+    setFiltersAll: (newFilters) => set((s) => ({
+        filters: {
+            NEW: { ...s.filters.NEW, ...newFilters },
+            FINAL_STRETCH: { ...s.filters.FINAL_STRETCH, ...newFilters },
+            MIGRATED: { ...s.filters.MIGRATED, ...newFilters },
+        },
     })),
 
     getFilteredItems: (state) => {
         const { items, filters } = get();
-        return filterPulseItems(items[state], filters);
+        return filterPulseItems(items[state], filters[state]);
     },
 
     setConnected: (connected) => set({ isConnected: connected }),

@@ -12,6 +12,8 @@ import {
   DollarSign,
   TrendingUp,
   RefreshCw,
+  Rocket,
+  ArrowRight,
 } from "lucide-react";
 import { bagsService } from "@/services/bags.service";
 import { formatCurrency, formatNumber } from "@/lib/format";
@@ -227,6 +229,24 @@ export default function FeeLeadersSection() {
 
   return (
     <div className="max-w-7xl mx-auto">
+      {/* Launch CTA — turn discovery into creation */}
+      <Link href="/launch" className="group block mb-6">
+        <div className="card p-4 flex items-center justify-between border-[#39FF14]/20 hover:border-[#39FF14]/40 transition-colors">
+          <div className="flex items-center gap-3">
+            <Rocket size={18} className="text-[#39FF14] flex-shrink-0" />
+            <div>
+              <div className="text-sm font-mono font-bold text-[#EDEDED]">
+                Launch a token with built-in fee sharing → climb the board
+              </div>
+              <div className="text-[10px] text-[#666] font-mono mt-0.5">
+                Ranked by lifetime creator fees earned on Bags. Split fees across up to 100 claimers.
+              </div>
+            </div>
+          </div>
+          <ArrowRight size={16} className="text-[#39FF14] group-hover:translate-x-1 transition-transform" />
+        </div>
+      </Link>
+
       {/* Stats bar */}
       {items.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -268,7 +288,7 @@ export default function FeeLeadersSection() {
               {items.length > 0
                 ? Math.round(
                     items.reduce((s, i) => s + (i.tokenInfo?.organicScore || 0), 0) /
-                      items.filter((i) => i.tokenInfo?.organicScore).length || 1
+                      (items.filter((i) => i.tokenInfo?.organicScore).length || 1)
                   )
                 : "—"}
             </div>

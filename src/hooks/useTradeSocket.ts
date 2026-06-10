@@ -74,11 +74,13 @@ interface TradeSocketState {
   tokensDisplay: number | null;
   lastError: string | null;
   jitoTips: JitoTipData | null;
+  preparedFor: { mint: string; amount: number } | null;
 }
 
 export function useTradeSocket() {
   const { phantomAddress, user } = useTurnkey();
   const socketRef = useRef<Socket | null>(null);
+  const lastPrepareRef = useRef<{ mint: string; amount: number } | null>(null);
 
   const [state, setState] = useState<TradeSocketState>({
     isConnected: false,
@@ -96,6 +98,7 @@ export function useTradeSocket() {
     tokensDisplay: null,
     lastError: null,
     jitoTips: null,
+    preparedFor: null,
   });
 
   const getToken = useCallback(() => {
@@ -104,7 +107,7 @@ export function useTradeSocket() {
   }, [phantomAddress]);
 
   const connect = useCallback(() => {
-    if (socketRef.current?.connected) return;
+    if (socketRef.current) return;
     if (!config.buysellServerUrl) return;
 
     const socket = io(config.buysellServerUrl, {
@@ -119,7 +122,7 @@ export function useTradeSocket() {
     });
 
     socket.on("disconnect", () => {
-      setState((s) => ({ ...s, isConnected: false, isReady: false }));
+      setState((s) => ({ ...s, isConnected: false, isReady: false, preparedFor: null }));
     });
 
     socket.on("prepare_result", (result: {
@@ -133,9 +136,10 @@ export function useTradeSocket() {
           estimatedDisplay: result.estimated_display ?? null,
           pricePerToken: result.price_per_token ?? null,
           lastError: null,
+          preparedFor: lastPrepareRef.current,
         }));
       } else {
-        setState((s) => ({ ...s, isPreparing: false, isReady: false, lastError: result.error || "Prepare failed" }));
+        setState((s) => ({ ...s, isPreparing: false, isReady: false, lastError: result.error || "Prepare failed", preparedFor: null }));
       }
     });
 
@@ -150,9 +154,10 @@ export function useTradeSocket() {
           estimatedSolDisplay: result.estimated_sol_display ?? null,
           sellPricePerToken: result.price_per_token ?? null,
           lastError: null,
+          preparedFor: lastPrepareRef.current,
         }));
       } else {
-        setState((s) => ({ ...s, isPreparing: false, isReady: false, lastError: result.error || "Prepare sell failed" }));
+        setState((s) => ({ ...s, isPreparing: false, isReady: false, lastError: result.error || "Prepare sell failed", preparedFor: null }));
       }
     });
 
@@ -167,6 +172,7 @@ export function useTradeSocket() {
           tokensReceived: result.tokens_received ?? null,
           tokensDisplay: result.tokens_display ?? null,
           lastError: null,
+          preparedFor: null,
         }));
       } else {
         setState((s) => ({ ...s, isExecuting: false, lastError: result.error || "Execute failed" }));
@@ -194,15 +200,16 @@ export function useTradeSocket() {
     poolAddress?: string; poolType?: string; quoteAddress?: string;
     creatorAddress?: string; coinCreator?: string; priorityFee?: number; jitoTip?: number;
     baseVaultAddress?: string; quoteVaultAddress?: string; tokenStandard?: string;
-  }) => {
+  }): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     const solLamports = Math.floor(params.solAmount * 1_000_000_000);
 
+    lastPrepareRef.current = { mint: params.mint, amount: params.solAmount };
     setState((s) => ({
       ...s, isPreparing: true, isReady: false, lastError: null,
-      estimatedTokens: null, estimatedDisplay: null,
+      estimatedTokens: null, estimatedDisplay: null, preparedFor: null,
     }));
 
     const request: PrepareRequest = {
@@ -218,14 +225,16 @@ export function useTradeSocket() {
     };
 
     socketRef.current.emit("prepare_buy", request);
+    return true;
   }, [getToken, phantomAddress, user]);
 
-  const executeBuy = useCallback(() => {
+  const executeBuy = useCallback((): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     setState((s) => ({ ...s, isExecuting: true, lastError: null, lastSignature: null, tokensReceived: null }));
     socketRef.current.emit("execute_buy", { token, phantom_address: phantomAddress } as ExecuteRequest);
+    return true;
   }, [getToken, phantomAddress]);
 
   const prepareSell = useCallback((params: {
@@ -234,16 +243,17 @@ export function useTradeSocket() {
     quoteAddress?: string; creatorAddress?: string; coinCreator?: string; priorityFee?: number;
     jitoTip?: number; baseVaultAddress?: string; quoteVaultAddress?: string;
     tokenStandard?: string;
-  }) => {
+  }): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     const decimals = params.tokenDecimals ?? 6;
     const tokenBaseUnits = Math.floor(params.tokenAmount * Math.pow(10, decimals));
 
+    lastPrepareRef.current = { mint: params.mint, amount: params.tokenAmount };
     setState((s) => ({
       ...s, isPreparing: true, isReady: false, lastError: null,
-      estimatedSol: null, estimatedSolDisplay: null,
+      estimatedSol: null, estimatedSolDisplay: null, preparedFor: null,
     }));
 
     const request: PrepareSellRequest = {
@@ -259,14 +269,16 @@ export function useTradeSocket() {
     };
 
     socketRef.current.emit("prepare_sell", request);
+    return true;
   }, [getToken, phantomAddress, user]);
 
-  const executeSell = useCallback(() => {
+  const executeSell = useCallback((): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     setState((s) => ({ ...s, isExecuting: true, lastError: null, lastSignature: null }));
     socketRef.current.emit("execute_sell", { token, phantom_address: phantomAddress } as ExecuteRequest);
+    return true;
   }, [getToken, phantomAddress]);
 
   const instantBuy = useCallback((params: {
@@ -274,15 +286,15 @@ export function useTradeSocket() {
     poolAddress?: string; poolType?: string; quoteAddress?: string;
     creatorAddress?: string; coinCreator?: string; priorityFee?: number; jitoTip?: number;
     baseVaultAddress?: string; quoteVaultAddress?: string; tokenStandard?: string;
-  }) => {
+  }): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     const solLamports = Math.floor(params.solAmount * 1_000_000_000);
 
     setState((s) => ({
       ...s, isExecuting: true, isPreparing: false, isReady: false,
-      lastError: null, lastSignature: null, tokensReceived: null,
+      lastError: null, lastSignature: null, tokensReceived: null, preparedFor: null,
     }));
 
     socketRef.current.emit("instant_buy", {
@@ -296,6 +308,7 @@ export function useTradeSocket() {
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     } as PrepareRequest);
+    return true;
   }, [getToken, phantomAddress, user]);
 
   const instantSell = useCallback((params: {
@@ -304,16 +317,16 @@ export function useTradeSocket() {
     quoteAddress?: string; creatorAddress?: string; coinCreator?: string; priorityFee?: number;
     jitoTip?: number; baseVaultAddress?: string; quoteVaultAddress?: string;
     tokenStandard?: string;
-  }) => {
+  }): boolean => {
     const token = getToken();
-    if (!token || !phantomAddress || !socketRef.current?.connected) return;
+    if (!token || !phantomAddress || !socketRef.current?.connected) return false;
 
     const decimals = params.tokenDecimals ?? 6;
     const tokenBaseUnits = Math.floor(params.tokenAmount * Math.pow(10, decimals));
 
     setState((s) => ({
       ...s, isExecuting: true, isPreparing: false, isReady: false,
-      lastError: null, lastSignature: null, tokensReceived: null,
+      lastError: null, lastSignature: null, tokensReceived: null, preparedFor: null,
     }));
 
     socketRef.current.emit("instant_sell", {
@@ -327,6 +340,7 @@ export function useTradeSocket() {
       jito_tip: params.jitoTip, base_vault_address: params.baseVaultAddress,
       quote_vault_address: params.quoteVaultAddress, token_standard: params.tokenStandard,
     } as PrepareSellRequest);
+    return true;
   }, [getToken, phantomAddress, user]);
 
   const clearError = useCallback(() => {
@@ -334,10 +348,12 @@ export function useTradeSocket() {
   }, []);
 
   const resetPrepare = useCallback(() => {
+    lastPrepareRef.current = null;
     setState((s) => ({
       ...s, isPreparing: false, isReady: false,
       estimatedTokens: null, estimatedDisplay: null, pricePerToken: null,
       estimatedSol: null, estimatedSolDisplay: null, sellPricePerToken: null,
+      preparedFor: null,
     }));
   }, []);
 

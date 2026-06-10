@@ -7,10 +7,13 @@ import {
   RiFlashlightFill,
 } from "@remixicon/react";
 import { AxiomPulseCard } from "./AxiomPulseCard";
-import { usePulseStore } from "@/store/pulse.store";
-import type { PulseItem } from "@/lib/types";
+import { BuyPresetChips } from "./BuyPresetChips";
+import { PulseFilterButton } from "./PulseFilterButton";
+import { usePulseStore, defaultAdvancedFilters } from "@/store/pulse.store";
+import type { PulseItem, PulseState } from "@/lib/types";
 
 interface AxiomPulseColumnProps {
+  state: PulseState;
   title: string;
   tokens: PulseItem[];
   isLoading?: boolean;
@@ -61,6 +64,7 @@ function AxiomPulseColumnSkeleton() {
 }
 
 function AxiomPulseColumnComponent({
+  state,
   title,
   tokens,
   isLoading = false,
@@ -68,7 +72,6 @@ function AxiomPulseColumnComponent({
   className,
 }: AxiomPulseColumnProps) {
   const parentRef = useRef<HTMLDivElement>(null);
-  const { filters, setFilters } = usePulseStore();
 
   // Initial estimate only — actual heights are measured per-row below.
   const estimateSize = useCallback(() => 92, []);
@@ -102,35 +105,12 @@ function AxiomPulseColumnComponent({
             <div className="w-[10px] h-[10px] rounded-full" style={{ backgroundColor: color }} />
             <div className="w-[1px] h-3 bg-[#2a2a35]" />
 
-            {["P1", "P2", "P3"].map((preset) => {
-              const isActive = (preset === "P1" && filters.tierFilter === "all") ||
-                (preset === "P2" && filters.tierFilter === "medium") ||
-                (preset === "P3" && filters.tierFilter === "high");
-              return (
-                <button
-                  key={preset}
-                  onClick={() => {
-                    const nextTier = preset === "P1" ? "all" : preset === "P2" ? "medium" : "high";
-                    setFilters({ tierFilter: nextTier });
-                  }}
-                  className={`p-0 px-1 text-[10px] font-bold border-none cursor-pointer bg-transparent transition-colors ${isActive ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
-                    }`}
-                >
-                  {preset}
-                </button>
-              );
-            })}
+            {/* Editable SOL buy-amount loadout (drives the ⚡ quick-buy buttons) */}
+            <BuyPresetChips />
           </div>
 
-          <button
-            onClick={() => setFilters({ hideRisky: !filters.hideRisky })}
-            className={`relative p-1 bg-none border-none cursor-pointer flex items-center transition-colors ${filters.hideRisky ? "text-[#14f195]" : "text-neutral-400 hover:text-white"
-              }`}
-            title="Toggle Risky Filters"
-          >
-            <RiEqualizer3Line className="w-[12px] h-[12px]" />
-            <span className={`absolute -top-0 -right-0.5 h-1 w-1 rounded-full ${filters.hideRisky ? "bg-[#14f195]" : "bg-[#526fff]"}`} />
-          </button>
+          {/* Full filter menu (opens a popover) — filters only this column */}
+          <PulseFilterButton state={state} />
         </div>
       </div>
 
@@ -146,7 +126,18 @@ function AxiomPulseColumnComponent({
           <div className="flex flex-col items-center justify-center h-full text-[#6b6b7a] space-y-2">
             <RiEqualizer3Line className="w-8 h-8 opacity-50" />
             <span className="text-[13px] font-medium">No matching Results</span>
-            <button className="text-[#526fff] text-[11px] hover:underline cursor-pointer">
+            <button
+              onClick={() =>
+                usePulseStore.getState().setFilters(state, {
+                  tierFilter: "all",
+                  hideRisky: false,
+                  bagsOnly: false,
+                  minMarketCap: 0,
+                  ...defaultAdvancedFilters(),
+                })
+              }
+              className="text-[#526fff] text-[11px] hover:underline cursor-pointer"
+            >
               Adjust Filters
             </button>
           </div>
