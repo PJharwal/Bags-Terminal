@@ -11,14 +11,14 @@ export const metadata: Metadata = {
     description:
       "Compete on the payout axis, not speed. Launch with built-in fee sharing and claim creator fees on one Solana wallet.",
     url: "/axiom-alternative",
-    images: [{ url: "/api/og", width: 1200, height: 630, alt: "BAGS Terminal — an Axiom alternative" }],
+    images: [{ url: "/api/og?v=2", width: 1200, height: 630, alt: "BAGS Terminal — an Axiom alternative" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "BAGS Terminal — an Axiom alternative",
     description:
       "Compete on the payout axis, not speed. Launch with built-in fee sharing and claim creator fees on one Solana wallet.",
-    images: ["/api/og"],
+    images: ["/api/og?v=2"],
   },
 };
 

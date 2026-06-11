@@ -9,13 +9,13 @@ export const metadata: Metadata = {
     title: 'Perps Terminal · BAGS Terminal',
     description: 'Live perps market data — 200+ markets via Hyperliquid. Execution coming soon.',
     url: '/perps',
-    images: [{ url: '/api/og?page=perps', width: 1200, height: 630, alt: 'Perps Terminal on BAGS Terminal' }],
+    images: [{ url: '/api/og?page=perps&v=2', width: 1200, height: 630, alt: 'Perps Terminal on BAGS Terminal' }],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Perps Terminal · BAGS Terminal',
     description: 'Live perps market data — 200+ markets via Hyperliquid. Execution coming soon.',
-    images: ['/api/og?page=perps'],
+    images: ['/api/og?page=perps&v=2'],
   },
 };
 

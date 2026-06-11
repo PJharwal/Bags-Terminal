@@ -32,7 +32,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const { tokenId } = await params;
   const meta = await fetchTokenMeta(tokenId);
-  const ogImage = `/api/og?mint=${encodeURIComponent(tokenId)}`;
+  const ogImage = `/api/og?mint=${encodeURIComponent(tokenId)}&v=2`;
 
   const sym = meta?.symbol ? `$${meta.symbol}` : 'Token';
   const priceBit = meta?.priceUsd ? ` · $${meta.priceUsd}` : '';

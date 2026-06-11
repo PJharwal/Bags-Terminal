@@ -565,84 +565,56 @@ export async function GET(req: NextRequest) {
     // fall through to default card if token data unavailable
   }
 
+  // Default + referral card — same visual language as the page/market cards.
   return new ImageResponse(
     (
-      <div
-        style={{
-          width: "1200px",
-          height: "630px",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "space-between",
-          backgroundColor: "#050505",
-          backgroundImage:
-            "radial-gradient(circle at 25% 15%, rgba(57,255,20,0.16) 0%, transparent 45%), radial-gradient(circle at 80% 90%, rgba(0,240,255,0.12) 0%, transparent 50%)",
-          padding: "72px",
-          fontFamily: "monospace",
-        }}
-      >
-        {/* Top row: logo + wordmark. Referral cards use the official logo. */}
-        <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-          {shortRef && officialLogoSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={officialLogoSrc} width={96} height={96} alt="" />
-          ) : (
-            <BagsMark size={96} />
-          )}
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span
-              style={{
-                fontSize: "52px",
-                fontWeight: 700,
-                color: "#EDEDED",
-                letterSpacing: "-1px",
-              }}
-            >
-              BAGS_TERMINAL
-            </span>
-            <span style={{ fontSize: "22px", color: "#888", marginTop: "4px" }}>
-              bagsterminal.fm
+      <div style={ogShell("rgba(57,255,20,0.14)")}>
+        <OgCorners accent="#39FF14" />
+        <OgHeader
+          kicker={shortRef ? "REFERRAL · FEE SHARING" : "SOLANA TRADING TERMINAL"}
+          accent="#39FF14"
+        />
+
+        {/* Middle: headline + market chips */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <span style={{ fontSize: "80px", fontWeight: 700, color: "#FFFFFF", lineHeight: 1.05 }}>
+            One terminal.
+          </span>
+          <span style={{ fontSize: "80px", fontWeight: 700, color: "#39FF14", lineHeight: 1.05 }}>
+            Every market.
+          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", marginTop: "14px" }}>
+            {[
+              { label: "MEMES", color: "#39FF14" },
+              { label: "PREDICTION MARKETS", color: "#00F0FF" },
+              { label: "PERPS", color: "#FFD700" },
+            ].map((c) => (
+              <div
+                key={c.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  border: `1px solid ${c.color}55`,
+                  backgroundColor: `${c.color}14`,
+                  borderRadius: "10px",
+                  padding: "10px 20px",
+                }}
+              >
+                <span style={{ fontSize: "20px", color: c.color, fontWeight: 700, letterSpacing: "2px" }}>
+                  {c.label}
+                </span>
+              </div>
+            ))}
+            <span style={{ fontSize: "20px", color: "#9aa0a6", letterSpacing: "2px" }}>
+              · LIVE ON SOLANA
             </span>
           </div>
         </div>
 
-        {/* Middle: headline */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
-          <span
-            style={{
-              fontSize: "76px",
-              fontWeight: 700,
-              color: "#FFFFFF",
-              lineHeight: 1.05,
-            }}
-          >
-            One Terminal.
-          </span>
-          <span
-            style={{
-              fontSize: "76px",
-              fontWeight: 700,
-              color: "#39FF14",
-              lineHeight: 1.05,
-            }}
-          >
-            Every Market.
-          </span>
-          <span
-            style={{
-              fontSize: "26px",
-              color: "#9aa0a6",
-              marginTop: "8px",
-              maxWidth: "900px",
-            }}
-          >
-            Spot memes, prediction markets & perps on Solana — built on bags.fm.
-          </span>
-        </div>
-
-        {/* Bottom: referral badge or default tag */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          {shortRef ? (
+        {/* Bottom: referral badge (if any) + scan footer */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          {shortRef && (
             <div
               style={{
                 display: "flex",
@@ -650,34 +622,17 @@ export async function GET(req: NextRequest) {
                 gap: "14px",
                 border: "1px solid rgba(57,255,20,0.35)",
                 backgroundColor: "rgba(57,255,20,0.08)",
-                padding: "16px 28px",
+                borderRadius: "10px",
+                padding: "14px 24px",
+                alignSelf: "flex-start",
               }}
             >
-              <span style={{ fontSize: "22px", color: "#888" }}>REFERRED BY</span>
-              <span
-                style={{ fontSize: "26px", color: "#39FF14", fontWeight: 700 }}
-              >
-                {shortRef}
-              </span>
-              <span style={{ fontSize: "22px", color: "#888" }}>
-                · launch with built-in fee sharing
-              </span>
-            </div>
-          ) : (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                border: "1px solid rgba(255,255,255,0.12)",
-                padding: "16px 28px",
-              }}
-            >
-              <span style={{ fontSize: "22px", color: "#9aa0a6" }}>
-                LIVE · SOLANA MAINNET
-              </span>
+              <span style={{ fontSize: "20px", color: "#888" }}>REFERRED BY</span>
+              <span style={{ fontSize: "24px", color: "#39FF14", fontWeight: 700 }}>{shortRef}</span>
+              <span style={{ fontSize: "20px", color: "#888" }}>· launch with built-in fee sharing</span>
             </div>
           )}
+          <OgScanFooter path="/" accent="#39FF14" />
         </div>
       </div>
     ),

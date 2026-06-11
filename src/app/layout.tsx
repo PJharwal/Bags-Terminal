@@ -23,7 +23,7 @@ const jsonLd = {
       name: "BAGS Terminal",
       url: siteUrl,
       description: siteDescription,
-      logo: `${siteUrl}/api/og`,
+      logo: `${siteUrl}/api/og?v=2`,
     },
     {
       "@type": "WebApplication",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
     url: "/",
     images: [
       {
-        url: "/api/og",
+        url: "/api/og?v=2",
         width: 1200,
         height: 630,
         alt: "BAGS Terminal — one terminal, every market",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "BAGS Terminal",
     description: siteDescription,
-    images: ["/api/og"],
+    images: ["/api/og?v=2"],
   },
 };
 

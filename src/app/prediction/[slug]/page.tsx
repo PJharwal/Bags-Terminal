@@ -16,7 +16,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const ogImage = `${config.siteUrl}/api/og?pmarket=${encodeURIComponent(slug)}`;
+  const ogImage = `${config.siteUrl}/api/og?pmarket=${encodeURIComponent(slug)}&v=2`;
 
   // Try the live event (3s budget) for a real title/description; fall back
   // to the slug-derived title — never block the page on the backend.

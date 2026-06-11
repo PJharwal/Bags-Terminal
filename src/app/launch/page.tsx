@@ -8,7 +8,7 @@ export async function generateMetadata(
 
   if (ref) {
     const shortRef = ref.length > 10 ? `${ref.slice(0, 4)}…${ref.slice(-4)}` : ref;
-    const ogImage = `/api/og?ref=${encodeURIComponent(ref)}`;
+    const ogImage = `/api/og?ref=${encodeURIComponent(ref)}&v=2`;
     const title = `Launch a token on BAGS — referred by ${shortRef}`;
     const description =
       'Launch on bags.fm with built-in fee sharing. Use this referral link to get started.';
@@ -35,9 +35,9 @@ export async function generateMetadata(
       title,
       description,
       url: '/launch',
-      images: [{ url: '/api/og', width: 1200, height: 630, alt: title }],
+      images: [{ url: '/api/og?v=2', width: 1200, height: 630, alt: title }],
     },
-    twitter: { card: 'summary_large_image', title, description, images: ['/api/og'] },
+    twitter: { card: 'summary_large_image', title, description, images: ['/api/og?v=2'] },
   };
 }
 
