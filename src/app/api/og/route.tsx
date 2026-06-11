@@ -195,7 +195,7 @@ async function fetchOgEvent(slug: string): Promise<PolyEvent | null> {
   try {
     const res = await fetch(
       `${config.polyBackendUrl}/api/polymarket/event/${encodeURIComponent(slug)}`,
-      { signal: AbortSignal.timeout(3500) },
+      { signal: AbortSignal.timeout(8000) },
     );
     if (!res.ok) return null;
     const json = await res.json();
@@ -350,7 +350,7 @@ export async function GET(req: NextRequest) {
     let live: { t: string; p: number }[] = [];
     try {
       const res = await fetch(`${config.polyBackendUrl}/api/polymarket/events?limit=12`, {
-        signal: AbortSignal.timeout(3500),
+        signal: AbortSignal.timeout(6000),
       });
       if (res.ok) {
         const json = await res.json();

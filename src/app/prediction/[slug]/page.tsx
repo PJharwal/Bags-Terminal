@@ -25,7 +25,7 @@ export async function generateMetadata({
   try {
     const event = await Promise.race([
       fetchPolyEvent(slug),
-      new Promise<null>((resolve) => setTimeout(() => resolve(null), 3000)),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 6000)),
     ]);
     if (event?.title) {
       title = event.title;
