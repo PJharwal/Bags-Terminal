@@ -49,6 +49,10 @@ export function EventCard({ event, hot }: { event: PolyEvent; hot: boolean }) {
   const firstMarket = event.markets?.[0];
   const timeLeft = formatTimeLeft(event.endDate);
 
+  // Urgency: real end date within 24h and still open.
+  const msLeft = new Date(event.endDate).getTime() - Date.now();
+  const endingSoon = status === "active" && Number.isFinite(msLeft) && msLeft > 0 && msLeft < 24 * 3600_000;
+
   // Binary market data — honest: no real prices → no hero, chips show "—".
   const hasPrices = (firstMarket?.outcomePrices?.length ?? 0) >= 2;
   const prices = firstMarket ? getOutcomePrices(firstMarket) : ([0, 0] as const);
@@ -84,9 +88,18 @@ export function EventCard({ event, hot }: { event: PolyEvent; hot: boolean }) {
           {event.title}
         </h3>
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className={`${meta.badgeClass} px-1.5 py-0.5 text-[8px] rounded-md`} title={meta.description}>
-            {meta.label}
-          </span>
+          {endingSoon ? (
+            <span
+              className="px-1.5 py-0.5 text-[8px] font-bold rounded-md border border-[#FFD700]/50 bg-[#FFD700]/10 text-[#FFD700] animate-pulse"
+              title="Market closes within 24 hours"
+            >
+              ENDING SOON
+            </span>
+          ) : (
+            <span className={`${meta.badgeClass} px-1.5 py-0.5 text-[8px] rounded-md`} title={meta.description}>
+              {meta.label}
+            </span>
+          )}
           {hot && (
             <span
               className="flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-bold rounded-md border border-[#FFD700]/40 bg-[#FFD700]/10 text-[#FFD700]"
@@ -102,17 +115,27 @@ export function EventCard({ event, hot }: { event: PolyEvent; hot: boolean }) {
       {isMulti ? (
         /* Multi-outcome: top-3 rows with cyan % + progress bar */
         <div className="flex flex-col gap-1.5 min-h-[5.5rem]">
-          {topMarkets.map(({ m, p }) => (
+          {topMarkets.map(({ m, p }, i) => (
             <div key={m.id} className="space-y-1">
               <div className="flex items-center justify-between gap-2 text-[10px]">
-                <span className="text-[#999] truncate">{m.question || m.slug}</span>
-                <span className="text-[#00F0FF] font-bold tabular-nums shrink-0">
+                <span className={`truncate ${i === 0 ? "text-white font-bold" : "text-[#999]"}`}>
+                  {i === 0 && p !== null && (
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#00F0FF] mr-1.5 align-middle shadow-[0_0_6px_#00F0FF]" />
+                  )}
+                  {m.question || m.slug}
+                </span>
+                <span
+                  className={`font-bold tabular-nums shrink-0 ${i === 0 ? "text-[#00F0FF] text-[11px]" : "text-[#00F0FF]/70"}`}
+                  style={i === 0 ? { textShadow: "0 0 10px #00F0FF40" } : undefined}
+                >
                   {p !== null ? `${Math.round(p * 100)}%` : "—"}
                 </span>
               </div>
               <div className="h-[2px] rounded bg-white/5 overflow-hidden">
                 <div
-                  className="h-full bg-[#00F0FF]/60"
+                  className={`h-full transition-[width] duration-500 ${
+                    i === 0 ? "bg-gradient-to-r from-[#00F0FF]/80 to-[#39FF14]/80" : "bg-[#00F0FF]/40"
+                  }`}
                   style={{ width: `${p !== null ? Math.round(p * 100) : 0}%` }}
                 />
               </div>
@@ -139,19 +162,38 @@ export function EventCard({ event, hot }: { event: PolyEvent; hot: boolean }) {
             <span className="text-[8px] text-[#555] tracking-[0.18em] uppercase">Chance</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-[#39FF14]/20 bg-[#39FF14]/10 group-hover:bg-[#39FF14]/15 transition-colors">
+            <div
+              className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-[#39FF14]/20 bg-[#39FF14]/10 group-hover:bg-[#39FF14]/15 hover:!bg-[#39FF14]/25 hover:border-[#39FF14]/50 transition-all"
+              title={hasPrices && prices[0] > 0 ? `${labels[0]} pays $1 — ${(1 / prices[0]).toFixed(2)}x` : undefined}
+            >
               <span className="text-[9px] text-[#39FF14]/70 font-bold uppercase truncate">{labels[0]}</span>
               <span className="text-[11px] text-[#39FF14] font-bold tabular-nums">
                 {hasPrices ? `${Math.round(prices[0] * 100)}¢` : "—"}
               </span>
             </div>
-            <div className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-[#FF003C]/20 bg-[#FF003C]/10 group-hover:bg-[#FF003C]/15 transition-colors">
+            <div
+              className="flex items-center justify-center gap-1.5 py-1.5 rounded-lg border border-[#FF003C]/20 bg-[#FF003C]/10 group-hover:bg-[#FF003C]/15 hover:!bg-[#FF003C]/25 hover:border-[#FF003C]/50 transition-all"
+              title={hasPrices && prices[1] > 0 ? `${labels[1]} pays $1 — ${(1 / prices[1]).toFixed(2)}x` : undefined}
+            >
               <span className="text-[9px] text-[#FF003C]/70 font-bold uppercase truncate">{labels[1]}</span>
               <span className="text-[11px] text-[#FF003C] font-bold tabular-nums">
                 {hasPrices ? `${Math.round(prices[1] * 100)}¢` : "—"}
               </span>
             </div>
           </div>
+          {/* Probability split bar — instant YES/NO visual anchor */}
+          {yesPct !== null && (
+            <div className="flex h-[3px] rounded-full overflow-hidden bg-white/5">
+              <div
+                className="bg-[#39FF14]/70 transition-[width] duration-500"
+                style={{ width: `${yesPct}%` }}
+              />
+              <div
+                className="bg-[#FF003C]/50 transition-[width] duration-500"
+                style={{ width: `${100 - yesPct}%` }}
+              />
+            </div>
+          )}
         </>
       )}
 

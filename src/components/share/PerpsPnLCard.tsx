@@ -34,19 +34,42 @@ export function PerpsPnLCard({
 }: PerpsPnLCardProps) {
   const isPositive = roePct >= 0;
   const accent = isPositive ? '#39FF14' : '#FF003C';
-  const prefix = isPositive ? '+' : '';
+  const prefix = isPositive ? '+' : '-'; // paired with Math.abs below — a loss must read "-26.2%"
   const sideColor = side === 'long' ? '#39FF14' : '#FF003C';
+  // Glow scales with the size of the move (capped).
+  const glowAlpha = Math.min(0.32, 0.12 + Math.abs(roePct) / 400);
+  // Entry→mark rail, padded so both markers sit inside the track.
+  const lo = Math.min(entryPx, markPx);
+  const hi = Math.max(entryPx, markPx);
+  const span = Math.max(hi - lo, hi * 0.001);
+  const railLo = lo - span * 0.35;
+  const railSpan = span * 1.7;
+  const pos = (v: number) => `${((v - railLo) / railSpan) * 100}%`;
 
-  const tweetText = `${simulated ? '[SIMULATED] ' : ''}${prefix}${roePct.toFixed(1)}% ROE on ${coin}-PERP ${isPositive ? '🟢' : '🔴'}\n\n${side.toUpperCase()} ${leverage}x · entry $${px(entryPx)} → mark $${px(markPx)}\n\nPerps on BAGS Terminal`;
+  const tweetText = `${simulated ? '[SIMULATED] ' : ''}${prefix}${Math.abs(roePct).toFixed(1)}% ROE on ${coin}-PERP ${isPositive ? '🟢' : '🔴'}\n\n${side.toUpperCase()} ${leverage}x · entry $${px(entryPx)} → mark $${px(markPx)}\n\nPerps on BAGS Terminal`;
 
   return (
     <ShareCardWrapper tweetText={tweetText} filename={`bags-perps-${coin.toLowerCase()}`}>
       <div style={{ fontFamily: mono, position: 'relative', minHeight: 220 }}>
-        {/* Accent glow */}
+        {/* Terminal grid backdrop */}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.5,
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)',
+          backgroundSize: '28px 28px',
+          maskImage: 'radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%)',
+          WebkitMaskImage: 'radial-gradient(ellipse at 50% 40%, black 30%, transparent 80%)',
+        }} />
+        {/* Side edge bar */}
+        <div style={{
+          position: 'absolute', left: -16, top: 8, bottom: 8, width: 3,
+          background: `linear-gradient(180deg, transparent, ${sideColor}aa, transparent)`,
+          borderRadius: 2, pointerEvents: 'none',
+        }} />
+        {/* Accent glow — intensity tracks ROE magnitude */}
         <div style={{
           position: 'absolute', top: '45%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: 220, height: 220, borderRadius: '50%',
-          background: `radial-gradient(circle, ${accent}15 0%, transparent 70%)`,
+          width: 240, height: 240, borderRadius: '50%',
+          background: `radial-gradient(circle, rgba(${isPositive ? '57,255,20' : '255,0,60'},${glowAlpha}) 0%, transparent 70%)`,
           filter: 'blur(40px)', pointerEvents: 'none',
         }} />
 
@@ -107,12 +130,38 @@ export function PerpsPnLCard({
             </div>
           )}
 
+          {/* Price rail: entry → mark */}
+          <div style={{ padding: '0 4px 14px' }}>
+            <div style={{ position: 'relative', height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)' }}>
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0, borderRadius: 3,
+                left: pos(lo),
+                width: `${(span / railSpan) * 100}%`,
+                background: `linear-gradient(90deg, ${accent}30, ${accent}90)`,
+              }} />
+              <div style={{
+                position: 'absolute', top: -2, width: 10, height: 10, borderRadius: '50%',
+                left: `calc(${pos(entryPx)} - 5px)`,
+                background: '#666', border: '2px solid #0A0A0A',
+              }} />
+              <div style={{
+                position: 'absolute', top: -2, width: 10, height: 10, borderRadius: '50%',
+                left: `calc(${pos(markPx)} - 5px)`,
+                background: accent, border: '2px solid #0A0A0A',
+                boxShadow: `0 0 8px ${accent}90`,
+              }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: 5, fontSize: 8, color: '#888', fontFamily: mono, letterSpacing: '0.1em' }}>
+              <span>ENTRY ${px(entryPx)} → <span style={{ color: accent }}>MARK ${px(markPx)}</span></span>
+            </div>
+          </div>
+
           {/* Details bar */}
           <div style={{ display: 'flex', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: 14 }}>
             {[
-              { label: 'ENTRY', value: `$${px(entryPx)}`, color: '#888' },
-              { label: 'MARK', value: `$${px(markPx)}`, color: '#fff' },
               { label: 'MARGIN', value: `$${marginUsd.toFixed(2)}`, color: '#888' },
+              { label: 'NOTIONAL', value: `$${(marginUsd * leverage).toFixed(2)}`, color: '#fff' },
+              { label: 'PNL', value: `${prefix}$${Math.abs(pnlUsd).toFixed(2)}`, color: accent },
             ].map((item, i) => (
               <div key={item.label} style={{
                 flex: 1, textAlign: 'center',
